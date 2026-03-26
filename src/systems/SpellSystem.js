@@ -1,5 +1,6 @@
 import { WALL_Y } from '../config/constants.js';
 import { addParticle } from './SpawnSystem.js';
+import { bus } from '../core/EventBus.js';
 
 /**
  * Ticks fox fire zones — damages enemies inside and spawns fire particles.
@@ -54,6 +55,7 @@ export function tickDragonWaves(s, dt) {
 export function triggerThunder(s, setUiTick) {
   if (s.koku >= 150 && s.gameState === 'COMBAT' && s.thunderCooldown <= 0) {
     s.koku -= 150;
+    bus.emit('KOKU_CHANGED', s.koku);
     s.thunderCooldown = 2.0;
     const enemies = s.units.filter(u => u.team === 'enemy' && u.hp > 0);
     const targets = enemies.sort((a, b) => b.hp - a.hp).slice(0, 3);
@@ -62,6 +64,7 @@ export function triggerThunder(s, setUiTick) {
       s.lightnings.push({ x: t.x, y: t.y, life: 0.5 });
     });
     s.screenShake = 0.4;
+    bus.emit('SCREEN_SHAKE', s.screenShake);
     setUiTick(t => t + 1);
   }
 }
@@ -69,6 +72,7 @@ export function triggerThunder(s, setUiTick) {
 export function triggerFoxFire(s, setUiTick) {
   if (s.koku >= 250 && s.gameState === 'COMBAT' && s.foxFireCooldown <= 0) {
     s.koku -= 250;
+    bus.emit('KOKU_CHANGED', s.koku);
     s.foxFireCooldown = 10.0;
     s.foxFires.push({ yTop: 1000, yBottom: 1200, life: 8.0 });
     setUiTick(t => t + 1);
@@ -78,9 +82,11 @@ export function triggerFoxFire(s, setUiTick) {
 export function triggerDragonWave(s, setUiTick) {
   if (s.koku >= 600 && s.gameState === 'COMBAT' && s.dragonCooldown <= 0) {
     s.koku -= 600;
+    bus.emit('KOKU_CHANGED', s.koku);
     s.dragonCooldown = 15.0;
     s.dragonWaves.push({ y: WALL_Y - 50, life: 2.0 });
     s.screenShake = 1.0;
+    bus.emit('SCREEN_SHAKE', s.screenShake);
     setUiTick(t => t + 1);
   }
 }
@@ -88,6 +94,7 @@ export function triggerDragonWave(s, setUiTick) {
 export function triggerWarDrums(s, setUiTick) {
   if (s.koku >= 200 && s.gameState === 'COMBAT') {
     s.koku -= 200;
+    bus.emit('KOKU_CHANGED', s.koku);
     s.warDrumsActive = 5.0;
     setUiTick(t => t + 1);
   }
@@ -96,6 +103,7 @@ export function triggerWarDrums(s, setUiTick) {
 export function triggerHarvest(s, setUiTick) {
   if (s.koku >= 300 && s.gameState === 'COMBAT') {
     s.koku -= 300;
+    bus.emit('KOKU_CHANGED', s.koku);
     s.harvestActive = 10.0;
     setUiTick(t => t + 1);
   }
@@ -104,6 +112,7 @@ export function triggerHarvest(s, setUiTick) {
 export function triggerResolve(s, setUiTick) {
   if (s.koku >= 150 && s.gameState === 'COMBAT') {
     s.koku -= 150;
+    bus.emit('KOKU_CHANGED', s.koku);
     let healedAny = false;
     s.units.forEach(u => {
       if (u.team === 'player' && (u.name === 'Hatamoto' || u.name === 'Bamboo Barricade')) {
@@ -112,7 +121,10 @@ export function triggerResolve(s, setUiTick) {
         healedAny = true;
       }
     });
-    if (healedAny) s.screenShake = 0.3;
+    if (healedAny) {
+      s.screenShake = 0.3;
+      bus.emit('SCREEN_SHAKE', s.screenShake);
+    }
     setUiTick(t => t + 1);
   }
 }

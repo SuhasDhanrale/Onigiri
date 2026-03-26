@@ -8,9 +8,10 @@ import { BARRACKS_DEFS, BARRACKS_LAYOUT } from './config/barracks.js';
 import { CAMPAIGN_MAP, ENEMY_COSTS } from './config/campaign.js';
 import { PERMANENT_TECHS, HEIRLOOMS } from './config/progression.js';
 import { generateId, getCost, getSquadCap, lineCircleCollide } from './core/utils.js';
-import { recalculateGuards } from './core/GameState.js';
+import { createInitialState } from './core/GameState.js'; // Note: createInitialState is the only export now, but App.jsx has inline state currently
 
 // --- Phase 2: System imports ---
+import { recalculateGuards } from './systems/GuardSystem.js';
 import { spawnUnit as _spawnUnit, addParticle as _addParticle } from './systems/SpawnSystem.js';
 import { generateWave, tickWaveState } from './systems/WaveSystem.js';
 import { tickBarracks } from './systems/BarracksSystem.js';

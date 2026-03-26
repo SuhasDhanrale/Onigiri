@@ -1,5 +1,6 @@
 import { addParticle } from './SpawnSystem.js';
 import { COLORS } from '../config/colors.js';
+import { bus } from '../core/EventBus.js';
 
 /**
  * Processes all dead units (hp <= 0): grants koku, honor, blood splats, particles.
@@ -30,6 +31,7 @@ export function processDeaths(s, bgCtx, metaRef, setUiTick) {
           let reward = (baseReward > 0 && hasRiverlands) ? baseReward + Math.max(1, Math.floor(baseReward * 0.2)) : baseReward;
           if (s.harvestActive > 0) reward *= 2;
           s.koku += reward; s.totalKoku += reward;
+          bus.emit('KOKU_CHANGED', s.koku);
           s.floatingTexts.push({ x: u.x, y: u.y - 20, text: '+2 HONOR!', color: '#d4af37', life: 2.0, vy: -50 });
           if (reward > 0) s.floatingTexts.push({ x: u.x, y: u.y, text: `+${reward}`, color: '#ffb703', life: 1.0, vy: -60 });
           s.screenShake = 0.5;
@@ -40,6 +42,7 @@ export function processDeaths(s, bgCtx, metaRef, setUiTick) {
           let reward = (baseReward > 0 && hasRiverlands) ? baseReward + Math.max(1, Math.floor(baseReward * 0.2)) : baseReward;
           if (s.harvestActive > 0) reward *= 2;
           s.koku += reward; s.totalKoku += reward;
+          bus.emit('KOKU_CHANGED', s.koku);
           if (reward > 0) s.floatingTexts.push({ x: u.x, y: u.y, text: `+${reward}`, color: '#ffb703', life: 1.0, vy: -60 });
         }
       }
@@ -62,6 +65,7 @@ export function processDeaths(s, bgCtx, metaRef, setUiTick) {
         bgCtx.restore();
       }
 
+      bus.emit('UNIT_DIED', u);
       s.units.splice(i, 1);
     }
   }

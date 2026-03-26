@@ -1,5 +1,6 @@
 import { ENEMY_COSTS, CAMPAIGN_MAP } from '../config/campaign.js';
 import { spawnUnit } from './SpawnSystem.js';
+import { bus } from '../core/EventBus.js';
 
 /**
  * Generates a list of enemy squads for a given wave number.
@@ -80,6 +81,7 @@ export function tickWaveState(s, dt, metaRef, setUiTick) {
       const regionDef = CAMPAIGN_MAP[s.currentRegion];
       if (regionDef && s.wave >= regionDef.waves) {
         s.gameState = 'REGION_VICTORY';
+        bus.emit('GAME_STATE_CHANGED', s.gameState);
         setUiTick(t => t + 1);
       } else {
         const isReformation = s.wave % 3 === 0;
