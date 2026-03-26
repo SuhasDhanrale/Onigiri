@@ -1,4 +1,4 @@
-import { BARRACKS_DEFS } from '../config/barracks.js';
+import { BARRACKS_DEFS, BARRACKS_LAYOUT } from '../config/barracks.js';
 import { UNIT_TYPES } from '../config/units.js';
 import { getSquadCap } from '../core/utils.js';
 import { spawnUnit } from './SpawnSystem.js';
@@ -26,9 +26,8 @@ export function tickBarracks(s, dt, metaRef) {
         if (s.autoUnlocked[key]) s.timers[key] -= dt * focusMult;
 
         if (s.timers[key] <= 0) {
-          // Import BARRACKS_LAYOUT lazily to avoid circular dep
-          const layout = { HATAMOTO: { x: 150, y: 1460 }, YUMI: { x: 450, y: 1460 }, CAVALRY: { x: 750, y: 1460 }, HOROKU: { x: 1050, y: 1460 } };
-          spawnUnit(s, def.unit, 'player', layout[key].x, layout[key].y - 80, metaRef);
+          const layout = BARRACKS_LAYOUT[key];
+          spawnUnit(s, def.unit, 'player', layout.x, layout.y - 80, metaRef);
           s.visuals[key] = 1.0;
           s.timers[key] = maxTime;
         }

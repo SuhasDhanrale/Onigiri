@@ -31,14 +31,14 @@ export function EconomyHeader({ state, activeTroops, maxTroops }) {
         </div>
         <div className="flex flex-col items-end">
           <span className="text-[10px] font-bold tracking-widest text-[#8b8574] uppercase">Army Size</span>
-          <span className="text-xl font-black leading-none">
+          <span className={`text-xl font-black leading-none ${activeTroops >= maxTroops ? 'text-[var(--color-vermilion)]' : ''}`}>
             {activeTroops} <span className="text-xs text-[#8b8574]">/ {maxTroops}</span>
           </span>
         </div>
       </div>
       <div className="w-full h-1.5 bg-[var(--color-parchment)]/20 overflow-hidden">
         <div 
-          className="h-full bg-[#d4af37] transition-all duration-300" 
+          className={`h-full transition-all duration-300 ${activeTroops >= maxTroops ? 'bg-[var(--color-vermilion)]' : 'bg-[#d4af37]'}`} 
           style={{ width: `${maxTroops > 0 ? (activeTroops / maxTroops) * 100 : 0}%` }} 
         />
       </div>

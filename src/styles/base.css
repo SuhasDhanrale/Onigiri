@@ -8,6 +8,12 @@
   --color-gold: #d4af37;
 }
 
+body {
+  font-family: 'Outfit', 'Inter', serif;
+  background-color: var(--color-ink);
+  color: var(--color-ink);
+}
+
 /* src/styles/base.css
    Global base styles — moved from App.jsx dangerouslySetInnerHTML */
 
