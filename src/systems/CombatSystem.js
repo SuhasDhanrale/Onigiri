@@ -3,16 +3,16 @@ import { WALL_Y, V_WIDTH } from '../config/constants.js';
 import { addParticle } from './SpawnSystem.js';
 import { calculateVelocity, applySeparation } from './MovementSystem.js';
 import { bus } from '../core/EventBus.js';
+import { EVENTS } from '../core/events.js';
 
 /**
  * Full unit movement + combat loop. Processes all units each frame.
  * @param {object} s       - game state
  * @param {number} dt
- * @param {number} now     - performance.now()
+ * @param {object} now     - performance.now()
  * @param {object} metaRef - React ref to meta state
- * @param {Function} setUiTick
  */
-export function tickUnits(s, dt, now, metaRef, setUiTick) {
+export function tickUnits(s, dt, now, metaRef) {
   const enemies = s.units.filter(u => u.team === 'enemy');
   const players = s.units.filter(u => u.team === 'player');
 
@@ -122,14 +122,14 @@ export function tickUnits(s, dt, now, metaRef, setUiTick) {
           if (unit.type === 'cavalry') {
             if (target.type === 'shield' || target.type === 'boss') { 
               s.screenShake = 0.1; 
-              bus.emit('SCREEN_SHAKE', s.screenShake);
+              bus.emit(EVENTS.SCREEN_SHAKE, { amount: s.screenShake });
             }
             else {
               const shoveDir = unit.team === 'player' ? -1 : 1;
               target.y += shoveDir * (unit.chargeTimer > 0 ? 180 : 60);
               target.x += (Math.random() - 0.5) * 20;
               s.screenShake = unit.chargeTimer > 0 ? 0.5 : 0.2;
-              bus.emit('SCREEN_SHAKE', s.screenShake);
+              bus.emit(EVENTS.SCREEN_SHAKE, { amount: s.screenShake });
               addParticle(s, target.x, target.y, '#dfd4ba', 5);
             }
           }
@@ -150,8 +150,7 @@ export function tickUnits(s, dt, now, metaRef, setUiTick) {
 
     if (unit.team === 'enemy' && unit.y + unit.radius >= WALL_Y) { 
       s.gameState = 'GAMEOVER'; 
-      bus.emit('GAME_STATE_CHANGED', s.gameState);
-      setUiTick(t => t + 1); 
+      bus.emit(EVENTS.GAME_STATE_CHANGED, { state: s.gameState });
     }
     if (unit.team === 'player' && unit.y < -300) unit.hp = 0;
   }

@@ -22,6 +22,22 @@ export const drawGame = (ctx, s, dt, now, metaRef) => {
         ctx.translate((Math.random() - 0.5) * amt, (Math.random() - 0.5) * amt); 
     }
 
+    // Boss Vignette
+    const bossActive = s.units.some(u => u.type === 'boss');
+    if (bossActive) {
+        const grad = ctx.createRadialGradient(V_WIDTH/2, V_HEIGHT/2, 0, V_WIDTH/2, V_HEIGHT/2, V_WIDTH);
+        grad.addColorStop(0, 'transparent');
+        grad.addColorStop(1, 'rgba(184, 66, 53, 0.4)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+    }
+
+    // Fever Overlay
+    if (s.feverActive > 0) {
+        ctx.fillStyle = 'rgba(184, 66, 53, 0.15)';
+        ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+    }
+
     drawBackground(ctx, s, now, metaRef);
     drawBackgroundEffects(ctx, s);
     

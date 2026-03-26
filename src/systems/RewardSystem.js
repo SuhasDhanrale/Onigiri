@@ -1,6 +1,7 @@
 import { addParticle } from './SpawnSystem.js';
 import { COLORS } from '../config/colors.js';
 import { bus } from '../core/EventBus.js';
+import { EVENTS } from '../core/events.js';
 
 /**
  * Processes all dead units (hp <= 0): grants koku, honor, blood splats, particles.
@@ -8,9 +9,8 @@ import { bus } from '../core/EventBus.js';
  * @param {object} s       - game state
  * @param {object} bgCtx   - background canvas 2d context (for blood splats)
  * @param {object} metaRef - React ref to meta state
- * @param {Function} setUiTick
  */
-export function processDeaths(s, bgCtx, metaRef, setUiTick) {
+export function processDeaths(s, bgCtx, metaRef) {
   for (let i = s.units.length - 1; i >= 0; i--) {
     if (s.units[i].hp <= 0) {
       const u = s.units[i];
@@ -31,18 +31,19 @@ export function processDeaths(s, bgCtx, metaRef, setUiTick) {
           let reward = (baseReward > 0 && hasRiverlands) ? baseReward + Math.max(1, Math.floor(baseReward * 0.2)) : baseReward;
           if (s.harvestActive > 0) reward *= 2;
           s.koku += reward; s.totalKoku += reward;
-          bus.emit('KOKU_CHANGED', s.koku);
+          bus.emit(EVENTS.KOKU_CHANGED, { koku: s.koku });
+          bus.emit(EVENTS.HONOR_EARNED, { amount: 2 });
           s.floatingTexts.push({ x: u.x, y: u.y - 20, text: '+2 HONOR!', color: '#d4af37', life: 2.0, vy: -50 });
           if (reward > 0) s.floatingTexts.push({ x: u.x, y: u.y, text: `+${reward}`, color: '#ffb703', life: 1.0, vy: -60 });
           s.screenShake = 0.5;
-          setUiTick(t => t + 1);
+          bus.emit(EVENTS.SCREEN_SHAKE, { amount: s.screenShake });
         } else {
           let baseReward = u.type === 'boss' ? 50 : (u.type === 'shield' ? 5 : (u.name === 'Ikki Rebel' ? 1 : 2));
           if (isBloodKatana) baseReward = 0;
           let reward = (baseReward > 0 && hasRiverlands) ? baseReward + Math.max(1, Math.floor(baseReward * 0.2)) : baseReward;
           if (s.harvestActive > 0) reward *= 2;
           s.koku += reward; s.totalKoku += reward;
-          bus.emit('KOKU_CHANGED', s.koku);
+          bus.emit(EVENTS.KOKU_CHANGED, { koku: s.koku });
           if (reward > 0) s.floatingTexts.push({ x: u.x, y: u.y, text: `+${reward}`, color: '#ffb703', life: 1.0, vy: -60 });
         }
       }
@@ -65,7 +66,7 @@ export function processDeaths(s, bgCtx, metaRef, setUiTick) {
         bgCtx.restore();
       }
 
-      bus.emit('UNIT_DIED', u);
+      bus.emit(EVENTS.UNIT_DIED, { unit: u });
       s.units.splice(i, 1);
     }
   }

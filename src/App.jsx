@@ -18,6 +18,7 @@ import { triggerThunder as _triggerThunder, triggerFoxFire as _triggerFoxFire, t
 // --- Phase 5: Hook & Input imports ---
 import { useMeta } from './hooks/useMeta.js';
 import { useGameLoop } from './hooks/useGameLoop.js';
+import { useGameEvents } from './hooks/useGameEvents.js';
 import { createInputHandlers } from './input/InputHandler.js';
 
 export default function App() {
@@ -25,6 +26,8 @@ export default function App() {
   const bgCanvasRef = useRef(null);
   const [uiTick, setUiTick] = useState(0);
   const [armedSpell, setArmedSpell] = useState('BARRICADE');
+  const armedSpellRef = useRef(armedSpell);
+  useEffect(() => { armedSpellRef.current = armedSpell; }, [armedSpell]);
   
   const { meta, setMeta, metaRef } = useMeta();
 
@@ -204,12 +207,12 @@ export default function App() {
     initRun();
   }, [initRun, setMeta]);
 
-  const triggerWarDrums  = useCallback(() => _triggerWarDrums(state.current,  setUiTick), []);
-  const triggerHarvest   = useCallback(() => _triggerHarvest(state.current,   setUiTick), []);
-  const triggerResolve   = useCallback(() => _triggerResolve(state.current,   setUiTick), []);
-  const triggerThunder   = useCallback(() => _triggerThunder(state.current,   setUiTick), []);
-  const triggerFoxFire   = useCallback(() => _triggerFoxFire(state.current,   setUiTick), []);
-  const triggerDragonWave= useCallback(() => _triggerDragonWave(state.current,setUiTick), []);
+  const triggerWarDrums  = useCallback(() => _triggerWarDrums(state.current), []);
+  const triggerHarvest   = useCallback(() => _triggerHarvest(state.current), []);
+  const triggerResolve   = useCallback(() => _triggerResolve(state.current), []);
+  const triggerThunder   = useCallback(() => _triggerThunder(state.current), []);
+  const triggerFoxFire   = useCallback(() => _triggerFoxFire(state.current), []);
+  const triggerDragonWave= useCallback(() => _triggerDragonWave(state.current), []);
   
   const changeQuota = useCallback((key, delta) => {
       const s = state.current;
@@ -225,11 +228,14 @@ export default function App() {
   // Hook up Game Loop
   useGameLoop(state, fgCanvasRef, bgCanvasRef, metaRef, setUiTick);
 
+  // Hook up Event Bus
+  useGameEvents(setUiTick);
+
   // Hook up Input Handlers
   const { handlePointerDown, handlePointerMove, handlePointerUp } = useMemo(() => 
-    createInputHandlers(state, fgCanvasRef, setUiTick, metaRef, spawnUnit, armedSpell, setArmedSpell),
+    createInputHandlers(state, fgCanvasRef, setUiTick, metaRef, spawnUnit, armedSpellRef, setArmedSpell),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [armedSpell, spawnUnit]
+    []
   );
 
   const s = state.current;

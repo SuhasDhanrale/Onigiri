@@ -1,6 +1,7 @@
 import { ENEMY_COSTS, CAMPAIGN_MAP } from '../config/campaign.js';
 import { spawnUnit } from './SpawnSystem.js';
 import { bus } from '../core/EventBus.js';
+import { EVENTS } from '../core/events.js';
 
 /**
  * Generates a list of enemy squads for a given wave number.
@@ -45,9 +46,8 @@ export function generateWave(waveNum) {
  * @param {object} s           - game state
  * @param {number} dt
  * @param {object} metaRef     - React ref to meta state
- * @param {Function} setUiTick - React setter to trigger UI re-render
  */
-export function tickWaveState(s, dt, metaRef, setUiTick) {
+export function tickWaveState(s, dt, metaRef) {
   const enemies = s.units.filter(u => u.team === 'enemy');
 
   if (s.waveState === 'PRE_WAVE') {
@@ -57,7 +57,11 @@ export function tickWaveState(s, dt, metaRef, setUiTick) {
       s.squadsToSpawn = generateWave(s.wave);
       s.enemiesInWave = s.squadsToSpawn.reduce((sum, sq) => sum + sq.count, 0);
       s.waveTimer = 1.0;
-      setUiTick(t => t + 1);
+      bus.emit(EVENTS.WAVE_CHANGED, { 
+        wave: s.wave, 
+        waveState: s.waveState, 
+        waveTimer: s.waveTimer 
+      });
     }
   } else if (s.waveState === 'SPAWNING') {
     s.waveTimer -= dt;
@@ -72,7 +76,11 @@ export function tickWaveState(s, dt, metaRef, setUiTick) {
         s.waveTimer = 3.0 + (s.wave * 0.15) + (Math.random() * 2.0);
       } else {
         s.waveState = 'CLEANUP';
-        setUiTick(t => t + 1);
+        bus.emit(EVENTS.WAVE_CHANGED, { 
+          wave: s.wave, 
+          waveState: s.waveState, 
+          waveTimer: s.waveTimer 
+        });
       }
     }
   } else if (s.waveState === 'CLEANUP') {
@@ -81,14 +89,17 @@ export function tickWaveState(s, dt, metaRef, setUiTick) {
       const regionDef = CAMPAIGN_MAP[s.currentRegion];
       if (regionDef && s.wave >= regionDef.waves) {
         s.gameState = 'REGION_VICTORY';
-        bus.emit('GAME_STATE_CHANGED', s.gameState);
-        setUiTick(t => t + 1);
+        bus.emit(EVENTS.GAME_STATE_CHANGED, { state: s.gameState });
       } else {
         const isReformation = s.wave % 3 === 0;
         s.wave++;
         s.waveState = 'PRE_WAVE';
         s.waveTimer = isReformation ? 15.0 : 6.0;
-        setUiTick(t => t + 1);
+        bus.emit(EVENTS.WAVE_CHANGED, { 
+          wave: s.wave, 
+          waveState: s.waveState, 
+          waveTimer: s.waveTimer 
+        });
       }
     }
   }

@@ -11,7 +11,7 @@ export const getCanvasPos = (e, canvas) => {
     return { x: (e.clientX - rect.left) * (V_WIDTH / rect.width), y: (e.clientY - rect.top) * (V_HEIGHT / rect.height) };
 };
 
-export const createInputHandlers = (state, fgCanvasRef, setUiTick, metaRef, spawnUnit, armedSpell, setArmedSpell) => {
+export const createInputHandlers = (state, fgCanvasRef, setUiTick, metaRef, spawnUnit, armedSpellRef, setArmedSpell) => {
 
     const handlePointerDown = (e) => {
         const s = state.current;
@@ -57,6 +57,7 @@ export const createInputHandlers = (state, fgCanvasRef, setUiTick, metaRef, spaw
             }
 
             // One-Click Canvas Execution
+            const armedSpell = armedSpellRef.current;
             if (armedSpell === 'BARRICADE') {
                 if (y < WALL_Y + 150 && y > 100 && s.conscriptCooldown <= 0) {
                     spawnUnit('BARRICADE', 'player', x, y);

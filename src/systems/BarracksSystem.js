@@ -2,6 +2,8 @@ import { BARRACKS_DEFS, BARRACKS_LAYOUT } from '../config/barracks.js';
 import { UNIT_TYPES } from '../config/units.js';
 import { getSquadCap } from '../core/utils.js';
 import { spawnUnit } from './SpawnSystem.js';
+import { bus } from '../core/EventBus.js';
+import { EVENTS } from '../core/events.js';
 
 /**
  * Ticks all barracks training timers and auto-spawns units when ready.
@@ -28,6 +30,7 @@ export function tickBarracks(s, dt, metaRef) {
         if (s.timers[key] <= 0) {
           const layout = BARRACKS_LAYOUT[key];
           spawnUnit(s, def.unit, 'player', layout.x, layout.y - 80, metaRef);
+          bus.emit(EVENTS.UNIT_SPAWNED, { type: def.unit });
           s.visuals[key] = 1.0;
           s.timers[key] = maxTime;
         }

@@ -40,17 +40,22 @@ export function useGameLoop(state, fgCanvasRef, bgCanvasRef, metaRef, setUiTick)
       // --- Systems ---
       tickBarracks(s, dt, metaRef);
       tickInkLine(s, dt);
-      tickWaveState(s, dt, metaRef, setUiTick);
+      tickWaveState(s, dt, metaRef);
       tickFoxFires(s, dt);
       tickDragonWaves(s, dt);
       tickProjectiles(s, dt);
-      tickUnits(s, dt, now, metaRef, setUiTick);
+      tickUnits(s, dt, now, metaRef);
 
       const bgCtx = bgCanvasRef.current?.getContext('2d');
-      processDeaths(s, bgCtx, metaRef, setUiTick);
+      processDeaths(s, bgCtx, metaRef);
 
       tickParticles(s, dt);
       tickEffects(s, dt);
+
+      // Tick visual squash animations for buildings
+      Object.keys(s.visuals).forEach(k => { 
+        if (s.visuals[k] > 0) s.visuals[k] = Math.max(0, s.visuals[k] - dt * 7); 
+      });
     };
 
     const gameLoop = (time) => {
@@ -72,12 +77,8 @@ export function useGameLoop(state, fgCanvasRef, bgCanvasRef, metaRef, setUiTick)
 
     animationFrameId = requestAnimationFrame(gameLoop);
     
-    // UI ticking handled outside the rAF loop
-    const uiInterval = setInterval(() => setUiTick(t => t + 1), 100);
-    
     return () => { 
         cancelAnimationFrame(animationFrameId); 
-        clearInterval(uiInterval); 
     };
-  }, [setUiTick, metaRef, fgCanvasRef, bgCanvasRef, state]);
+  }, [metaRef, fgCanvasRef, bgCanvasRef, state]);
 }
