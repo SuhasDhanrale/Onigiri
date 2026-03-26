@@ -1,0 +1,13 @@
+/* src/styles/base.css
+   Global base styles — moved from App.jsx dangerouslySetInnerHTML */
+
+/* Custom scrollbar utility */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #dfd4ba;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #1b1918;
+}
