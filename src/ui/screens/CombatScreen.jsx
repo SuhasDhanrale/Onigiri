@@ -42,9 +42,12 @@ export function CombatScreen({
 
   return (
     <>
-      <div className={`flex-[7] relative bg-[#1b1918] flex justify-center items-center overflow-hidden p-2 ${s.gameState === 'MAP_SCREEN' ? 'hidden' : ''}`}>
+      <div 
+        className={`flex-[7] relative bg-[var(--color-ink)] flex justify-center items-center overflow-hidden p-2 ${s.gameState === 'MAP_SCREEN' ? 'hidden' : ''}`}
+        data-mobile={window.innerWidth < 1024}
+      >
         <div 
-           className={`relative touch-none z-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] bg-[#dfd4ba] ${armedSpell ? 'cursor-crosshair' : 'cursor-default'}`}
+           className={`relative touch-none z-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] bg-[var(--color-parchment)] ${armedSpell ? 'cursor-crosshair' : 'cursor-default'}`}
            style={{ height: '100%', maxWidth: '100%', aspectRatio: '1200/1600' }}
         >
           <canvas ref={bgCanvasRef} width={V_WIDTH} height={V_HEIGHT} className="absolute top-0 left-0 w-full h-full block" />
@@ -52,9 +55,9 @@ export function CombatScreen({
         </div>
 
         <div className="absolute top-6 left-8 flex justify-between items-start pointer-events-none z-30">
-          <div className="flex flex-col bg-[#dfd4ba]/90 px-4 py-2 border-2 border-[#1b1918]">
+          <div className="flex flex-col bg-[var(--color-parchment)]/90 px-4 py-2 border-2 border-[var(--color-ink)]">
              <span className={`${waveStatusColor} text-xs uppercase tracking-[0.3em] font-bold`}>{waveStatusText}</span>
-             <span className="text-3xl font-black text-[#1b1918] tracking-widest">WAVE {s.wave} <span className="text-xl">/ {CAMPAIGN_MAP[s.currentRegion]?.waves || '?'}</span></span>
+             <span className="text-3xl font-black text-[var(--color-ink)] tracking-widest">WAVE {s.wave} <span className="text-xl">/ {CAMPAIGN_MAP[s.currentRegion]?.waves || '?'}</span></span>
           </div>
         </div>
         

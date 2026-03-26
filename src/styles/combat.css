@@ -1,0 +1,36 @@
+.game-container {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+    background-color: var(--color-ink);
+    color: var(--color-ink);
+    font-family: serif;
+    overflow: hidden;
+    user-select: none;
+    position: relative;
+}
+
+.canvas-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.combat-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* Combat Screen Layout Prepped for Mobile */
+.combat-screen {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: row;
+}
+
+[data-mobile="true"] .combat-screen {
+    flex-direction: column;
+}

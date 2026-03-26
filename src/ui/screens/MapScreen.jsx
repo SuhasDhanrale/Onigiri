@@ -5,7 +5,7 @@ export function MapScreen({ s, meta, setMeta, initRun, startCombat, unlockHeirlo
   if (s.gameState !== 'MAP_SCREEN') return null;
 
   return (
-    <div className="absolute inset-0 bg-[#dfd4ba] z-[100] flex pointer-events-auto overflow-hidden">
+    <div className="absolute inset-0 bg-[var(--color-ink)] z-[100] flex pointer-events-auto overflow-hidden">
       <WarCampPanel 
         s={s} 
         meta={meta} 

@@ -1,0 +1,28 @@
+.command-panel {
+    background-color: var(--color-parchment);
+    border-left: 2px solid var(--color-ink);
+    overflow-y: auto;
+    position: relative;
+}
+
+.panel-header {
+    background-color: var(--color-ink);
+    color: var(--color-parchment);
+    padding: 1rem;
+}
+
+.barracks-card {
+    background-color: var(--color-parchment);
+    border: 1px solid var(--color-ink);
+    transition: transform 0.2s;
+}
+
+.barracks-card:hover {
+    transform: scale(1.02);
+}
+
+.spell-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--color-ink);
+    transition: all 0.2s;
+}

@@ -1,3 +1,13 @@
+:root {
+  --color-parchment: #dfd4ba;
+  --color-ink: #1b1918;
+  --color-vermilion: #b84235;
+  --color-navy: #2b3d60;
+  --color-khaki: #8b8574;
+  --color-jade: #4a5d23;
+  --color-gold: #d4af37;
+}
+
 /* src/styles/base.css
    Global base styles — moved from App.jsx dangerouslySetInnerHTML */
 
@@ -6,8 +16,8 @@
   width: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #dfd4ba;
+  background: var(--color-parchment);
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #1b1918;
+  background: var(--color-ink);
 }
