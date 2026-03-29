@@ -1,6 +1,9 @@
 :root {
   --color-parchment: #dfd4ba;
-  --color-ink: #1b1918;
+  --color-ink-dark: #1b1918;
+  --color-ink: #4c4947;
+  --color-ink-light: #7a736d;
+  --color-void: #e6dec6ff;
   --color-vermilion: #b84235;
   --color-navy: #2b3d60;
   --color-khaki: #8b8574;
@@ -10,8 +13,8 @@
 
 body {
   font-family: 'Outfit', 'Inter', serif;
-  background-color: var(--color-ink);
-  color: var(--color-ink);
+  background-color: var(--color-void);
+  color: var(--color-ink-dark);
 }
 
 /* src/styles/base.css

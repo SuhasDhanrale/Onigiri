@@ -5,10 +5,18 @@ import { WALL_Y, V_WIDTH, V_HEIGHT } from '../config/constants.js';
 import { addParticle } from '../systems/SpawnSystem.js';
 import { COLORS } from '../config/colors.js';
 
-export const getCanvasPos = (e, canvas) => {
+export const getCanvasPos = (e, canvas, s) => {
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
-    return { x: (e.clientX - rect.left) * (V_WIDTH / rect.width), y: (e.clientY - rect.top) * (V_HEIGHT / rect.height) };
+    const physX = (e.clientX - rect.left);
+    const physY = (e.clientY - rect.top);
+    const scale = (s && s.canvasScale) ? s.canvasScale : 1;
+    const offsetX = (s && s.canvasOffsetX) ? s.canvasOffsetX : 0;
+    const offsetY = (s && s.canvasOffsetY) ? s.canvasOffsetY : 0;
+    return {
+        x: (physX - offsetX) / scale,
+        y: (physY - offsetY) / scale
+    };
 };
 
 export const createInputHandlers = (state, fgCanvasRef, setUiTick, metaRef, spawnUnit, armedSpellRef, setArmedSpell) => {
@@ -16,7 +24,7 @@ export const createInputHandlers = (state, fgCanvasRef, setUiTick, metaRef, spaw
     const handlePointerDown = (e) => {
         const s = state.current;
         if (s.gameState !== 'COMBAT') return;
-        const { x, y } = getCanvasPos(e, fgCanvasRef.current);
+        const { x, y } = getCanvasPos(e, fgCanvasRef.current, s);
         if (s.feverActive > 0) { s.isSlashing = true; s.lastSlashPos = { x, y }; return; }
         
         let clickedBuilding = null;
@@ -74,7 +82,7 @@ export const createInputHandlers = (state, fgCanvasRef, setUiTick, metaRef, spaw
     const handlePointerMove = (e) => {
         const s = state.current;
         if (!s.isSlashing || s.feverActive <= 0 || s.gameState !== 'COMBAT') return;
-        const { x, y } = getCanvasPos(e, fgCanvasRef.current);
+        const { x, y } = getCanvasPos(e, fgCanvasRef.current, s);
         const prev = s.lastSlashPos;
         if (!prev) return;
         if ((x - prev.x)**2 + (y - prev.y)**2 > 600) { 

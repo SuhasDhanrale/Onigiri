@@ -22,12 +22,12 @@ export function BarracksCard({ bKey, def, s, meta, setUiTick, changeQuota, build
   return (
     <div 
       onClick={() => { s.focusedBuilding = isFocused ? null : bKey; setUiTick(t => t + 1); }}
-      className={`bg-[var(--color-ink)] border-2 flex flex-col text-[var(--color-parchment)] transition-all cursor-pointer overflow-hidden ${isFocused ? 'border-[#d4af37] shadow-[0_0_15px_rgba(212,175,55,0.25)]' : 'border-[var(--color-ink)] hover:border-[#8b8574]'}`}
+      className={`bg-[var(--color-ink)] border-2 flex flex-col text-[var(--color-parchment)] transition-all cursor-pointer overflow-hidden ${isFocused ? 'border-[#d4af37] shadow-[0_0_15px_rgba(212,175,55,0.25)]' : 'border-[var(--color-ink-dark)] hover:border-[#8b8574]'}`}
     >
       <div className="flex items-center h-14 px-2 relative">
         {isFocused && <div className="absolute inset-0 bg-[#d4af37]/10 animate-pulse pointer-events-none" />}
         
-        <div className="w-16 flex flex-col items-center justify-center shrink-0 relative z-10 border-r-2 border-[var(--color-ink)] h-full bg-[#2b3d60] mr-2">
+        <div className="w-16 flex flex-col items-center justify-center shrink-0 relative z-10 border-r-2 border-[var(--color-ink-dark)] h-full bg-[#2b3d60] mr-2">
           <span className="text-[10px] font-black tracking-widest leading-none text-center px-1">{def.name}</span>
           {level > 0 && <div className="absolute -top-1 -left-1 bg-[#b84235] text-white text-[8px] font-bold px-1 py-0.5 border border-[var(--color-ink)]">Lv.{s.troopLevel[bKey]}</div>}
         </div>

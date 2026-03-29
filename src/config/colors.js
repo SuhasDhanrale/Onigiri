@@ -1,7 +1,10 @@
 // --- UKIYO-E THEME ---
 export const COLORS = {
   parchment: '#dfd4ba',
-  ink: '#1b1918',
+  inkDark: '#1b1918',
+  ink: '#4c4947',
+  inkLight: '#7a736d',
+  void: '#e6dec6ff',
   vermilion: '#b84235',
   navy: '#2b3d60',
   khaki: '#8b8574',

@@ -1,3 +1,4 @@
+import React, { useRef, useEffect, useState } from 'react';
 import { CAMPAIGN_MAP } from '../../config/campaign.js';
 import { V_WIDTH, V_HEIGHT } from '../../config/constants.js';
 import { ResultScreens } from './ResultScreens.jsx';
@@ -15,6 +16,31 @@ export function CombatScreen({
   initRun,
   handleRegionVictory 
 }) {
+  const containerRef = useRef(null);
+  const [size, setSize] = useState({ w: V_WIDTH, h: V_HEIGHT });
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver(entries => {
+      for (let entry of entries) {
+        const { width, height } = entry.contentRect;
+        const boundedW = Math.floor(width);
+        const boundedH = Math.floor(height);
+        setSize({ w: boundedW, h: boundedH });
+        
+        s.canvasWidth = boundedW;
+        s.canvasHeight = boundedH;
+        
+        const scale = Math.min(boundedW / V_WIDTH, boundedH / V_HEIGHT);
+        s.canvasScale = scale;
+        s.canvasOffsetX = (boundedW - (V_WIDTH * scale)) / 2;
+        s.canvasOffsetY = (boundedH - (V_HEIGHT * scale)) / 2;
+      }
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [s]);
+
   let waveStatusText = "";
   let waveStatusColor = "text-[#1b1918]";
   
@@ -43,21 +69,17 @@ export function CombatScreen({
   return (
     <>
       <div 
-        className={`flex-[7] relative bg-[var(--color-ink)] flex justify-center items-center overflow-hidden p-2 ${s.gameState === 'MAP_SCREEN' ? 'hidden' : ''}`}
+        ref={containerRef}
+        className={`flex-[7] relative bg-[var(--color-void)] flex justify-center items-center overflow-hidden ${s.gameState === 'MAP_SCREEN' ? 'hidden' : ''}`}
         data-mobile={window.innerWidth < 1024}
       >
-        <div 
-           className={`relative touch-none z-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] bg-[var(--color-parchment)] ${armedSpell ? 'cursor-crosshair' : 'cursor-default'}`}
-           style={{ height: '100%', maxWidth: '100%', aspectRatio: '1200/1600' }}
-        >
-          <canvas ref={bgCanvasRef} width={V_WIDTH} height={V_HEIGHT} className="absolute top-0 left-0 w-full h-full block" />
-          <canvas ref={fgCanvasRef} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} width={V_WIDTH} height={V_HEIGHT} className="absolute top-0 left-0 w-full h-full block" />
-        </div>
+        <canvas ref={bgCanvasRef} width={size.w} height={size.h} className="absolute top-0 left-0 w-full h-full block touch-none" />
+        <canvas ref={fgCanvasRef} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} width={size.w} height={size.h} className={`absolute top-0 left-0 w-full h-full block touch-none z-10 ${armedSpell ? 'cursor-crosshair' : 'cursor-default'}`} />
 
         <div className="absolute top-6 left-8 flex justify-between items-start pointer-events-none z-30">
-          <div className="flex flex-col bg-[var(--color-parchment)]/90 px-4 py-2 border-2 border-[var(--color-ink)]">
+          <div className="flex flex-col bg-[var(--color-parchment)]/90 px-4 py-2 border-2 border-[var(--color-ink-dark)]">
              <span className={`${waveStatusColor} text-xs uppercase tracking-[0.3em] font-bold`}>{waveStatusText}</span>
-             <span className="text-3xl font-black text-[var(--color-ink)] tracking-widest">WAVE {s.wave} <span className="text-xl">/ {CAMPAIGN_MAP[s.currentRegion]?.waves || '?'}</span></span>
+             <span className="text-3xl font-black text-[var(--color-ink-dark)] tracking-widest">WAVE {s.wave} <span className="text-xl">/ {CAMPAIGN_MAP[s.currentRegion]?.waves || '?'}</span></span>
           </div>
         </div>
         
