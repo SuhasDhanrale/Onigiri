@@ -1,0 +1,66 @@
+{
+  "id": "hatamoto",
+  "name": "Hatamoto",
+  "type": "melee",
+  "radius": 16,
+  "colors": {
+    "ink": "#1b1918",
+    "parchment": "#dfd4ba",
+    "navy": "#2b3d60",
+    "gold": "#d4af37",
+    "steel": "#a8a29e"
+  },
+  "drawOrder": ["slash-trail", "shoulders", "body", "helmet", "blade"],
+  "layers": {
+    "slash-trail": {
+      "type": "group",
+      "children": [
+        { "type": "arc", "cx": 0, "cy": 0, "r": 40, "startAngle": -90, "endAngle": 90, "fill": "none", "stroke": "#a8a29e", "strokeWidth": 4, "lineCap": "round", "opacity": 0.6 }
+      ]
+    },
+    "shoulders": {
+      "type": "group",
+      "children": [
+        { "type": "roundRect", "x": -25, "y": -10, "w": 50, "h": 20, "r": 4, "fill": "#2b3d60", "stroke": "#1b1918", "strokeWidth": 3, "rotate": -15 },
+        { "type": "roundRect", "x": -25, "y": -10, "w": 50, "h": 20, "r": 4, "fill": "#2b3d60", "stroke": "#1b1918", "strokeWidth": 3, "rotate": 15 }
+      ]
+    },
+    "body": {
+      "type": "circle",
+      "r": 22,
+      "fill": "#2b3d60",
+      "stroke": "#1b1918",
+      "strokeWidth": 3
+    },
+    "helmet": {
+      "type": "group",
+      "children": [
+        { "type": "path", "d": "M-20 -5 Q0 -30 20 -5", "fill": "none", "stroke": "#d4af37", "strokeWidth": 4, "lineCap": "round" },
+        { "type": "circle", "r": 14, "fill": "#1b1918", "stroke": "#a8a29e", "strokeWidth": 2 },
+        { "type": "polygon", "points": "0,-8 -4,-15 4,-15", "fill": "#d4af37" }
+      ]
+    },
+    "blade": {
+      "type": "group",
+      "children": [
+        { "type": "line", "x1": 0, "y1": 0, "x2": 35, "y2": -30, "stroke": "#a8a29e", "strokeWidth": 6, "lineCap": "round" }
+      ]
+    }
+  },
+  "animations": {
+    "idle": {
+      "duration": 0,
+      "keyframes": []
+    },
+    "attack": {
+      "duration": 200,
+      "easing": "ease-in-out",
+      "keyframes": [
+        { "time": 0, "layer": "blade", "rotate": 60, "opacity": 0 },
+        { "time": 0.5, "layer": "blade", "rotate": -60, "opacity": 1 },
+        { "time": 1, "layer": "blade", "rotate": 60, "opacity": 0 }
+      ]
+    }
+  },
+  "fallbackType": "melee"
+}

@@ -20,6 +20,7 @@ import { useMeta } from './hooks/useMeta.js';
 import { useGameLoop } from './hooks/useGameLoop.js';
 import { useGameEvents } from './hooks/useGameEvents.js';
 import { createInputHandlers } from './input/InputHandler.js';
+import { spriteRenderer } from './renderer/SpriteRenderer.js';
 
 export default function App() {
   const fgCanvasRef = useRef(null);
@@ -73,6 +74,14 @@ export default function App() {
   }, [initRun, setMeta]);
 
   const startCombat = useCallback((regionId) => {
+    if (!spriteRenderer.isLoaded()) {
+      spriteRenderer.loadAllSprites().then(() => {
+        console.log('[Sprites] All sprites loaded');
+      }).catch(err => {
+        console.warn('[Sprites] Failed to load some sprites:', err);
+      });
+    }
+    
     state.current = {
       ...state.current, 
       koku: 150, totalKoku: 150, wave: 1, fever: 0, feverActive: 0, screenShake: 0, conscriptCooldown: 0,

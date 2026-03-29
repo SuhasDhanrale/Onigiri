@@ -8,12 +8,13 @@ export class SpriteRenderer {
   }
 
   async loadSprite(id, basePath) {
-    if (this.sprites[id]) return this.sprites[id];
+    // Always force fresh load to catch JSON updates
+    const cacheBuster = `?t=${Date.now()}`;
     if (this.loading[id]) return null;
 
     this.loading[id] = true;
     try {
-      const response = await fetch(`${basePath}${id}.json`);
+      const response = await fetch(`${basePath}${id}.json${cacheBuster}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       this.sprites[id] = data;
@@ -26,15 +27,30 @@ export class SpriteRenderer {
     }
   }
 
-  async loadAllSprites(basePath = '/assets/sprites/enemy/') {
-    const spriteIds = [
+  async loadAllSprites() {
+    // Clear cache to force reload of updated JSON files
+    this.sprites = {};
+    
+    const enemyIds = [
       'rebels/ikki-rebel',
       'tengu/tengu-flier',
       'onmyoji/onmyoji',
       'shinobi/shinobi',
       'oni/great-oni'
     ];
-    const results = await Promise.all(spriteIds.map(id => this.loadSprite(id, basePath)));
+    
+    const playerIds = [
+      'hatamoto',
+      'yumi-archer',
+      'cavalry',
+      'horoku',
+      'champion'
+    ];
+    
+    const enemyPromises = enemyIds.map(id => this.loadSprite(id, '/assets/sprites/enemy/'));
+    const playerPromises = playerIds.map(id => this.loadSprite(id, '/assets/sprites/player/'));
+    
+    const results = await Promise.all([...enemyPromises, ...playerPromises]);
     return results.filter(Boolean);
   }
 
@@ -61,13 +77,13 @@ export class SpriteRenderer {
         .filter(k => k.layer === layerName)
         .sort((a, b) => a.time - b.time);
 
-      this.drawLayer(ctx, layer, layerKfs, animProgress);
+      this.drawLayer(ctx, layer, layerKfs, animProgress, state);
     }
 
     ctx.restore();
   }
 
-  drawLayer(ctx, layer, layerKfs, progress) {
+  drawLayer(ctx, layer, layerKfs, progress, state = 'idle') {
     // Helper to interpolate a property value between keyframes
     const interpolate = (prop, defaultVal = 0) => {
       if (layerKfs.length === 0) return defaultVal;
@@ -109,9 +125,14 @@ export class SpriteRenderer {
       if (scaleX !== 1 || scaleY !== 1) ctx.scale(scaleX, scaleY);
       if (op !== null) ctx.globalAlpha = op;
 
-      if (layer.attackTranslateX) ctx.translate(layer.attackTranslateX, 0);
-      if (layer.attackTranslateY) ctx.translate(0, layer.attackTranslateY);
-      if (layer.attackRotate) ctx.rotate((layer.attackRotate * Math.PI) / 180);
+      if (state === 'attack') {
+        if (layer.attackTranslateX) ctx.translate(layer.attackTranslateX, 0);
+        if (layer.attackTranslateY) ctx.translate(0, layer.attackTranslateY);
+        if (layer.attackRotate) ctx.rotate((layer.attackRotate * Math.PI) / 180);
+        if (layer.attackScaleX || layer.attackScaleY) {
+          ctx.scale(layer.attackScaleX || 1, layer.attackScaleY || 1);
+        }
+      }
 
       for (const child of layer.children || []) {
         this.drawPrimitive(ctx, child);
@@ -261,6 +282,26 @@ export class SpriteRenderer {
             ctx.fillStyle = shape.fill;
             ctx.fill();
           }
+        }
+        break;
+
+      case 'arc':
+        ctx.beginPath();
+        ctx.arc(
+          shape.cx || 0, 
+          shape.cy || 0, 
+          shape.r, 
+          (shape.startAngle * Math.PI) / 180, 
+          (shape.endAngle * Math.PI) / 180
+        );
+        if (shape.fill && shape.fill !== 'none') {
+          ctx.fillStyle = shape.fill;
+          ctx.fill();
+        }
+        if (shape.stroke) {
+          ctx.strokeStyle = shape.stroke;
+          ctx.lineWidth = shape.strokeWidth || 2;
+          ctx.stroke();
         }
         break;
     }

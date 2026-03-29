@@ -1,0 +1,102 @@
+{
+  "id": "horoku",
+  "name": "Horoku Siege",
+  "type": "artillery",
+  "radius": 36,
+  "colors": {
+    "ink": "#1b1918",
+    "parchment": "#dfd4ba",
+    "vermilion": "#b84235",
+    "navy": "#2b3d60",
+    "khaki": "#8b8574",
+    "gold": "#d4af37",
+    "steel": "#a8a29e"
+  },
+  "drawOrder": ["wheels", "frame", "brackets", "coil", "arm", "payload"],
+  "layers": {
+    "wheels": {
+      "type": "group",
+      "children": [
+        { "type": "roundRect", "x": -55, "y": -45, "w": 14, "h": 26, "r": 4, "fill": "#1b1918", "stroke": "#a8a29e", "strokeWidth": 2 },
+        { "type": "roundRect", "x": -55, "y": 19, "w": 14, "h": 26, "r": 4, "fill": "#1b1918", "stroke": "#a8a29e", "strokeWidth": 2 },
+        { "type": "roundRect", "x": 41, "y": -45, "w": 14, "h": 26, "r": 4, "fill": "#1b1918", "stroke": "#a8a29e", "strokeWidth": 2 },
+        { "type": "roundRect", "x": 41, "y": 19, "w": 14, "h": 26, "r": 4, "fill": "#1b1918", "stroke": "#a8a29e", "strokeWidth": 2 }
+      ]
+    },
+    "frame": {
+      "type": "group",
+      "children": [
+        { "type": "rect", "x": -34, "y": -40, "w": 12, "h": 80, "fill": "#8b8574", "stroke": "#1b1918", "strokeWidth": 3 },
+        { "type": "rect", "x": 22, "y": -40, "w": 12, "h": 80, "fill": "#8b8574", "stroke": "#1b1918", "strokeWidth": 3 },
+        { "type": "rect", "x": -34, "y": -30, "w": 68, "h": 16, "fill": "#8b8574", "stroke": "#1b1918", "strokeWidth": 3 },
+        { "type": "rect", "x": -34, "y": 14, "w": 68, "h": 16, "fill": "#8b8574", "stroke": "#1b1918", "strokeWidth": 3 }
+      ]
+    },
+    "brackets": {
+      "type": "group",
+      "children": [
+        { "type": "circle", "cx": -28, "cy": -22, "r": 3, "fill": "#1b1918" },
+        { "type": "circle", "cx": 28, "cy": -22, "r": 3, "fill": "#1b1918" },
+        { "type": "circle", "cx": -28, "cy": 22, "r": 3, "fill": "#1b1918" },
+        { "type": "circle", "cx": 28, "cy": 22, "r": 3, "fill": "#1b1918" },
+        { "type": "rect", "x": -10, "y": -30, "w": 20, "h": 16, "fill": "#a8a29e", "stroke": "#1b1918", "strokeWidth": 2 }
+      ]
+    },
+    "coil": {
+      "type": "group",
+      "children": [
+        { "type": "roundRect", "x": -24, "y": -12, "w": 48, "h": 24, "r": 6, "fill": "#dfd4ba", "stroke": "#1b1918", "strokeWidth": 3 },
+        { "type": "lines", "pairs": [[-18,-12,-18,12], [-10,-12,-10,12], [0,-12,0,12], [10,-12,10,12], [18,-12,18,12]], "stroke": "#1b1918", "strokeWidth": 2 }
+      ]
+    },
+    "arm": {
+      "type": "group",
+      "attackScaleY": 0.5,
+      "attackTranslateY": -4,
+      "restTranslateY": 4,
+      "originX": 0,
+      "originY": 12,
+      "children": [
+        { "type": "path", "d": "M-6 0 L-6 -52 L6 -52 L6 0 Z", "fill": "#8b8574", "stroke": "#1b1918", "strokeWidth": 3, "strokeJoin": "round" },
+        { "type": "lines", "pairs": [[-3,-52,-3,0], [3,-52,3,0]], "stroke": "#1b1918", "strokeWidth": 1, "opacity": 0.4 },
+        { "type": "circle", "cx": 0, "cy": -54, "r": 14, "fill": "#2b3d60", "stroke": "#1b1918", "strokeWidth": 3 },
+        { "type": "circle", "cx": 0, "cy": -54, "r": 8, "fill": "#1b1918", "opacity": 0.4 }
+      ]
+    },
+    "payload": {
+      "type": "group",
+      "attackTranslateY": -48,
+      "attackScale": 1.8,
+      "attackOpacity": 0,
+      "restTranslateY": 4,
+      "restScale": 1,
+      "restOpacity": 1,
+      "children": [
+        { "type": "circle", "r": 9, "fill": "#1b1918", "stroke": "#b84235", "strokeWidth": 2 },
+        { "type": "path", "d": "M-5 -3 Q0 0 5 -3", "fill": "none", "stroke": "#b84235", "strokeWidth": 2 },
+        { "type": "path", "d": "M0 -9 Q5 -18 10 -13", "fill": "none", "stroke": "#dfd4ba", "strokeWidth": 2, "lineDash": [2, 1] },
+        { "type": "circle", "cx": 10, "cy": -13, "r": 3, "fill": "#b84235" },
+        { "type": "polygon", "points": "10,-19 12,-15 16,-13 12,-11 10,-7 8,-11 4,-13 8,-15", "fill": "#d4af37", "opacity": 0 }
+      ]
+    }
+  },
+  "animations": {
+    "idle": {
+      "duration": 0,
+      "keyframes": []
+    },
+    "attack": {
+      "duration": 500,
+      "easing": "ease-out",
+      "keyframes": [
+        { "time": 0, "layer": "arm", "scaleY": 1, "translateY": 4 },
+        { "time": 0.3, "layer": "arm", "scaleY": 0.5, "translateY": -4 },
+        { "time": 1, "layer": "arm", "scaleY": 1, "translateY": 4 },
+        { "time": 0, "layer": "payload", "translateY": 4, "scale": 1, "opacity": 1 },
+        { "time": 0.3, "layer": "payload", "translateY": -48, "scale": 1.8, "opacity": 0 },
+        { "time": 1, "layer": "payload", "translateY": 4, "scale": 1, "opacity": 1 }
+      ]
+    }
+  },
+  "fallbackType": "siege"
+}

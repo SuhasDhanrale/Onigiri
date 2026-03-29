@@ -1,0 +1,85 @@
+{
+  "id": "champion",
+  "name": "Samurai Champion",
+  "type": "hero",
+  "radius": 38,
+  "colors": {
+    "ink": "#1b1918",
+    "parchment": "#dfd4ba",
+    "vermilion": "#b84235",
+    "navy": "#2b3d60",
+    "gold": "#d4af37",
+    "steel": "#a8a29e"
+  },
+  "drawOrder": ["aura", "slash-trail", "shoulders", "body", "helmet", "blade"],
+  "layers": {
+    "aura": {
+      "type": "circle",
+      "r": 60,
+      "fill": "rgba(212,175,55,0.1)",
+      "animate": "pulse"
+    },
+    "slash-trail": {
+      "type": "group",
+      "children": [
+        { "type": "arc", "cx": 0, "cy": 0, "r": 70, "startAngle": -90, "endAngle": 90, "fill": "none", "stroke": "#d4af37", "strokeWidth": 12, "lineCap": "round", "opacity": 0.4 }
+      ]
+    },
+    "shoulders": {
+      "type": "group",
+      "children": [
+        { "type": "roundRect", "x": -45, "y": -15, "w": 90, "h": 30, "r": 6, "fill": "#b84235", "stroke": "#1b1918", "strokeWidth": 4, "rotate": -15 },
+        { "type": "roundRect", "x": -45, "y": -15, "w": 90, "h": 30, "r": 6, "fill": "#b84235", "stroke": "#1b1918", "strokeWidth": 4, "rotate": 15 }
+      ]
+    },
+    "body": {
+      "type": "circle",
+      "r": 32,
+      "fill": "#2b3d60",
+      "stroke": "#d4af37",
+      "strokeWidth": 4
+    },
+    "helmet": {
+      "type": "group",
+      "children": [
+        { "type": "path", "d": "M-50 -20 Q0 -70 50 -20", "fill": "none", "stroke": "#d4af37", "strokeWidth": 6, "lineCap": "round" },
+        { "type": "path", "d": "M-40 -10 Q0 -50 40 -10", "fill": "none", "stroke": "#b84235", "strokeWidth": 4, "lineCap": "round" },
+        { "type": "circle", "r": 20, "fill": "#1b1918", "stroke": "#d4af37", "strokeWidth": 3 },
+        { "type": "circle", "r": 8, "fill": "#b84235" }
+      ]
+    },
+    "blade": {
+      "type": "group",
+      "attackRotate": -160,
+      "restRotate": 20,
+      "restOpacity": 0.8,
+      "attackOpacity": 1,
+      "originX": 0,
+      "originY": 0,
+      "children": [
+        { "type": "rect", "x": -4, "y": -100, "w": 8, "h": 90, "fill": "#a8a29e", "stroke": "#1b1918", "strokeWidth": 2 },
+        { "type": "polygon", "points": "-4,-100 0,-115 4,-100", "fill": "#a8a29e", "stroke": "#1b1918", "strokeWidth": 2 },
+        { "type": "rect", "x": -10, "y": -10, "w": 20, "h": 6, "fill": "#d4af37", "stroke": "#1b1918", "strokeWidth": 2 }
+      ]
+    }
+  },
+  "animations": {
+    "idle": {
+      "duration": 0,
+      "keyframes": []
+    },
+    "attack": {
+      "duration": 300,
+      "easing": "ease-in-out",
+      "keyframes": [
+        { "time": 0, "layer": "blade", "rotate": 20, "opacity": 0.8 },
+        { "time": 0.5, "layer": "blade", "rotate": -160, "opacity": 1 },
+        { "time": 1, "layer": "blade", "rotate": 20, "opacity": 0.8 },
+        { "time": 0, "layer": "aura", "opacity": 0 },
+        { "time": 0.5, "layer": "aura", "opacity": 1 },
+        { "time": 1, "layer": "aura", "opacity": 0 }
+      ]
+    }
+  },
+  "fallbackType": "hero"
+}

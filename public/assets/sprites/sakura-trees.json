@@ -1,0 +1,68 @@
+{
+  "id": "sakura-trees",
+  "name": "Sakura Trees",
+  "variants": {
+    "1": {
+      "name": "The Balanced",
+      "palettes": [
+        { "light": "#FFC2D1", "main": "#FB6F92", "dark": "#C9184A", "trunk": "#3D2B2A" },
+        { "light": "#FFE5EC", "main": "#FFB3C1", "dark": "#FB6F92", "trunk": "#2D1E1E" },
+        { "light": "#FF8FAB", "main": "#FB6F92", "dark": "#800F2F", "trunk": "#1A0F06" }
+      ],
+      "trunk": {
+        "main": { "type": "path", "d": "M48,50 L52,50 L51,65 L49,65 Z" },
+        "branch": { "type": "line", "x1": 50, "y1": 52, "x2": 58, "y2": 45, "strokeWidth": 2.5, "lineCap": "round", "opacity": 0.6 }
+      },
+      "clumps": [
+        { "cx": 50, "cy": 35, "r": 28 },
+        { "cx": 35, "cy": 50, "r": 18 },
+        { "cx": 65, "cy": 50, "r": 18 }
+      ]
+    },
+    "2": {
+      "name": "The Spreading Canopy",
+      "palettes": [
+        { "light": "#FFC2D1", "main": "#FB6F92", "dark": "#C9184A", "trunk": "#3D2B2A" },
+        { "light": "#FFE5EC", "main": "#FFB3C1", "dark": "#FB6F92", "trunk": "#2D1E1E" },
+        { "light": "#FF8FAB", "main": "#FB6F92", "dark": "#800F2F", "trunk": "#1A0F06" }
+      ],
+      "trunk": {
+        "main": { "type": "path", "d": "M48,50 L52,50 L51,65 L49,65 Z" },
+        "branch": { "type": "line", "x1": 50, "y1": 52, "x2": 58, "y2": 45, "strokeWidth": 2.5, "lineCap": "round", "opacity": 0.6 }
+      },
+      "clumps": [
+        { "cx": 50, "cy": 30, "r": 22 },
+        { "cx": 32, "cy": 45, "r": 20 },
+        { "cx": 68, "cy": 45, "r": 20 },
+        { "cx": 42, "cy": 58, "r": 15 },
+        { "cx": 58, "cy": 58, "r": 15 }
+      ]
+    },
+    "3": {
+      "name": "The Weeping/Tall",
+      "palettes": [
+        { "light": "#FFC2D1", "main": "#FB6F92", "dark": "#C9184A", "trunk": "#3D2B2A" },
+        { "light": "#FFE5EC", "main": "#FFB3C1", "dark": "#FB6F92", "trunk": "#2D1E1E" },
+        { "light": "#FF8FAB", "main": "#FB6F92", "dark": "#800F2F", "trunk": "#1A0F06" }
+      ],
+      "trunk": {
+        "main": { "type": "path", "d": "M48,50 L52,50 L51,65 L49,65 Z" },
+        "branch": { "type": "line", "x1": 50, "y1": 52, "x2": 58, "y2": 45, "strokeWidth": 2.5, "lineCap": "round", "opacity": 0.6 }
+      },
+      "clumps": [
+        { "cx": 50, "cy": 28, "r": 18 },
+        { "cx": 50, "cy": 48, "r": 22 },
+        { "cx": 50, "cy": 65, "r": 15 }
+      ]
+    }
+  },
+  "shared": {
+    "viewBox": "0 0 100 100",
+    "groundShadow": { "cx": 53, "cy": 67, "r": 25, "fill": "#000", "opacity": 0.05 }
+  },
+  "clumpStructure": {
+    "base": { "offset": { "x": 0, "y": 0 }, "scale": 1 },
+    "highlight": { "offset": { "x": -0.15, "y": -0.15 }, "scale": 0.85 },
+    "sparkle": { "offset": { "x": 0.4, "y": 0.4 }, "scale": 0.1, "opacity": 0.2 }
+  }
+}

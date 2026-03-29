@@ -1,0 +1,73 @@
+{
+  "id": "yumi-archer",
+  "name": "Yumi Archer",
+  "type": "ranged",
+  "radius": 14,
+  "colors": {
+    "ink": "#1b1918",
+    "parchment": "#dfd4ba",
+    "vermilion": "#b84235",
+    "khaki": "#8b8574",
+    "steel": "#a8a29e"
+  },
+  "drawOrder": ["arrow", "bow", "body", "head", "hat"],
+  "layers": {
+    "arrow": {
+      "type": "group",
+      "attackTranslateY": -20,
+      "children": [
+        { "type": "line", "x1": 0, "y1": 10, "x2": 0, "y2": -50, "stroke": "#dfd4ba", "strokeWidth": 3 },
+        { "type": "polygon", "points": "0,-55 -5,-45 5,-45", "fill": "#a8a29e" },
+        { "type": "lines", "pairs": [[-5,5,5,10], [-5,10,5,15]], "stroke": "#b84235", "strokeWidth": 1 }
+      ]
+    },
+    "bow": {
+      "type": "group",
+      "attackScaleY": 0.9,
+      "children": [
+        { "type": "path", "d": "M-40 30 Q0 -50 40 30", "fill": "none", "stroke": "#1b1918", "strokeWidth": 5, "lineCap": "round" },
+        { "type": "path", "d": "M-40 30 L0 0 L40 30", "fill": "none", "stroke": "#dfd4ba", "strokeWidth": 1, "opacity": 0.4 }
+      ]
+    },
+    "body": {
+      "type": "group",
+      "children": [
+        { "type": "path", "d": "M-25 0 Q0 -15 25 0 Q20 20 0 15 Q-20 20 -25 0", "fill": "#8b8574", "stroke": "#1b1918", "strokeWidth": 3 },
+        { "type": "circle", "r": 16, "fill": "#8b8574", "stroke": "#1b1918", "strokeWidth": 3 }
+      ]
+    },
+    "head": {
+      "type": "circle",
+      "r": 12,
+      "fill": "#1b1918",
+      "stroke": "#dfd4ba",
+      "strokeWidth": 1
+    },
+    "hat": {
+      "type": "group",
+      "children": [
+        { "type": "circle", "r": 8, "fill": "#1b1918", "stroke": "#dfd4ba", "strokeWidth": 1 },
+        { "type": "circle", "r": 3, "fill": "#b84235" }
+      ]
+    }
+  },
+  "animations": {
+    "idle": {
+      "duration": 0,
+      "keyframes": []
+    },
+    "attack": {
+      "duration": 200,
+      "easing": "ease-out",
+      "keyframes": [
+        { "time": 0, "layer": "arrow", "translateY": 0, "opacity": 1 },
+        { "time": 0.5, "layer": "arrow", "translateY": -20, "opacity": 0 },
+        { "time": 1, "layer": "arrow", "translateY": -40, "opacity": 0 },
+        { "time": 0, "layer": "bow", "scaleY": 1 },
+        { "time": 0.5, "layer": "bow", "scaleY": 0.9 },
+        { "time": 1, "layer": "bow", "scaleY": 1 }
+      ]
+    }
+  },
+  "fallbackType": "ranged"
+}

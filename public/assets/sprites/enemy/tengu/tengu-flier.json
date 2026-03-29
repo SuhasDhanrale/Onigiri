@@ -2,7 +2,7 @@
   "id": "tengu-flier",
   "name": "Tengu Flier",
   "type": "aerial",
-  "radius": 16,
+  "radius": 20,
   "colors": {
     "ink": "#1b1918",
     "parchment": "#dfd4ba",
@@ -10,26 +10,20 @@
     "gold": "#d4af37",
     "jade": "#4a5d23"
   },
-  "drawOrder": ["shadow", "wings", "body", "head", "beak"],
+  "drawOrder": ["wings", "body", "head", "eyes", "beak"],
   "layers": {
-    "shadow": {
-      "type": "ellipse",
-      "rx": 16,
-      "ry": 8,
-      "fill": "rgba(0,0,0,0.3)"
-    },
     "wings": {
       "type": "group",
-      "attackScaleY": 0.4,
-      "attackScaleX": 1.1,
       "children": [
-        { "type": "path", "d": "M0 0 Q-50 -40 -55 10 Q-35 40 0 0", "fill": "#1b1918", "stroke": "#dfd4ba", "strokeWidth": 2, "strokeLinejoin": "round" },
-        { "type": "path", "d": "M0 0 Q50 -40 55 10 Q35 40 0 0", "fill": "#1b1918", "stroke": "#dfd4ba", "strokeWidth": 2, "strokeLinejoin": "round" },
-        { "type": "lines", "pairs": [[-40,0,-55,15], [-25,5,-40,20], [40,0,55,15], [25,5,40,20]], "stroke": "#dfd4ba", "strokeWidth": 2, "strokeLinecap": "round", "opacity": 0.6 }
+        { "type": "path", "d": "M60 60 Q10 20 5 70 Q25 100 60 60", "fill": "#1b1918", "stroke": "#dfd4ba", "strokeWidth": 2, "strokeLinejoin": "round" },
+        { "type": "path", "d": "M60 60 Q110 20 115 70 Q95 100 60 60", "fill": "#1b1918", "stroke": "#dfd4ba", "strokeWidth": 2, "strokeLinejoin": "round" },
+        { "type": "path", "d": "M25 60 L10 75 M40 65 L25 85 M95 60 L110 75 M80 65 L95 85", "stroke": "#dfd4ba", "strokeWidth": 2, "strokeLinecap": "round", "opacity": 0.6 }
       ]
     },
     "body": {
       "type": "circle",
+      "cx": 60,
+      "cy": 60,
       "r": 18,
       "fill": "#4a5d23",
       "stroke": "#1b1918",
@@ -37,6 +31,8 @@
     },
     "head": {
       "type": "circle",
+      "cx": 60,
+      "cy": 60,
       "r": 14,
       "fill": "#b84235",
       "stroke": "#1b1918",
@@ -45,13 +41,13 @@
     "eyes": {
       "type": "group",
       "children": [
-        { "type": "circle", "cx": -10, "cy": -15, "r": 4, "fill": "#dfd4ba", "stroke": "#1b1918", "strokeWidth": 1 },
-        { "type": "circle", "cx": 10, "cy": -15, "r": 4, "fill": "#dfd4ba", "stroke": "#1b1918", "strokeWidth": 1 }
+        { "type": "circle", "cx": 50, "cy": 45, "r": 4, "fill": "#dfd4ba", "stroke": "#1b1918", "strokeWidth": 1 },
+        { "type": "circle", "cx": 70, "cy": 45, "r": 4, "fill": "#dfd4ba", "stroke": "#1b1918", "strokeWidth": 1 }
       ]
     },
     "beak": {
       "type": "polygon",
-      "points": "-6,-5 0,-35 6,-5",
+      "points": "54,55 60,25 66,55",
       "fill": "#d4af37",
       "stroke": "#1b1918",
       "strokeWidth": 2,
@@ -60,12 +56,8 @@
   },
   "animations": {
     "idle": {
-      "duration": 1500,
-      "keyframes": [
-        { "time": 0, "layer": "wings", "translateY": 0 },
-        { "time": 0.5, "layer": "wings", "translateY": -8 },
-        { "time": 1, "layer": "wings", "translateY": 0 }
-      ]
+      "duration": 0,
+      "keyframes": []
     },
     "attack": {
       "duration": 150,
