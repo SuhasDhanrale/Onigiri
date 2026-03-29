@@ -1,0 +1,10 @@
+﻿60fca9d - feat: implement Ukiyo-e visual theme with custom UI panels and background rendering logic
+dd295fb - feat: add sprite definitions for five enemy types and implement SpriteRenderer class
+bae6021 - feat: implement core combat, movement, and slot management systems with unit configurations
+b971509 - feat: implement slot-based combat architecture to replace atomic collision with structured engagement queues
+a9d21c8 - adds and analytics integration
+9293b3d - docs: add comprehensive design and behavior analysis documentation for micro-AI, unit synergies, and combat mechanics.
+02454fd - event bus use feat: Implement core game architecture including main application, game loop, event system, input, and various game systems.
+9541244 - Debuging feat: initialize project with core game systems, foundational UI, and comprehensive developer documentation.
+92ba068 - Phase 5 feat: Implement campaign map, combat screens, and core game UI components.
+f8e2522 - Phse 04 feat: Implement core game UI with command, war camp, economy, and various game screens.
