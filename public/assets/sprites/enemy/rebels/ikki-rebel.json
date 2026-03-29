@@ -1,0 +1,67 @@
+{
+  "id": "ikki-rebel",
+  "name": "Ikki Rebel",
+  "type": "fodder",
+  "radius": 10,
+  "colors": {
+    "ink": "#1b1918",
+    "parchment": "#dfd4ba",
+    "navy": "#2b3d60",
+    "khaki": "#8b8574"
+  },
+  "drawOrder": ["shadow", "body", "weapon", "head", "hat"],
+  "layers": {
+    "shadow": {
+      "type": "ellipse",
+      "rx": 10,
+      "ry": 5,
+      "fill": "rgba(0,0,0,0.2)"
+    },
+    "body": {
+      "type": "path",
+      "d": "M-20 10 Q0 -5 20 10 Q25 20 0 25 Q-25 20 -20 10",
+      "fill": "#2b3d60",
+      "stroke": "#1b1918",
+      "strokeWidth": 2
+    },
+    "weapon": {
+      "type": "group",
+      "children": [
+        { "type": "line", "x1": 0, "y1": 10, "x2": 0, "y2": -45, "stroke": "#1b1918", "strokeWidth": 4, "lineCap": "round" },
+        { "type": "polygon", "points": "-5,-30 0,-55 5,-30", "fill": "#1b1918" },
+        { "type": "polygon", "points": "-3,-30 0,-45 3,-30", "fill": "#dfd4ba" }
+      ]
+    },
+    "head": {
+      "type": "circle",
+      "r": 8,
+      "fill": "#dfd4ba",
+      "stroke": "#1b1918",
+      "strokeWidth": 2
+    },
+    "hat": {
+      "type": "group",
+      "children": [
+        { "type": "circle", "cx": 0, "cy": 0, "r": 20, "fill": "#8b8574", "stroke": "#1b1918", "strokeWidth": 2 },
+        { "type": "circle", "cx": 0, "cy": 0, "r": 6, "fill": "#dfd4ba", "stroke": "#1b1918", "strokeWidth": 1 },
+        { "type": "lines", "pairs": [[0,-20,0,20], [-20,0,20,0], [-14,-14,14,14], [-14,14,14,-14]], "stroke": "#1b1918", "strokeWidth": 1, "opacity": 0.3 }
+      ]
+    }
+  },
+  "animations": {
+    "idle": {
+      "duration": 0,
+      "keyframes": []
+    },
+    "attack": {
+      "duration": 500,
+      "easing": "ease-in-out",
+      "keyframes": [
+        { "time": 0, "layer": "weapon", "translateY": 0 },
+        { "time": 0.5, "layer": "weapon", "translateY": -12 },
+        { "time": 1, "layer": "weapon", "translateY": 0 }
+      ]
+    }
+  },
+  "fallbackType": "melee"
+}

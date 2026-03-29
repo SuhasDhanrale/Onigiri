@@ -1,0 +1,80 @@
+{
+  "id": "tengu-flier",
+  "name": "Tengu Flier",
+  "type": "aerial",
+  "radius": 16,
+  "colors": {
+    "ink": "#1b1918",
+    "parchment": "#dfd4ba",
+    "vermilion": "#b84235",
+    "gold": "#d4af37",
+    "jade": "#4a5d23"
+  },
+  "drawOrder": ["shadow", "wings", "body", "head", "beak"],
+  "layers": {
+    "shadow": {
+      "type": "ellipse",
+      "rx": 16,
+      "ry": 8,
+      "fill": "rgba(0,0,0,0.3)"
+    },
+    "wings": {
+      "type": "group",
+      "attackScaleY": 0.4,
+      "attackScaleX": 1.1,
+      "children": [
+        { "type": "path", "d": "M0 0 Q-50 -40 -55 10 Q-35 40 0 0", "fill": "#1b1918", "stroke": "#dfd4ba", "strokeWidth": 2, "strokeLinejoin": "round" },
+        { "type": "path", "d": "M0 0 Q50 -40 55 10 Q35 40 0 0", "fill": "#1b1918", "stroke": "#dfd4ba", "strokeWidth": 2, "strokeLinejoin": "round" },
+        { "type": "lines", "pairs": [[-40,0,-55,15], [-25,5,-40,20], [40,0,55,15], [25,5,40,20]], "stroke": "#dfd4ba", "strokeWidth": 2, "strokeLinecap": "round", "opacity": 0.6 }
+      ]
+    },
+    "body": {
+      "type": "circle",
+      "r": 18,
+      "fill": "#4a5d23",
+      "stroke": "#1b1918",
+      "strokeWidth": 3
+    },
+    "head": {
+      "type": "circle",
+      "r": 14,
+      "fill": "#b84235",
+      "stroke": "#1b1918",
+      "strokeWidth": 3
+    },
+    "eyes": {
+      "type": "group",
+      "children": [
+        { "type": "circle", "cx": -10, "cy": -15, "r": 4, "fill": "#dfd4ba", "stroke": "#1b1918", "strokeWidth": 1 },
+        { "type": "circle", "cx": 10, "cy": -15, "r": 4, "fill": "#dfd4ba", "stroke": "#1b1918", "strokeWidth": 1 }
+      ]
+    },
+    "beak": {
+      "type": "polygon",
+      "points": "-6,-5 0,-35 6,-5",
+      "fill": "#d4af37",
+      "stroke": "#1b1918",
+      "strokeWidth": 2,
+      "strokeLinejoin": "round"
+    }
+  },
+  "animations": {
+    "idle": {
+      "duration": 1500,
+      "keyframes": [
+        { "time": 0, "layer": "wings", "translateY": 0 },
+        { "time": 0.5, "layer": "wings", "translateY": -8 },
+        { "time": 1, "layer": "wings", "translateY": 0 }
+      ]
+    },
+    "attack": {
+      "duration": 150,
+      "easing": "ease-out",
+      "keyframes": [
+        { "time": 0, "layer": "wings", "scaleY": 1, "scaleX": 1 },
+        { "time": 1, "layer": "wings", "scaleY": 0.4, "scaleX": 1.1 }
+      ]
+    }
+  },
+  "fallbackType": "flying"
+}

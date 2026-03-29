@@ -1,0 +1,103 @@
+{
+  "id": "great-oni",
+  "name": "Great Oni",
+  "type": "boss",
+  "radius": 55,
+  "colors": {
+    "ink": "#1b1918",
+    "parchment": "#dfd4ba",
+    "vermilion": "#b84235",
+    "gold": "#d4af37"
+  },
+  "drawOrder": ["rage-aura", "club", "hair", "body", "shoulders", "necklace", "horns", "head"],
+  "layers": {
+    "rage-aura": {
+      "type": "circle",
+      "r": 70,
+      "fill": "rgba(184,66,53,0.1)",
+      "animate": "pulse"
+    },
+    "club": {
+      "type": "group",
+      "restRotate": 25,
+      "attackRotate": -70,
+      "attackTranslateY": -25,
+      "attackTranslateX": -15,
+      "originX": 0,
+      "originY": 0,
+      "children": [
+        { "type": "roundRect", "x": 15, "y": -100, "w": 24, "h": 90, "r": 8, "fill": "#1b1918" },
+        { "type": "circles", "positions": [[-5,-90],[19,-80],[-5,-65],[19,-55],[-5,-40],[19,-30]], "r": 4, "fill": "#d4af37" },
+        { "type": "rect", "x": -4, "y": -10, "w": 8, "h": 25, "fill": "#dfd4ba" }
+      ]
+    },
+    "hair": {
+      "type": "path",
+      "d": "M-35 0 Q-50 -45 0 -45 Q50 -45 35 0 L30,-30 L-30,-30 Z",
+      "fill": "#1b1918",
+      "stroke": "#1b1918",
+      "strokeWidth": 4,
+      "strokeLinejoin": "round"
+    },
+    "hair-spikes": {
+      "type": "lines",
+      "pairs": [[-50,-30,-60,0], [-35,-55,-45,-25], [-15,-60,0,-35], [15,-60,0,-35], [35,-55,45,-25], [50,-30,60,0]],
+      "stroke": "#1b1918",
+      "strokeWidth": 4,
+      "strokeLinecap": "round"
+    },
+    "body": {
+      "type": "ellipse",
+      "rx": 42,
+      "ry": 30,
+      "fill": "#b84235",
+      "stroke": "#1b1918",
+      "strokeWidth": 4
+    },
+    "shoulders": {
+      "type": "group",
+      "children": [
+        { "type": "circle", "cx": -35, "cy": 5, "r": 26, "fill": "#b84235", "stroke": "#1b1918", "strokeWidth": 4 },
+        { "type": "circle", "cx": 35, "cy": 5, "r": 26, "fill": "#b84235", "stroke": "#1b1918", "strokeWidth": 4 }
+      ]
+    },
+    "necklace": {
+      "type": "group",
+      "children": [
+        { "type": "circle", "cx": -25, "cy": -15, "r": 6, "fill": "#d4af37", "stroke": "#1b1918", "strokeWidth": 2 },
+        { "type": "circle", "cx": 0, "cy": -8, "r": 8, "fill": "#d4af37", "stroke": "#1b1918", "strokeWidth": 3 },
+        { "type": "circle", "cx": 25, "cy": -15, "r": 6, "fill": "#d4af37", "stroke": "#1b1918", "strokeWidth": 2 }
+      ]
+    },
+    "horns": {
+      "type": "group",
+      "children": [
+        { "type": "path", "d": "M-18 -10 Q-25 -50 -40 -55 Q-30 -20 -12 -10", "fill": "#dfd4ba", "stroke": "#1b1918", "strokeWidth": 3, "strokeLinejoin": "round" },
+        { "type": "path", "d": "M18 -10 Q25 -50 40 -55 Q30 -20 12 -10", "fill": "#dfd4ba", "stroke": "#1b1918", "strokeWidth": 3, "strokeLinejoin": "round" }
+      ]
+    },
+    "head": {
+      "type": "circle",
+      "r": 18,
+      "fill": "#b84235",
+      "stroke": "#1b1918",
+      "strokeWidth": 4
+    }
+  },
+  "animations": {
+    "idle": {
+      "duration": 0,
+      "keyframes": []
+    },
+    "attack": {
+      "duration": 300,
+      "easing": "ease-in-out",
+      "keyframes": [
+        { "time": 0, "layer": "club", "rotate": 25, "translateX": 0, "translateY": 0 },
+        { "time": 0.5, "layer": "club", "rotate": -70, "translateX": -15, "translateY": -25 },
+        { "time": 1, "layer": "club", "rotate": 25, "translateX": 0, "translateY": 0 }
+      ]
+    }
+  },
+  "fallbackType": "boss"
+}

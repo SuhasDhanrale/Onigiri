@@ -1,0 +1,92 @@
+{
+  "id": "shinobi",
+  "name": "Shinobi",
+  "type": "assassin",
+  "radius": 12,
+  "colors": {
+    "ink": "#1b1918",
+    "parchment": "#dfd4ba",
+    "navy": "#2b3d60",
+    "vermilion": "#b84235",
+    "khaki": "#8b8574"
+  },
+  "drawOrder": ["dash-effect", "scarf", "body", "head", "headband", "weapon-left", "weapon-right"],
+  "layers": {
+    "dash-effect": {
+      "type": "circle",
+      "r": 30,
+      "fill": "rgba(27,25,24,0.3)",
+      "animate": "ping"
+    },
+    "scarf": {
+      "type": "group",
+      "children": [
+        { "type": "path", "d": "M-5 20 Q-30 35 -15 60 Q0 50 5 35 Z", "fill": "#b84235", "stroke": "#1b1918", "strokeWidth": 2, "strokeLinejoin": "round" },
+        { "type": "path", "d": "M5 25 Q-10 45 15 65 Q25 50 15 35 Z", "fill": "#b84235", "stroke": "#1b1918", "strokeWidth": 2, "strokeLinejoin": "round" }
+      ]
+    },
+    "body": {
+      "type": "path",
+      "d": "M-20 10 Q0 -15 20 10 Q15 30 0 25 Q-15 30 -20 10",
+      "fill": "#1b1918",
+      "stroke": "#2b3d60",
+      "strokeWidth": 2,
+      "strokeLinejoin": "round"
+    },
+    "head": {
+      "type": "circle",
+      "r": 14,
+      "fill": "#1b1918",
+      "stroke": "#2b3d60",
+      "strokeWidth": 2
+    },
+    "headband": {
+      "type": "rect",
+      "x": -12,
+      "y": -6,
+      "w": 24,
+      "h": 6,
+      "fill": "#b84235"
+    },
+    "weapon-left": {
+      "type": "group",
+      "attackRotate": 45,
+      "attackTranslateX": -8,
+      "attackTranslateY": -4,
+      "children": [
+        { "type": "polygon", "points": "25,0 45,-5 30,10", "fill": "#8b8574", "stroke": "#1b1918", "strokeWidth": 2, "strokeLinejoin": "round" },
+        { "type": "polygon", "points": "25,0 15,2 18,-5", "fill": "#1b1918" }
+      ]
+    },
+    "weapon-right": {
+      "type": "group",
+      "attackRotate": -45,
+      "attackTranslateX": 8,
+      "attackTranslateY": -4,
+      "children": [
+        { "type": "polygon", "points": "-25,0 -45,-5 -30,10", "fill": "#8b8574", "stroke": "#1b1918", "strokeWidth": 2, "strokeLinejoin": "round" },
+        { "type": "polygon", "points": "-25,0 -15,2 -18,-5", "fill": "#1b1918" }
+      ]
+    }
+  },
+  "animations": {
+    "idle": {
+      "duration": 0,
+      "keyframes": []
+    },
+    "attack": {
+      "duration": 150,
+      "easing": "ease-out",
+      "keyframes": [
+        { "time": 0, "layer": "weapon-left", "rotate": 0, "translateX": 0, "translateY": 0 },
+        { "time": 1, "layer": "weapon-left", "rotate": 45, "translateX": -8, "translateY": -4 },
+        { "time": 0, "layer": "weapon-right", "rotate": 0, "translateX": 0, "translateY": 0 },
+        { "time": 1, "layer": "weapon-right", "rotate": -45, "translateX": 8, "translateY": -4 },
+        { "time": 0, "layer": "dash-effect", "opacity": 0 },
+        { "time": 0.5, "layer": "dash-effect", "opacity": 1 },
+        { "time": 1, "layer": "dash-effect", "opacity": 0 }
+      ]
+    }
+  },
+  "fallbackType": "assassin"
+}
