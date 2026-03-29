@@ -33,6 +33,7 @@ export function tickUnits(s, dt, now, metaRef) {
     }
     if (unit.lifeSpan !== undefined) { unit.lifeSpan -= dt; if (unit.lifeSpan <= 0) { unit.hp = 0; unit.noReward = true; } }
     if (unit.burn > 0) { unit.burn -= dt; unit.hp -= 10 * dt; }
+    if (unit.deathFlash > 0) unit.deathFlash -= dt;
 
     let uSpeed = (unit.team === 'player' && s.warDrumsActive > 0) ? unit.speed * 1.5 : unit.speed;
     if (unit.chargeTimer > 0) uSpeed *= 2.0;
@@ -105,6 +106,10 @@ export function tickUnits(s, dt, now, metaRef) {
     const bypassSlotClaim = shouldBypassSlotClaiming(unit);
 
     if (target) {
+      // Clear HALT_SCREEN when we have a valid target - unit should engage
+      if (unit.stance_override === 'HALT_SCREEN') {
+        unit.stance_override = null;
+      }
       if (unit.slotTargetId !== target.id) {
         if (unit.slotTargetId && unit.claimedSlotIdx !== null) {
           const oldTarget = targetList.find(t => t.id === unit.slotTargetId);
@@ -152,7 +157,6 @@ export function tickUnits(s, dt, now, metaRef) {
     // Combat engagement
     const isEngaged = target && slotDistSq <= engageDist * engageDist && unit.type !== 'support';
     if (isEngaged) {
-      if (unit.name === 'Ikki Rebel') { target.hp -= unit.damage; unit.hp = 0; addParticle(s, unit.x, unit.y, COLORS.ink, 5); continue; }
 
       if (unit.type === 'assassin' && target.name === 'Bamboo Barricade') {
         unit.hp -= 1000; target.hp -= 1000; 
@@ -187,10 +191,11 @@ export function tickUnits(s, dt, now, metaRef) {
             }
             else {
               const shoveDir = unit.team === 'player' ? -1 : 1;
-              target.y += shoveDir * (unit.chargeTimer > 0 ? 180 : 60);
-              target.x += (Math.random() - 0.5) * 20;
-              s.screenShake = unit.chargeTimer > 0 ? 0.5 : 0.2;
-              bus.emit(EVENTS.SCREEN_SHAKE, { amount: s.screenShake });
+              const mass = target.mass || 1;
+              const knockbackMult = 1 / mass;
+              target.y += shoveDir * (unit.chargeTimer > 0 ? 180 : 60) * knockbackMult;
+              target.x += (Math.random() - 0.5) * 20 * knockbackMult;
+              s.screenShake = 0.05;
               addParticle(s, target.x, target.y, '#dfd4ba', 5);
             }
           }
@@ -208,6 +213,30 @@ export function tickUnits(s, dt, now, metaRef) {
     // Position update + separation
     const myTeam = unit.team === 'player' ? players : enemies;
     applySeparation(unit, vx, vy, dt, myTeam);
+
+    // Barricade impact damage for low-mass units
+    const mass = unit.mass || 1;
+    if (mass < 1 && unit.hp > 0) {
+      const barricades = s.units.filter(u => u.type === 'friction' && u.hp > 0);
+      for (const barricade of barricades) {
+        const dx = unit.x - barricade.x;
+        const dy = unit.y - barricade.y;
+        const distSq = dx * dx + dy * dy;
+        const minDist = unit.radius + barricade.radius;
+        if (distSq < minDist * minDist) {
+          const barricadeDamage = barricade.damage || 5;
+          const impactDamage = barricadeDamage * (1 / mass) * dt;
+          if (impactDamage > 0.1) {
+            unit.hp -= impactDamage;
+            if (unit.hp <= 0) {
+              unit.noReward = true;
+              s.floatingTexts.push({ x: unit.x, y: unit.y - 10, text: 'BLOCKED', color: '#8b8574', life: 0.5, vy: -30 });
+              break;
+            }
+          }
+        }
+      }
+    }
 
     if (unit.team === 'enemy' && unit.y + unit.radius >= WALL_Y) { 
       s.gameState = 'GAMEOVER'; 

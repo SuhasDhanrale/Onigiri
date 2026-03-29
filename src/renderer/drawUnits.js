@@ -98,9 +98,16 @@ import { COLORS } from '../config/colors.js';
           ctx.lineWidth = 5; 
           ctx.beginPath(); 
           ctx.moveTo(0, u.radius*0.6); 
-          ctx.lineTo(u.radius*2.8 + sw, u.radius*0.6); 
+          ctx.lineTo(u.radius*4.0 + sw, u.radius*0.6); 
           ctx.stroke(); 
-      } 
+          ctx.fillStyle = COLORS.parchment; 
+          ctx.beginPath(); 
+          ctx.moveTo(u.radius*4.0 + sw, u.radius*0.6); 
+          ctx.lineTo(u.radius*4.8 + sw, u.radius*0.2); 
+          ctx.lineTo(u.radius*4.8 + sw, u.radius*1.0); 
+          ctx.closePath(); 
+          ctx.fill(); ctx.stroke(); 
+      }
       else if (u.type === 'assassin') {
           ctx.fillStyle = COLORS.ink; 
           ctx.beginPath(); ctx.ellipse(-2, 0, Math.max(0.1, u.radius*0.8), Math.max(0.1, u.radius*1.2), 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
@@ -108,7 +115,16 @@ import { COLORS } from '../config/colors.js';
           ctx.strokeStyle = '#8b8574'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(u.radius*0.8, 0); ctx.lineTo(u.radius*1.8 + sw, 0); ctx.stroke();
       }
       else if (u.type === 'boss') { 
-          ctx.fillStyle = u.color; 
+          ctx.save(); 
+          ctx.shadowBlur = 30; 
+          ctx.shadowColor = 'rgba(184, 66, 53, 0.9)'; 
+          ctx.strokeStyle = 'rgba(184, 66, 53, 0.6)'; 
+          ctx.lineWidth = 4; 
+          ctx.beginPath(); 
+          ctx.arc(0, 0, u.radius + 20, 0, Math.PI*2); 
+          ctx.stroke(); 
+          ctx.restore(); 
+          ctx.fillStyle = u.color;
           ctx.beginPath(); 
           ctx.ellipse(-2, 0, Math.max(0.1, u.radius*0.7), Math.max(0.1, u.radius*1.3), 0, 0, Math.PI*2); 
           ctx.fill(); ctx.stroke(); 
@@ -171,6 +187,12 @@ import { COLORS } from '../config/colors.js';
           ctx.rotate(u.team === 'player' ? Math.PI/2 : -Math.PI/2); 
           ctx.fillStyle = '#1b1918'; ctx.fillRect(-15, u.radius + 5, 30, 4); 
           ctx.fillStyle = '#b84235'; ctx.fillRect(-15, u.radius + 5, Math.max(0, 30 * (u.hp / u.maxHp)), 4); 
+      }
+      if (u.deathFlash > 0) { 
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'; 
+          ctx.beginPath(); 
+          ctx.arc(0, 0, Math.max(u.radius, 20), 0, Math.PI*2); 
+          ctx.fill(); 
       }
       ctx.restore();
     };

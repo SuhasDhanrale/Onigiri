@@ -41,9 +41,15 @@ export const drawGame = (ctx, s, dt, now, metaRef) => {
     drawBackground(ctx, s, now, metaRef);
     drawBackgroundEffects(ctx, s);
     
-    // Sort and draw units
-    s.units.sort((a,b) => (a.type === 'flying' ? 1 : 0) - (b.type === 'flying' ? 1 : 0))
-           .forEach(u => drawUnitTopDown(ctx, u));
+    // Sort and draw units — semantic layer first, Y-second within layer
+    [...s.units]
+      .sort((a, b) => {
+        const la = a.renderLayer ?? 2;
+        const lb = b.renderLayer ?? 2;
+        if (la !== lb) return la - lb;
+        return a.y - b.y;
+      })
+      .forEach(u => drawUnitTopDown(ctx, u));
            
     drawForegroundEffects(ctx, s);
     

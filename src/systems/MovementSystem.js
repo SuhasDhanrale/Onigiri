@@ -3,21 +3,45 @@ import { WALL_Y, V_WIDTH } from '../config/constants.js';
 export function calculateVelocity(unit, target, closestSq, s, now, uSpeed, enemies, players) {
     let vx = 0; let vy = 0;
 
-    if (unit.stance_override === 'SCREENING') {
+    if (unit.stance_override === 'SCREENING' || unit.stance_override === 'HALT_SCREEN') {
       const friendlyTeam = unit.team === 'player' ? players : enemies;
       let avgX = unit.x;
       let friendlyCount = 0;
       for (const ally of friendlyTeam) {
-        if (ally.id !== unit.id && ally.stance_override !== 'SCREENING') {
+        if (ally.id !== unit.id && ally.stance_override !== 'SCREENING' && ally.stance_override !== 'HALT_SCREEN') {
           avgX += ally.x;
           friendlyCount++;
         }
       }
       if (friendlyCount > 0) avgX /= (friendlyCount + 1);
       const dxCenter = avgX - unit.x;
-      vx = Math.sign(dxCenter) * Math.min(Math.abs(dxCenter) * 0.5, 10);
+      const swayAmount = Math.sin((now / 300) + unit.hashOffset) * 8;
+      vx = Math.sign(dxCenter) * Math.min(Math.abs(dxCenter) * 0.3, 6) + swayAmount;
       vy = 0;
       return { vx, vy };
+    }
+
+    // Halt & Screen: if allies ahead are engaged in melee, hold position instead of rushing
+    if (unit.type === 'melee' && !target) {
+      const friendlyTeam = unit.team === 'player' ? players : enemies;
+      const isPlayer = unit.team === 'player';
+      let hasFrontlineEngaged = false;
+      for (const ally of friendlyTeam) {
+        if (ally.id !== unit.id && ally.hp > 0) {
+          const allyAhead = isPlayer ? ally.y < unit.y : ally.y > unit.y;
+          if (allyAhead && ally.claimedSlotIdx !== null) {
+            hasFrontlineEngaged = true;
+            break;
+          }
+        }
+      }
+      if (hasFrontlineEngaged) {
+        unit.stance_override = 'HALT_SCREEN';
+        const swayAmount = Math.sin((now / 300) + unit.hashOffset) * 8;
+        vx = swayAmount;
+        vy = 0;
+        return { vx, vy };
+      }
     }
 
     if (unit.team === 'player') {
@@ -111,7 +135,7 @@ export function applySeparation(unit, vx, vy, dt, myTeam) {
             }
             let pushWeight = 1.0;
             if (unit.stance === 'DEFEND') pushWeight = 0.1;
-            if (unit.stance_override === 'SCREENING') pushWeight = 0.05;
+            if (unit.stance_override === 'SCREENING' || unit.stance_override === 'HALT_SCREEN') pushWeight = 0.05;
             if (unit.team === 'player' && Math.abs(vy) < 5 && bothGround) {
               newX += (dxAlly / dist) * overlap * 50.0 * pushWeight * dt;
               newY += (dyAlly / dist) * overlap * 20.0 * pushWeight * dt;

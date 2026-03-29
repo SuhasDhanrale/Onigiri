@@ -1,0 +1,130 @@
+# Semantic Z-Sorting & Visual Hierarchy
+
+## Problem
+
+The current renderer sorts units with only a basic `flying` check — everything else draws in arbitrary order. This means the Oni Boss or Onmyoji can be completely buried inside a wall of Ikki Rebels. A player can't parse the threat landscape in 200ms, breaking the God-Game fantasy.
+
+Additionally, every cavalry hit triggers `screenShake`, so 15 simultaneous cavalry charges create a strobe effect, causing eye fatigue and destroying readability.
+
+## Resolved Design Decisions
+
+- **Rebel alpha**: Keep full opacity. Rebels are already tiny (radius 10); layer ordering alone handles their visual hierarchy.
+- **Y-sort direction**: Confirmed — **higher Y draws on top** (player defends at bottom, enemies approach from top).
+- **Yumi Archers stay Layer 2** (not chaff): The doc analysis placed archers with rebels, but player archers are high-value targets — demoting them to layer 1 would make it harder for the player to notice when they're under threat. They remain standard soldiers.
+
+## The Core Idea: Semantic Rendering Layers
+
+Assign each unit a `renderLayer` integer in its definition. The renderer uses this as the primary sort key, Y-position as tiebreaker within each layer.
+
+| Layer | Units | Role |
+|-------|-------|------|
+| `0` | Bamboo Barricade | Structures — painted on ground, always under combatants |
+| `1` | Ikki Rebel, Tengu Flier | Chaff — drawn first, visually recede naturally |
+| `2` | Yumi, Horoku, Hatamoto, Onmyoji, Shinobi | Standard soldiers |
+| `3` | Cavalry, Champion | Elites — spear protrusions must read above melee |
+| `4` | Great Oni | Boss — mathematically impossible to be buried |
+
+## Proposed Changes
+
+---
+
+### 1. Unit Config — `renderLayer` field
+
+#### [MODIFY] [units.js](file:///e:/WebGames/Onigiri/src/config/units.js)
+
+Add `renderLayer` to every entry in `UNIT_TYPES`. Data-only change, no logic touched.
+
+```
+BARRICADE  → renderLayer: 0
+REBEL      → renderLayer: 1
+TENGU      → renderLayer: 1
+YUMI       → renderLayer: 2
+HOROKU     → renderLayer: 2
+HATAMOTO   → renderLayer: 2
+ONMYOJI    → renderLayer: 2
+SHINOBI    → renderLayer: 2
+CAVALRY    → renderLayer: 3
+CHAMPION   → renderLayer: 3
+ONI        → renderLayer: 4
+```
+
+---
+
+### 2. Renderer — Two-Key Semantic Sort
+
+#### [MODIFY] [GameRenderer.js](file:///e:/WebGames/Onigiri/src/renderer/GameRenderer.js)
+
+Replace the current broken sort (only isolates `flying`) with a layer-first, Y-second sort:
+
+```js
+// BEFORE — only separates flying, everything else arbitrary
+s.units.sort((a,b) => (a.type==='flying'?1:0) - (b.type==='flying'?1:0))
+       .forEach(u => drawUnitTopDown(ctx, u));
+
+// AFTER — semantic layer first, Y-sort within layer
+[...s.units]
+  .sort((a, b) => {
+    const la = a.renderLayer ?? 2;
+    const lb = b.renderLayer ?? 2;
+    if (la !== lb) return la - lb;  // lower layer renders first (behind)
+    return a.y - b.y;              // within layer: higher Y draws on top
+  })
+  .forEach(u => drawUnitTopDown(ctx, u));
+```
+
+> `[...s.units]` shallow-copies before sorting to avoid mutating the live unit array mid-frame (CombatSystem iterates the same array).
+
+---
+
+### 3. Visual Differentiation
+
+#### [MODIFY] [drawUnits.js](file:///e:/WebGames/Onigiri/src/renderer/drawUnits.js)
+
+**A. Cavalry spear protrusion** — Extend the current spear stub from `u.radius * 2.8` to `u.radius * 4.0` and add a solid triangle spearhead at the tip. Gives cavalry a unique horizontal silhouette that reads differently from every other unit shape (all of which are vertical ellipses or circles). Passes the Pikmin "Squint Test".
+
+**B. Boss always-visible halo** — Add a `ctx.shadowBlur` red glow ring on the boss draw pass. Distinct from the existing `isElite` pulsing aura (which is gold/shared). The boss halo is static and intense — it burns through even when surrounded by rebels.
+
+**C. White death flash (Doom case study)** — Units with a `deathFlash > 0` timer get a brief white overlay composited over their shape. Set `deathFlash = 0.1` in CombatSystem at the moment `hp` first drops to 0. Tick it down each frame in the renderer. This gives the player a microsecond anchor to register kills within chaos — especially valuable when a spell or Dragon Wave hits a cluster simultaneously.
+
+**D. Suppress rebel death particles** — Currently `addParticle` fires 5 ink particles every time a Rebel dies. With 30 rebels dying in sequence this is pure visual noise. Rebels killed by standard melee skip the particle burst; their death is registered by the white flash alone.
+
+---
+
+### 4. Screen Shake — Boss-Only Bus Events
+
+#### [MODIFY] [CombatSystem.js](file:///e:/WebGames/Onigiri/src/systems/CombatSystem.js)
+
+All cavalry hits currently emit `SCREEN_SHAKE` via the event bus, which drives the CSS animation on the canvas container. 15 simultaneous charges = strobe.
+
+**Rule**: Only boss-level impacts emit the bus event and trigger the CSS shake.
+
+| Scenario | Before | After |
+|----------|--------|-------|
+| Boss telegraph | `screenShake = 0.5` + bus emit | ✅ unchanged |
+| Cavalry vs. shield/boss | `screenShake = 0.1` + bus emit | ✅ unchanged (heavy collision) |
+| Cavalry vs. normal target | `screenShake = 0.2` + bus emit | `screenShake = 0.05`, **no bus emit** |
+
+---
+
+## Scope Summary
+
+| Change | Verdict |
+|--------|---------|
+| `renderLayer` on all unit types | ✅ Implementing |
+| Layer + Y two-key sort in renderer | ✅ Implementing |
+| Cavalry spear protrusion | ✅ Implementing |
+| Boss always-visible halo | ✅ Implementing |
+| White death flash on kill | ✅ Implementing |
+| Rebel death particle suppression | ✅ Implementing |
+| Boss-only screen shake bus event | ✅ Implementing |
+| Squad Cohesion tension lines (Total War) | ❌ Skip — major arch change, low ROI at 70 units |
+| Audio ducking | ❌ Skip — no Web Audio system exists |
+| Ground decals for dead rebels | ❌ Skip — requires dead-unit state machine |
+
+## Verification Plan
+
+1. **Boss buried test** — Spawn Rebels + Oni simultaneously. Boss must be always visible above the mob regardless of Y-position.
+2. **Cavalry strobe test** — Deploy 10+ cavalry. Verify no screen-shake strobe; only a subtle shimmer.
+3. **Boss shake test** — Trigger boss telegraph. Verify full CSS screen shake still fires.
+4. **Barricade under-unit test** — Confirm Barricade renders below all combat units.
+5. **Death flash** — Kill a cluster with Dragon Wave. Verify white flash registers clearly.
