@@ -2,6 +2,7 @@ import { UNIT_TYPES } from '../config/units.js';
 import { CAMPAIGN_MAP } from '../config/campaign.js';
 import { V_WIDTH, WALL_Y } from '../config/constants.js';
 import { generateId } from '../core/utils.js';
+import { initSlotArray } from './SlotManager.js';
 
 /**
  * Adds burst particles to the state.
@@ -98,4 +99,7 @@ export function spawnUnit(s, typeKey, team, customX = null, customY = null, meta
     telegraphTimer: 0, lifeSpan, burn: 0, chargeTimer,
     stance: 'ATTACK'
   });
+
+  const spawnedUnit = s.units[s.units.length - 1];
+  initSlotArray(spawnedUnit);
 }

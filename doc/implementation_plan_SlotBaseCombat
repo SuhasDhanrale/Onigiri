@@ -1,0 +1,160 @@
+# Slot-Based Combat Architecture
+
+Eliminate the "Lemming Train" and "Blob" problems by replacing the current atomic collision-bumping system with a structured **Slot Ring** architecture. Every unit has a finite number of melee engagement slots around it. Attackers must claim a slot before advancing; if no slot is available, they enter a `SCREENING` state—halting behind the frontline and waiting to replace fallen comrades.
+
+This applies **universally** to all units on both teams.
+
+---
+
+## Proposed Changes
+
+### Phase 1: Data Layer — Unit Config & SlotManager
+
+#### [MODIFY] [units.js](file:///e:/WebGames/Onigiri/src/config/units.js)
+
+Add `maxMeleeSlots` to every unit definition. Values are derived from the unit's `radius`:
+
+| Unit | maxMeleeSlots | Reasoning |
+|---|---|---|
+| Bamboo Barricade | 6 | Wide structure, multiple attack faces |
+| Yumi Archer | 2 | Ranged—rarely melee'd, small profile |
+| Horoku Siege | 2 | Rarely engaged in melee |
+| Hatamoto | 3 | Medium shield unit |
+| Takeda Cavalry | 2 | Fast, transient contact |
+| Samurai Champion | 5 | Large hero unit |
+| Ikki Rebel | 3 | Small enemy, basic fighter |
+| Tengu Flier | 2 | Agile flying unit |
+| Onmyoji | 2 | Support, stays back |
+| Shinobi | 2 | Fast assassin |
+| Great Oni (Boss) | 8 | Massive boss, centerpiece of combat |
+
+**Bypass Rules — who skips slot-claiming as an attacker:**
+
+| Unit Type | Slot-claiming? | Reason |
+|---|---|---|
+| `ranged` (Yumi Archer) | ❌ Skip | Stays at range, never enters melee |
+| `siege` (Horoku Siege) | ❌ Skip | Lobs projectiles, never advances to melee |
+| `support` (Onmyoji) | ❌ Skip | Healer, never attacks |
+| `cavalry` (while charging) | ❌ Skip | Charge is a collision move, not sustained melee |
+| `melee`, `hero`, `boss`, `assassin`, `flying` | ✅ Must claim | All engage in direct contact melee |
+
+> [!NOTE]
+> Ranged/siege units still **own** a `meleeSlots` array — because melee enemies can target them and need to queue around them cleanly. The bypass only applies when they are the *attacker*, not the *target*.
+
+#### [NEW] [SlotManager.js](file:///e:/WebGames/Onigiri/src/systems/SlotManager.js)
+
+A new utility module responsible for managing melee slot state on units. Every unit gets a `meleeSlots` runtime array (initialized at spawn). The `SlotManager` provides three pure functions used by `CombatSystem`:
+
+```js
+// Returns the {x, y} coordinate of a free slot on `target`, or null if all slots are full.
+claimSlot(attacker, target)  → { slotIdx, slotX, slotY } | null
+
+// Called when an attacker dies, changes target, or disengages.
+releaseSlot(attacker, target)
+
+// Recalculates all slot coordinates if a target moves (called each frame for moving targets).
+updateSlotPositions(target)
+```
+
+**Slot geometry:** Slots are arranged evenly in a semicircle facing the attacker's approach direction.
+- Enemies attack from above → slots are on the top half of the target's radius.
+- Players attack from below → slots are on the bottom half of the target's radius.
+- The slot coordinate is: `target.x + cos(angle) * (target.radius + attacker.radius + 5)`, `target.y + sin(angle) * (target.radius + attacker.radius + 5)`.
+
+---
+
+### Phase 2: Combat Logic — CombatSystem & MovementSystem
+
+#### [MODIFY] [CombatSystem.js](file:///e:/WebGames/Onigiri/src/systems/CombatSystem.js)
+
+**In [tickUnits](file:///e:/WebGames/Onigiri/src/systems/CombatSystem.js#8-158), after `target` is found (line 59–84), replace the direct engagement with slot-claiming logic:**
+
+1. **If a unit already owns a slot** on its current target → proceed to combat normally (no change).
+2. **If a unit has a target but no slot claimed yet** → call `claimSlot(unit, target)`.
+   - **Slot available:** Store `unit.claimedSlotIdx = idx`, `unit.slotTargetX = x`, `unit.slotTargetY = y` on the unit. The unit moves toward that exact coordinate (not the center of the target).
+   - **No slot available:** Set `unit.stance_override = 'SCREENING'`. The unit halts.
+3. **If a unit's target dies** → call `releaseSlot(unit, oldTarget)`, clear `unit.claimedSlotIdx`, clear `unit.stance_override`.
+
+**Engagement distance check** becomes: distance from unit to its **claimed slot coordinate**, not to the target center.
+
+#### [MODIFY] [MovementSystem.js](file:///e:/WebGames/Onigiri/src/systems/MovementSystem.js)
+
+**In [calculateVelocity](file:///e:/WebGames/Onigiri/src/systems/MovementSystem.js#3-65), add SCREENING state handling:**
+
+```js
+// At the top of the function, before existing stance checks:
+if (unit.stance_override === 'SCREENING') {
+  // Halt vertical movement entirely
+  // Drift horizontally to align directly behind the nearest engaged ally
+  // vx = small drift toward the average X of friendly frontline units
+  // vy = 0
+  return { vx, vy: 0 };
+}
+```
+
+When a unit is in `SCREENING`:
+- `vy = 0` — it does not push forward.
+- `vx` = a gentle drift toward the center X of its team's current engagement cluster (prevents lateral spreading).
+
+**In [applySeparation](file:///e:/WebGames/Onigiri/src/systems/MovementSystem.js#66-106):** Units with `stance_override === 'SCREENING'` use a **reduced push weight of 0.05** (instead of default 1.0). This prevents the halted screening mass from violently shoving each other sideways.
+
+---
+
+### Phase 3: Initialization — Slot Arrays at Spawn
+
+#### [MODIFY] [SpawnSystem.js](file:///e:/WebGames/Onigiri/src/systems/SpawnSystem.js)
+
+When any unit is created/spawned, initialize its melee slot tracking:
+
+```js
+unit.meleeSlots = new Array(unitDef.maxMeleeSlots).fill(null); // null = free, occupantId = taken
+unit.claimedSlotIdx = null;   // Which slot index this unit has claimed on its target
+unit.slotTargetId = null;     // ID of the target this unit has a slot on
+unit.slotTargetX = null;      // Cached world X of the claimed slot
+unit.slotTargetY = null;      // Cached world Y of the claimed slot
+unit.stance_override = null;  // 'SCREENING' or null
+```
+
+---
+
+### Phase 4: Visual Feedback (Optional but Recommended)
+
+#### [MODIFY] Renderer (Canvas drawing layer)
+
+Units in `SCREENING` stance are drawn with a **subtle visual indicator** — a faint grey shield icon or a 30%-opacity white ring around them — so the player can see their army is organized, disciplined, and waiting. This does not change gameplay but dramatically elevates the "God-game" feel.
+
+---
+
+## Verification Plan
+
+> [!IMPORTANT]
+> There are no automated tests in this project. All verification is manual in-browser.
+
+### How to Run
+
+```bash
+# From the project root:
+npm run dev
+# Open http://localhost:5173 in a browser
+```
+
+### Manual Test Scenarios
+
+| # | Scenario | Steps | Expected Result |
+|---|---|---|---|
+| 1 | **Basic Blob Test** | Start Level 1. Let 15+ Rebels charge a single Hatamoto guard. | ≤3 Rebels actively strike the Hatamoto. The rest halt cleanly in a line behind them. No jitter blob. |
+| 2 | **Slot Refill (Replace fallen)** | Same as above. Let the Hatamoto die. | The first Rebel from the screening line instantly steps forward to claim a slot on the next target. No hesitation/jitter. |
+| 3 | **Player Attack Slots** | Send 10 Samurai Hatamotos to attack a single Great Oni boss. | ≤8 Hatamotos engage the Oni in a ring. Remaining Hatamotos halt in `SCREENING` behind them. |
+| 4 | **Slot Release on Target Death** | Let player units kill an enemy. | The `meleeSlots` array on the dead unit is irrelevant (unit is removed). All attackers that had slots on it should immediately re-target and re-claim slots. No units should freeze permanently. |
+| 5 | **No Regression: Ranged Units** | Deploy Yumi Archers. | Archers should be unaffected — they never enter melee, so `SCREENING` is never triggered for them. They fire normally. |
+| 6 | **Performance Check** | Start a max-unit battle (full barracks vs. large wave). | Frame rate should be **equal or better** than before (fewer separation physics resolves per frame). |
+
+---
+
+## Risk Notes
+
+> [!WARNING]
+> **Cavalry Charge:** The `chargeTimer > 0` path in [CombatSystem.js](file:///e:/WebGames/Onigiri/src/systems/CombatSystem.js) applies `shoveDir` to knock targets back. When a cavalry unit is charging, it should **bypass slot claiming** and collide directly (the charge is a special move, not a sustained melee engagement). We will add a `if (unit.chargeTimer > 0) skip slot logic` guard.
+
+> [!NOTE]
+> **Ikki Rebel (Suicide Unit):** The Rebel has a special-case early-exit on line 95 of [CombatSystem.js](file:///e:/WebGames/Onigiri/src/systems/CombatSystem.js) (`unit.hp = 0`). This unit should also bypass slot claiming since it dies on first contact. We will add a guard for `unit.name === 'Ikki Rebel'`.

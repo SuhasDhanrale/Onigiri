@@ -4,6 +4,7 @@ import { addParticle } from './SpawnSystem.js';
 import { calculateVelocity, applySeparation } from './MovementSystem.js';
 import { bus } from '../core/EventBus.js';
 import { EVENTS } from '../core/events.js';
+import { claimSlot, releaseSlot, calculateSlotPosition, shouldBypassSlotClaiming } from './SlotManager.js';
 
 /**
  * Full unit movement + combat loop. Processes all units each frame.
@@ -11,10 +12,12 @@ import { EVENTS } from '../core/events.js';
  * @param {number} dt
  * @param {object} now     - performance.now()
  * @param {object} metaRef - React ref to meta state
+ * @see doc/implementation_plan_SlotBaseCombat02
  */
 export function tickUnits(s, dt, now, metaRef) {
   const enemies = s.units.filter(u => u.team === 'enemy');
   const players = s.units.filter(u => u.team === 'player');
+  const expectedHpMap = new Map();
 
   for (let i = 0; i < s.units.length; i++) {
     const unit = s.units[i];
@@ -66,31 +69,88 @@ export function tickUnits(s, dt, now, metaRef) {
       if (unit.stance === 'PATROL' && e.type === 'assassin' && e.y > 500) { target = e; closestSq = 0; break; }
 
       const dx = Math.abs(e.x - unit.x);
-      if (unit.type === 'ranged' || unit.type === 'siege' || unit.type === 'assassin' || dx < 150) {
-        const dy = e.y - unit.y;
+      const dy = e.y - unit.y;
+      const rawDistSq = dx * dx + dy * dy;
+
+      // Detection range: ranged/siege/assassin always see all. Enemies use spherical aggroRadius;
+      // player units use dx<150 lane (defenders hold position, not chase across map).
+      const inDetectionRange =
+        unit.type === 'ranged' || unit.type === 'siege' || unit.type === 'assassin'
+          ? true
+          : unit.team === 'enemy'
+            ? rawDistSq < unit.aggroRadius * unit.aggroRadius
+            : dx < 150;
+
+      if (inDetectionRange) {
         let canSee = false;
         if (unit.type === 'ranged' || unit.type === 'siege' || unit.type === 'assassin') canSee = true;
         else if (unit.team === 'player' && dy <= 60) canSee = true;
         else if (unit.team === 'enemy' && dy >= -60) canSee = true;
 
         if (canSee) {
-          let distSq = dx * dx + dy * dy;
+          let distSq = rawDistSq;
           if (unit.type === 'cavalry' && e.type === 'ranged') distSq -= 250000;
-          if (unit.type === 'assassin' && (e.type === 'ranged' || e.type === 'support')) distSq -= 400000;
-          if (e.taunt && distSq < 40000) { target = e; break; }
-          if (distSq < closestSq) { closestSq = distSq; target = e; }
+          if (unit.type === 'assassin' && (e.type === 'ranged' || e.type === 'support' || e.type === 'friction')) distSq -= 500000;
+          if (e.taunt && distSq < 40000) { target = e; closestSq = rawDistSq; break; }
+          if (unit.type === 'ranged') {
+            const effectiveHp = expectedHpMap.get(e.id);
+            if (effectiveHp !== undefined && effectiveHp <= 0) continue;
+          }
+          if (distSq < closestSq) { closestSq = rawDistSq; target = e; }
         }
       }
+    }
+
+    // Handle slot claiming for melee combat
+    const bypassSlotClaim = shouldBypassSlotClaiming(unit);
+
+    if (target) {
+      if (unit.slotTargetId !== target.id) {
+        if (unit.slotTargetId && unit.claimedSlotIdx !== null) {
+          const oldTarget = targetList.find(t => t.id === unit.slotTargetId);
+          if (oldTarget) releaseSlot(unit, oldTarget);
+        }
+
+        if (!bypassSlotClaim) {
+          const slotResult = claimSlot(unit, target);
+          if (!slotResult) {
+            unit.stance_override = 'SCREENING';
+          } else {
+            unit.stance_override = null;
+          }
+        }
+      } else if (unit.stance_override === 'SCREENING') {
+        // Same target, slots were full — retry in case a slot opened up this frame
+        const retry = claimSlot(unit, target);
+        if (retry) unit.stance_override = null;
+      } else if (unit.claimedSlotIdx !== null) {
+        // Target hasn't changed — recalculate slot position since target may have moved this frame
+        const slotPos = calculateSlotPosition(unit, target, unit.claimedSlotIdx);
+        unit.slotTargetX = slotPos.x;
+        unit.slotTargetY = slotPos.y;
+      }
+    } else {
+      // Target lost (may have died) — clear slot state directly without needing the old target reference
+      unit.claimedSlotIdx = null;
+      unit.slotTargetId = null;
+      unit.slotTargetX = null;
+      unit.slotTargetY = null;
+      unit.stance_override = null;
     }
 
     let engageDist = unit.radius + (target ? target.radius : 0) + 15;
     if (unit.type === 'ranged' || unit.type === 'siege') engageDist = unit.range;
 
-    // Velocity calculation
+    const slotDistSq = unit.slotTargetX !== null && unit.slotTargetY !== null
+      ? (unit.x - unit.slotTargetX) ** 2 + (unit.y - unit.slotTargetY) ** 2
+      : Math.max(0, closestSq); // clamp: cavalry bias can make closestSq negative
+
+    // Always pass raw closestSq (distance to target) to calculateVelocity for the aggro gate.
+    // slotDistSq is only used below for the isEngaged melee check.
     let { vx, vy } = calculateVelocity(unit, target, closestSq, s, now, uSpeed, enemies, players);
 
     // Combat engagement
-    const isEngaged = target && closestSq <= engageDist * engageDist && unit.type !== 'support';
+    const isEngaged = target && slotDistSq <= engageDist * engageDist && unit.type !== 'support';
     if (isEngaged) {
       if (unit.name === 'Ikki Rebel') { target.hp -= unit.damage; unit.hp = 0; addParticle(s, unit.x, unit.y, COLORS.ink, 5); continue; }
 
@@ -110,6 +170,7 @@ export function tickUnits(s, dt, now, metaRef) {
           const angle = Math.atan2(target.y - unit.y, target.x - unit.x);
           const isFlaming = unit.team === 'player' && unit.name === 'Yumi Archer' && metaRef.current.unlockedTechs.includes('FLAMING_ARROWS') && Math.random() < 0.25;
           s.projectiles.push({ x: unit.x, y: unit.y, vx: Math.cos(angle) * 1200, vy: Math.sin(angle) * 1200, damage: unit.damage, team: unit.team, pierce: unit.pierce, isFlaming });
+          expectedHpMap.set(target.id, (expectedHpMap.get(target.id) ?? target.hp) - unit.damage);
         } else if (unit.type === 'siege') {
           s.projectiles.push({ type: 'lob', startX: unit.x, startY: unit.y, targetX: target.x, targetY: target.y, progress: 0, travelTime: 1.2, damage: unit.damage, team: unit.team, z: 0 });
         } else {

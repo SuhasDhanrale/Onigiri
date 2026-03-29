@@ -13,6 +13,16 @@ import { COLORS } from '../config/colors.js';
           ctx.fill();
       }
 
+      if (u.stance_override === 'SCREENING') {
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(0, 0, u.radius + 4, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+          ctx.fill();
+      }
+
       if (u.isElite) {
           const pulse = Math.sin(performance.now() / 150) * 8;
           ctx.fillStyle = 'rgba(212, 175, 55, 0.25)';
