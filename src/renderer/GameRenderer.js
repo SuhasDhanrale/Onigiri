@@ -81,7 +81,6 @@ export const drawGame = (ctx, s, dt, now, metaRef) => {
         return a.y - b.y;
       })
       .forEach(u => drawUnitTopDown(ctx, u));
-
     drawForegroundEffects(ctx, s);
 
     ctx.restore();

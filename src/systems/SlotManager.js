@@ -75,5 +75,6 @@ export function shouldBypassSlotClaiming(unit) {
   if (unit.type === 'siege') return true;
   if (unit.type === 'support') return true;
   if (unit.type === 'cavalry' && unit.chargeTimer > 0) return true;
+  if (unit.name === 'Ikki Rebel') return true;
   return false;
 }
