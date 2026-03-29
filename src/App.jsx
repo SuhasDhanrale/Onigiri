@@ -10,6 +10,7 @@ import { getCost, getSquadCap } from './core/utils.js';
 import { CommandPanel } from './ui/panels/CommandPanel.jsx';
 import { CombatScreen } from './ui/screens/CombatScreen.jsx';
 import { MapScreen } from './ui/screens/MapScreen.jsx';
+import { HubTestScreen } from './ui/screens/HubTestScreen.jsx';
 
 // --- Phase 2: System imports ---
 import { spawnUnit as _spawnUnit, addParticle as _addParticle } from './systems/SpawnSystem.js';
@@ -23,6 +24,13 @@ import { createInputHandlers } from './input/InputHandler.js';
 import { spriteRenderer } from './renderer/SpriteRenderer.js';
 
 export default function App() {
+  const [showTestHub, setShowTestHub] = useState(false);
+  
+  useEffect(() => {
+    window.toggleTestHub = () => setShowTestHub(prev => !prev);
+    return () => { delete window.toggleTestHub; };
+  }, []);
+
   const fgCanvasRef = useRef(null);
   const bgCanvasRef = useRef(null);
   const [uiTick, setUiTick] = useState(0);
@@ -253,9 +261,12 @@ export default function App() {
 
   return (
     <div className="flex h-screen w-full bg-[#1b1918] text-[#1b1918] font-serif overflow-hidden select-none relative">
-      
-      {/* MAP SCREEN HUB (MACRO UI) */}
-      <MapScreen 
+      {showTestHub && <HubTestScreen />}
+
+      {!showTestHub && (
+        <>
+          {/* MAP SCREEN HUB (MACRO UI) */}
+          <MapScreen 
         s={s} 
         meta={meta} 
         setMeta={setMeta} 
@@ -301,6 +312,8 @@ export default function App() {
         hireDrill={hireDrill}
         unlockHero={unlockHero}
       />
+      </>
+      )}
     </div>
   );
 }
