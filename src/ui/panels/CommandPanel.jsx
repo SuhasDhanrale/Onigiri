@@ -14,6 +14,17 @@ export function CommandPanel({
       
       <EconomyHeader state={s} activeTroops={activeTroops} maxTroops={maxTroops} />
       
+      <div className="px-4 py-3 bg-[var(--color-parchment)] border-b-2 border-[var(--color-ink-dark)]">
+        <SpellShrine 
+          s={s} 
+          setUiTick={setUiTick} 
+          triggerThunder={triggerThunder} 
+          triggerFoxFire={triggerFoxFire} 
+          triggerDragonWave={triggerDragonWave}
+          unlockHero={unlockHero}
+        />
+      </div>
+
       <div className="p-4 flex flex-col gap-3 bg-[var(--color-parchment)] border-b-4 border-[var(--color-ink-dark)]">
         <h3 className="text-[var(--color-ink-dark)] font-black text-[10px] uppercase tracking-[0.2em] border-b-2 border-[var(--color-ink-dark)] pb-1">Military Forces</h3>
         {Object.entries(BARRACKS_DEFS).map(([key, def]) => (
@@ -35,14 +46,6 @@ export function CommandPanel({
 
       <div className="p-4 flex flex-col gap-4 bg-[var(--color-parchment)]">
         <TacticalCommand s={s} triggerWarDrums={triggerWarDrums} triggerHarvest={triggerHarvest} triggerResolve={triggerResolve} />
-        <SpellShrine 
-          s={s} 
-          setUiTick={setUiTick} 
-          triggerThunder={triggerThunder} 
-          triggerFoxFire={triggerFoxFire} 
-          triggerDragonWave={triggerDragonWave}
-          unlockHero={unlockHero}
-        />
       </div>
       
     </div>
