@@ -1,6 +1,6 @@
 import { HEIRLOOMS, PERMANENT_TECHS } from '../../config/progression.js';
 
-export function WarCampPanel({ s, meta, setMeta, initRun, unlockHeirloom, equipHeirloom, unlockTech, resetDynasty }) {
+export function WarCampPanel({ s, meta, setMeta, initRun, unlockProvision, equipProvision, resetDynasty }) {
   return (
     <div className="w-[340px] h-full bg-[var(--color-parchment)] border-r-4 border-[var(--color-ink-dark)] flex flex-col p-4 relative z-20 shadow-[10px_0_20px_rgba(0,0,0,0.3)]">
       <h2 className="text-3xl font-black text-[var(--color-ink-dark)] uppercase tracking-widest mb-1">War Camp</h2>
@@ -19,19 +19,19 @@ export function WarCampPanel({ s, meta, setMeta, initRun, unlockHeirloom, equipH
           </div>
           <div className="flex flex-col gap-2">
             {Object.entries(HEIRLOOMS).map(([key, h]) => {
-              const isUnlocked = meta.unlockedHeirlooms.includes(key);
-              const isEquipped = meta.equippedHeirloom === key;
+              const isUnlocked = meta.unlockedProvisions.includes(key);
+              const isEquipped = meta.equippedItem === key;
               
               return (
                 <div key={key} className={`p-2 border-2 transition-colors ${isEquipped ? 'bg-[#b84235] border-[var(--color-ink-dark)] text-[var(--color-parchment)]' : 'bg-[#e8e0cc] border-[#8b8574] text-[var(--color-ink-dark)]'}`}>
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-[9px] font-black uppercase tracking-widest">{h.name}</span>
                     {isUnlocked ? (
-                      <button onClick={() => equipHeirloom(key)} className={`px-2 py-0.5 text-[8px] font-bold uppercase border-2 transition-colors ${isEquipped ? 'bg-[var(--color-ink)] border-[var(--color-ink-dark)] text-[var(--color-parchment)]' : 'bg-[var(--color-ink)] border-[var(--color-ink-dark)] text-[var(--color-parchment)] hover:bg-[var(--color-ink-light)]'}`}>
+                      <button onClick={() => equipProvision(key)} className={`px-2 py-0.5 text-[8px] font-bold uppercase border-2 transition-colors ${isEquipped ? 'bg-[var(--color-ink)] border-[var(--color-ink-dark)] text-[var(--color-parchment)]' : 'bg-[var(--color-ink)] border-[var(--color-ink-dark)] text-[var(--color-parchment)] hover:bg-[var(--color-ink-light)]'}`}>
                         {isEquipped ? 'Equipped' : 'Equip'}
                       </button>
                     ) : (
-                      <button onClick={() => unlockHeirloom(key, h.cost)} disabled={meta.honor < h.cost} className="px-2 py-0.5 text-[8px] font-bold uppercase border-2 border-[var(--color-ink-dark)] bg-[#d4af37] text-[var(--color-ink-dark)] disabled:opacity-50 disabled:grayscale hover:bg-[#b5952f] transition-colors">
+                      <button onClick={() => unlockProvision(key, h.cost)} disabled={meta.honor < h.cost} className="px-2 py-0.5 text-[8px] font-bold uppercase border-2 border-[var(--color-ink-dark)] bg-[#d4af37] text-[var(--color-ink-dark)] disabled:opacity-50 disabled:grayscale hover:bg-[#b5952f] transition-colors">
                         Unlock ({h.cost} H)
                       </button>
                     )}
@@ -50,7 +50,7 @@ export function WarCampPanel({ s, meta, setMeta, initRun, unlockHeirloom, equipH
           </div>
           <div className="flex flex-col gap-2">
             {Object.entries(PERMANENT_TECHS).map(([key, t]) => {
-              const isUnlocked = meta.unlockedTechs.includes(key);
+              const isUnlocked = meta.unlockedProvisions.includes(key);
 
               return (
                 <div key={key} className={`p-2 border-2 transition-colors ${isUnlocked ? 'bg-[#2b3d60] border-[var(--color-ink-dark)] text-[var(--color-parchment)]' : 'bg-[#e8e0cc] border-[#8b8574] text-[var(--color-ink-dark)]'}`}>
@@ -59,7 +59,7 @@ export function WarCampPanel({ s, meta, setMeta, initRun, unlockHeirloom, equipH
                     {isUnlocked ? (
                       <span className="px-2 py-0.5 text-[8px] font-bold uppercase text-[#d4af37]">Unlocked</span>
                     ) : (
-                      <button onClick={() => unlockTech(key, t.cost)} disabled={meta.honor < t.cost} className="px-2 py-0.5 text-[8px] font-bold uppercase border-2 border-[var(--color-ink-dark)] bg-[#d4af37] text-[var(--color-ink-dark)] disabled:opacity-50 disabled:grayscale hover:bg-[#b5952f] transition-colors">
+                      <button onClick={() => unlockProvision(key, t.cost)} disabled={meta.honor < t.cost} className="px-2 py-0.5 text-[8px] font-bold uppercase border-2 border-[var(--color-ink-dark)] bg-[#d4af37] text-[var(--color-ink-dark)] disabled:opacity-50 disabled:grayscale hover:bg-[#b5952f] transition-colors">
                         Unlock ({t.cost} H)
                       </button>
                     )}

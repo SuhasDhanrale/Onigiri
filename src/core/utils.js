@@ -17,10 +17,10 @@ export const getCost = (base, mult, count) => Math.floor(base * Math.pow(mult, c
  *
  * @param {string} key                - barracks key e.g. 'HATAMOTO'
  * @param {number} level              - current barracks level
- * @param {string|null} equippedHeirloom
+ * @param {string|null} equippedItem
  * @param {string[]} conqueredRegions
  */
-export const getSquadCap = (key, level, equippedHeirloom, conqueredRegions = []) => {
+export const getSquadCap = (key, level, equippedItem, conqueredRegions = []) => {
   if (level === 0) return 0;
   let cap = 0;
   if (key === 'HATAMOTO') cap = 4 + (level * 2);
@@ -29,7 +29,7 @@ export const getSquadCap = (key, level, equippedHeirloom, conqueredRegions = [])
   if (key === 'HOROKU')   cap = 2 + (level * 1);
 
   if (conqueredRegions.includes('OUTSKIRTS')) cap += 1;
-  if (equippedHeirloom === 'IMPERIAL_BANNER') cap *= 2;
+  if (equippedItem === 'IMPERIAL_BANNER') cap *= 2;
   return cap;
 };
 

@@ -168,7 +168,7 @@ export function tickUnits(s, dt, now, metaRef) {
           unit.telegraphTimer = 0.8; unit.attackCooldown = unit.attackSpeed;
         } else if (unit.type === 'ranged') {
           const angle = Math.atan2(target.y - unit.y, target.x - unit.x);
-          const isFlaming = unit.team === 'player' && unit.name === 'Yumi Archer' && metaRef.current.unlockedTechs.includes('FLAMING_ARROWS') && Math.random() < 0.25;
+          const isFlaming = unit.team === 'player' && unit.name === 'Yumi Archer' && metaRef.current.unlockedProvisions.includes('FLAMING_ARROWS') && Math.random() < 0.25;
           s.projectiles.push({ x: unit.x, y: unit.y, vx: Math.cos(angle) * 1200, vy: Math.sin(angle) * 1200, damage: unit.damage, team: unit.team, pierce: unit.pierce, isFlaming });
           expectedHpMap.set(target.id, (expectedHpMap.get(target.id) ?? target.hp) - unit.damage);
         } else if (unit.type === 'siege') {
@@ -176,7 +176,7 @@ export function tickUnits(s, dt, now, metaRef) {
         } else {
           target.hp -= unit.damage;
           unit.swingPhase = 1.0;
-          if (target.name === 'Bamboo Barricade' && target.team === 'player' && metaRef.current.unlockedTechs.includes('SPIKED_CALTROPS')) {
+          if (target.name === 'Bamboo Barricade' && target.team === 'player' && metaRef.current.unlockedProvisions.includes('SPIKED_CALTROPS')) {
             unit.hp -= unit.damage * 0.5;
             s.floatingTexts.push({ x: unit.x, y: unit.y - 10, text: 'REFLECT', color: '#b84235', life: 0.5, vy: -30 });
           }

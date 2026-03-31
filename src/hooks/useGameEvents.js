@@ -8,7 +8,7 @@ export function useGameEvents(setUiTick) {
 
     bus.on(EVENTS.GAME_STATE_CHANGED, tick);
     bus.on(EVENTS.WAVE_CHANGED,       tick);
-    bus.on(EVENTS.KOKU_CHANGED,       tick);
+    bus.on(EVENTS.COMMAND_CHANGED,    tick);
     bus.on(EVENTS.HONOR_EARNED,       tick);
     bus.on(EVENTS.ELITE_KILLED,       tick);
     bus.on(EVENTS.UNIT_SPAWNED,       tick);
@@ -16,7 +16,7 @@ export function useGameEvents(setUiTick) {
     return () => {
       bus.off(EVENTS.GAME_STATE_CHANGED, tick);
       bus.off(EVENTS.WAVE_CHANGED,       tick);
-      bus.off(EVENTS.KOKU_CHANGED,       tick);
+      bus.off(EVENTS.COMMAND_CHANGED,    tick);
       bus.off(EVENTS.HONOR_EARNED,       tick);
       bus.off(EVENTS.ELITE_KILLED,       tick);
       bus.off(EVENTS.UNIT_SPAWNED,       tick);

@@ -5,7 +5,7 @@
  */
 export function createInitialState() {
   return {
-    koku: 0, totalKoku: 0, wave: 1, fever: 0, feverActive: 0,
+    command: 0, totalCommand: 0, wave: 1, fever: 0, feverActive: 0,
     screenShake: 0, conscriptCooldown: 0,
     units: [], projectiles: [], explosions: [], floatingTexts: [],
     particles: [], slashTrails: [], lightnings: [], dragonWaves: [], foxFires: [],

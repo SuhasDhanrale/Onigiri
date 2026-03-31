@@ -5,7 +5,7 @@ export function TacticalCommand({ s, triggerWarDrums, triggerHarvest, triggerRes
       <div className="flex flex-col gap-1.5">
         <button 
           onClick={triggerWarDrums} 
-          disabled={s.koku < 200 || s.gameState !== 'COMBAT'} 
+          disabled={s.command < 200 || s.gameState !== 'COMBAT'} 
           className="relative group w-full flex justify-between items-baseline px-3 py-1.5 transition-all border-2 bg-[#e8e0cc] border-[var(--color-ink-dark)] text-[var(--color-ink-dark)] hover:bg-[var(--color-ink-light)] hover:text-[var(--color-parchment)] disabled:opacity-50 disabled:bg-[#cfc4af] disabled:text-[var(--color-khaki)] disabled:border-[#8b8574]"
         >
           <span className="text-[9px] font-bold tracking-widest uppercase">
@@ -19,7 +19,7 @@ export function TacticalCommand({ s, triggerWarDrums, triggerHarvest, triggerRes
 
         <button 
           onClick={triggerHarvest} 
-          disabled={s.koku < 300 || s.gameState !== 'COMBAT'} 
+          disabled={s.command < 300 || s.gameState !== 'COMBAT'} 
           className="relative group w-full flex justify-between items-baseline px-3 py-1.5 transition-all border-2 bg-[#e8e0cc] border-[var(--color-ink-dark)] text-[var(--color-ink-dark)] hover:bg-[var(--color-ink-light)] hover:text-[var(--color-parchment)] disabled:opacity-50 disabled:bg-[#cfc4af] disabled:text-[var(--color-khaki)] disabled:border-[#8b8574]"
         >
           <span className="text-[9px] font-bold tracking-widest uppercase">
@@ -27,13 +27,13 @@ export function TacticalCommand({ s, triggerWarDrums, triggerHarvest, triggerRes
           </span>
           <span className="text-[9px] font-black">300 K</span>
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 p-2 bg-[var(--color-ink-dark)] text-[var(--color-parchment)] text-[8px] font-bold text-center border-2 border-[#d4af37] opacity-0 group-hover:opacity-100 pointer-events-none z-50">
-            Double Koku drops for 10s.
+            Double Command drops for 10s.
           </div>
         </button>
 
         <button 
           onClick={triggerResolve} 
-          disabled={s.koku < 150 || s.gameState !== 'COMBAT'} 
+          disabled={s.command < 150 || s.gameState !== 'COMBAT'} 
           className="relative group w-full flex justify-between items-baseline px-3 py-1.5 transition-all border-2 bg-[#e8e0cc] border-[var(--color-ink-dark)] text-[var(--color-ink-dark)] hover:bg-[var(--color-ink-light)] hover:text-[var(--color-parchment)] disabled:opacity-50 disabled:bg-[#cfc4af] disabled:text-[var(--color-khaki)] disabled:border-[#8b8574]"
         >
           <span className="text-[9px] font-bold tracking-widest uppercase">

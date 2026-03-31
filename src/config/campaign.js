@@ -1,5 +1,5 @@
 export const CAMPAIGN_MAP = {
-  RIVERLANDS:  { id: 'RIVERLANDS',  name: 'Riverlands',  threatLevel: 1, waves: 5,  reward: 'Koku Drops +20%' },
+  RIVERLANDS:  { id: 'RIVERLANDS',  name: 'Riverlands',  threatLevel: 1, waves: 5,  reward: 'Command Drops +20%' },
   OUTSKIRTS:   { id: 'OUTSKIRTS',   name: 'Outskirts',   threatLevel: 2, waves: 6,  reward: '+1 Max Squad Cap' },
   TENGU_PEAKS: { id: 'TENGU_PEAKS', name: 'Tengu Peaks', threatLevel: 3, waves: 7,  reward: 'Archers +50% DMG' },
   IRON_MINES:  { id: 'IRON_MINES',  name: 'Iron Mines',  threatLevel: 3, waves: 7,  reward: 'Hatamoto +50% HP' },

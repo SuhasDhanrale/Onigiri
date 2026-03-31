@@ -54,9 +54,9 @@ export function tickDragonWaves(s, dt) {
 // --- Trigger functions (called via React callbacks, operate directly on s) ---
 
 export function triggerThunder(s) {
-  if (s.koku >= 150 && s.gameState === 'COMBAT' && s.thunderCooldown <= 0) {
-    s.koku -= 150;
-    bus.emit(EVENTS.KOKU_CHANGED, { koku: s.koku });
+  if (s.command >= 150 && s.gameState === 'COMBAT' && s.thunderCooldown <= 0) {
+    s.command -= 150;
+    bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
     s.thunderCooldown = 2.0;
     const enemies = s.units.filter(u => u.team === 'enemy' && u.hp > 0);
     const targets = enemies.sort((a, b) => b.hp - a.hp).slice(0, 3);
@@ -70,18 +70,18 @@ export function triggerThunder(s) {
 }
 
 export function triggerFoxFire(s) {
-  if (s.koku >= 250 && s.gameState === 'COMBAT' && s.foxFireCooldown <= 0) {
-    s.koku -= 250;
-    bus.emit(EVENTS.KOKU_CHANGED, { koku: s.koku });
+  if (s.command >= 250 && s.gameState === 'COMBAT' && s.foxFireCooldown <= 0) {
+    s.command -= 250;
+    bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
     s.foxFireCooldown = 10.0;
     s.foxFires.push({ yTop: 1000, yBottom: 1200, life: 8.0 });
   }
 }
 
 export function triggerDragonWave(s) {
-  if (s.koku >= 600 && s.gameState === 'COMBAT' && s.dragonCooldown <= 0) {
-    s.koku -= 600;
-    bus.emit(EVENTS.KOKU_CHANGED, { koku: s.koku });
+  if (s.command >= 600 && s.gameState === 'COMBAT' && s.dragonCooldown <= 0) {
+    s.command -= 600;
+    bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
     s.dragonCooldown = 15.0;
     s.dragonWaves.push({ y: WALL_Y - 50, life: 2.0 });
     s.screenShake = 1.0;
@@ -90,25 +90,25 @@ export function triggerDragonWave(s) {
 }
 
 export function triggerWarDrums(s) {
-  if (s.koku >= 200 && s.gameState === 'COMBAT') {
-    s.koku -= 200;
-    bus.emit(EVENTS.KOKU_CHANGED, { koku: s.koku });
+  if (s.command >= 200 && s.gameState === 'COMBAT') {
+    s.command -= 200;
+    bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
     s.warDrumsActive = 5.0;
   }
 }
 
 export function triggerHarvest(s) {
-  if (s.koku >= 300 && s.gameState === 'COMBAT') {
-    s.koku -= 300;
-    bus.emit(EVENTS.KOKU_CHANGED, { koku: s.koku });
+  if (s.command >= 300 && s.gameState === 'COMBAT') {
+    s.command -= 300;
+    bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
     s.harvestActive = 10.0;
   }
 }
 
 export function triggerResolve(s) {
-  if (s.koku >= 150 && s.gameState === 'COMBAT') {
-    s.koku -= 150;
-    bus.emit(EVENTS.KOKU_CHANGED, { koku: s.koku });
+  if (s.command >= 150 && s.gameState === 'COMBAT') {
+    s.command -= 150;
+    bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
     let healedAny = false;
     s.units.forEach(u => {
       if (u.team === 'player' && (u.name === 'Hatamoto' || u.name === 'Bamboo Barricade')) {

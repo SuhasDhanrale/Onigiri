@@ -41,7 +41,7 @@ export default function App() {
   const { meta, setMeta, metaRef } = useMeta();
 
   const state = useRef({
-    koku: 0, totalKoku: 0, wave: 1, fever: 0, feverActive: 0, screenShake: 0, conscriptCooldown: 0,
+    command: 0, totalCommand: 0, wave: 1, fever: 0, feverActive: 0, screenShake: 0, conscriptCooldown: 0,
     units: [], projectiles: [], explosions: [], floatingTexts: [], particles: [], slashTrails: [], lightnings: [], dragonWaves: [], foxFires: [],
     isSlashing: false, lastSlashPos: null,
     focusedBuilding: null,
@@ -92,7 +92,7 @@ export default function App() {
     
     state.current = {
       ...state.current, 
-      koku: 150, totalKoku: 150, wave: 1, fever: 0, feverActive: 0, screenShake: 0, conscriptCooldown: 0,
+      command: 150, totalCommand: 150, wave: 1, fever: 0, feverActive: 0, screenShake: 0, conscriptCooldown: 0,
       units: [], projectiles: [], explosions: [], floatingTexts: [], particles: [], slashTrails: [], lightnings: [], dragonWaves: [], foxFires: [],
       focusedBuilding: null,
       barracks: { HATAMOTO: 0, YUMI: 0, CAVALRY: 0, HOROKU: 0 },
@@ -143,8 +143,8 @@ export default function App() {
   // --- Centralized UI Action Handlers ---
   const buildBarracks = useCallback((bKey, cost, maxTime) => {
     const s = state.current;
-    if (s.koku >= cost && s.gameState === 'COMBAT') {
-      s.koku -= cost;
+    if (s.command >= cost && s.gameState === 'COMBAT') {
+      s.command -= cost;
       s.barracks[bKey] = 1;
       s.timers[bKey] = maxTime;
       setUiTick(t => t + 1);
@@ -153,8 +153,8 @@ export default function App() {
 
   const upgradeTroopLevel = useCallback((bKey, cost) => {
     const s = state.current;
-    if (s.koku >= cost && s.gameState === 'COMBAT') {
-      s.koku -= cost;
+    if (s.command >= cost && s.gameState === 'COMBAT') {
+      s.command -= cost;
       s.troopLevel[bKey]++;
       setUiTick(t => t + 1);
     }
@@ -162,8 +162,8 @@ export default function App() {
 
   const upgradeBarracksCap = useCallback((bKey, cost) => {
     const s = state.current;
-    if (s.koku >= cost && s.gameState === 'COMBAT') {
-      s.koku -= cost;
+    if (s.command >= cost && s.gameState === 'COMBAT') {
+      s.command -= cost;
       s.barracks[bKey]++;
       setUiTick(t => t + 1);
     }
@@ -171,8 +171,8 @@ export default function App() {
 
   const hireDrill = useCallback((bKey, cost) => {
     const s = state.current;
-    if (s.koku >= cost && s.gameState === 'COMBAT') {
-      s.koku -= cost;
+    if (s.command >= cost && s.gameState === 'COMBAT') {
+      s.command -= cost;
       s.autoUnlocked[bKey] = true;
       setUiTick(t => t + 1);
     }
@@ -180,39 +180,29 @@ export default function App() {
 
   const unlockHero = useCallback((cost) => {
     const s = state.current;
-    if (s.koku >= cost && s.gameState === 'COMBAT') {
-      s.koku -= cost;
+    if (s.command >= cost && s.gameState === 'COMBAT') {
+      s.command -= cost;
       s.heroUnlocked = true;
       setUiTick(t => t + 1);
     }
   }, []);
 
-  const unlockHeirloom = useCallback((hKey, cost) => {
+  const unlockProvision = useCallback((pKey, cost) => {
     if (metaRef.current.honor >= cost) {
       setMeta(prev => ({ 
         ...prev, 
         honor: prev.honor - cost, 
-        unlockedHeirlooms: [...prev.unlockedHeirlooms, hKey] 
+        unlockedProvisions: [...prev.unlockedProvisions, pKey] 
       }));
     }
   }, [setMeta, metaRef]);
 
-  const equipHeirloom = useCallback((hKey) => {
+  const equipProvision = useCallback((pKey) => {
     setMeta(prev => ({ 
       ...prev, 
-      equippedHeirloom: prev.equippedHeirloom === hKey ? null : hKey 
+      equippedItem: prev.equippedItem === pKey ? null : pKey 
     }));
   }, [setMeta]);
-
-  const unlockTech = useCallback((tKey, cost) => {
-    if (metaRef.current.honor >= cost) {
-      setMeta(prev => ({ 
-        ...prev, 
-        honor: prev.honor - cost, 
-        unlockedTechs: [...prev.unlockedTechs, tKey] 
-      }));
-    }
-  }, [setMeta, metaRef]);
 
   const resetDynasty = useCallback(() => {
     const s = state.current;
@@ -234,7 +224,7 @@ export default function App() {
   const changeQuota = useCallback((key, delta) => {
       const s = state.current;
       const level = s.barracks[key] || 0;
-      const cap = getSquadCap(key, level, metaRef.current.equippedHeirloom, metaRef.current.conqueredRegions);
+      const cap = getSquadCap(key, level, metaRef.current.equippedItem, metaRef.current.conqueredRegions);
       const newQuota = Math.max(0, Math.min(cap, (s.guardQuotas[key] || 0) + delta));
       
       s.guardQuotas[key] = newQuota;
@@ -257,7 +247,7 @@ export default function App() {
 
   const s = state.current;
   const activeUnits = s.units.filter(u => u.team === 'player' && u.hp > 0 && u.type !== 'friction' && u.type !== 'hero').length;
-  const maxTroops = Object.keys(BARRACKS_DEFS).reduce((sum, key) => sum + getSquadCap(key, s.barracks[key] || 0, meta.equippedHeirloom, meta.conqueredRegions), 0);
+  const maxTroops = Object.keys(BARRACKS_DEFS).reduce((sum, key) => sum + getSquadCap(key, s.barracks[key] || 0, meta.equippedItem, meta.conqueredRegions), 0);
 
   return (
     <div className="flex h-screen w-full bg-[#1b1918] text-[#1b1918] font-serif overflow-hidden select-none relative">
@@ -272,9 +262,8 @@ export default function App() {
         setMeta={setMeta} 
         initRun={initRun} 
         startCombat={startCombat} 
-        unlockHeirloom={unlockHeirloom}
-        equipHeirloom={equipHeirloom}
-        unlockTech={unlockTech}
+        unlockProvision={unlockProvision}
+        equipProvision={equipProvision}
         resetDynasty={resetDynasty}
       />
       <CombatScreen 

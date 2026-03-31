@@ -32,14 +32,14 @@ export const createInputHandlers = (state, fgCanvasRef, setUiTick, metaRef, spaw
           if (Math.abs(x - layout.x) < layout.w / 1.8 && y > layout.y - layout.h && y < layout.y + 100) clickedBuilding = key;
         });
 
-        const isImperial = metaRef.current.equippedHeirloom === 'IMPERIAL_BANNER';
+        const isImperial = metaRef.current.equippedItem === 'IMPERIAL_BANNER';
         const bannerMult = isImperial ? 1.5 : 1.0;
 
         if (clickedBuilding) {
            const level = s.barracks[clickedBuilding];
            if (level > 0) {
                const def = BARRACKS_DEFS[clickedBuilding];
-               const cap = getSquadCap(clickedBuilding, level, metaRef.current.equippedHeirloom, metaRef.current.conqueredRegions);
+                const cap = getSquadCap(clickedBuilding, level, metaRef.current.equippedItem, metaRef.current.conqueredRegions);
                const currentCount = s.units.filter(u => u.name === UNIT_TYPES[def.unit].name && u.team === 'player' && u.hp > 0).length;
                
                if (currentCount < cap) {

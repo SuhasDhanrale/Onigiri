@@ -4,7 +4,7 @@ import { bus } from '../core/EventBus.js';
 import { EVENTS } from '../core/events.js';
 
 /**
- * Processes all dead units (hp <= 0): grants koku, honor, blood splats, particles.
+ * Processes all dead units (hp <= 0): grants command, honor, blood splats, particles.
  * Removes dead units from s.units after processing.
  * @param {object} s       - game state
  * @param {object} bgCtx   - background canvas 2d context (for blood splats)
@@ -22,7 +22,7 @@ export function processDeaths(s, bgCtx, metaRef) {
       }
 
       if (u.team === 'enemy') {
-        const isBloodKatana = metaRef.current.equippedHeirloom === 'BLOOD_KATANA';
+        const isBloodKatana = metaRef.current.equippedItem === 'BLOOD_KATANA';
         const hasRiverlands = metaRef.current.conqueredRegions.includes('RIVERLANDS');
 
         if (u.isElite) {
@@ -30,8 +30,8 @@ export function processDeaths(s, bgCtx, metaRef) {
           const baseReward = isBloodKatana ? 0 : 30;
           let reward = (baseReward > 0 && hasRiverlands) ? baseReward + Math.max(1, Math.floor(baseReward * 0.2)) : baseReward;
           if (s.harvestActive > 0) reward *= 2;
-          s.koku += reward; s.totalKoku += reward;
-          bus.emit(EVENTS.KOKU_CHANGED, { koku: s.koku });
+          s.command += reward; s.totalCommand += reward;
+          bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
           bus.emit(EVENTS.HONOR_EARNED, { amount: 2 });
           s.floatingTexts.push({ x: u.x, y: u.y - 20, text: '+2 HONOR!', color: '#d4af37', life: 2.0, vy: -50 });
           if (reward > 0) s.floatingTexts.push({ x: u.x, y: u.y, text: `+${reward}`, color: '#ffb703', life: 1.0, vy: -60 });
@@ -42,8 +42,8 @@ export function processDeaths(s, bgCtx, metaRef) {
           if (isBloodKatana) baseReward = 0;
           let reward = (baseReward > 0 && hasRiverlands) ? baseReward + Math.max(1, Math.floor(baseReward * 0.2)) : baseReward;
           if (s.harvestActive > 0) reward *= 2;
-          s.koku += reward; s.totalKoku += reward;
-          bus.emit(EVENTS.KOKU_CHANGED, { koku: s.koku });
+          s.command += reward; s.totalCommand += reward;
+          bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
           if (reward > 0) s.floatingTexts.push({ x: u.x, y: u.y, text: `+${reward}`, color: '#ffb703', life: 1.0, vy: -60 });
         }
       }

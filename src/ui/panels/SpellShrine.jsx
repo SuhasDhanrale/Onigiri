@@ -8,7 +8,7 @@ export function SpellShrine({ s, setUiTick, meta, setMeta, triggerThunder, trigg
         {!s.heroUnlocked && (
           <button 
             onClick={() => unlockHero(500)} 
-            disabled={s.koku < 500 || s.gameState !== 'COMBAT'} 
+            disabled={s.command < 500 || s.gameState !== 'COMBAT'} 
             className="text-[8px] font-black uppercase border border-[#d4af37] bg-[#d4af37] text-[var(--color-ink-dark)] hover:bg-[var(--color-ink-dark)] hover:text-[#d4af37] px-1.5 py-0.5 disabled:opacity-50 transition-colors"
           >
             Unlock Hero (500K)
@@ -20,7 +20,7 @@ export function SpellShrine({ s, setUiTick, meta, setMeta, triggerThunder, trigg
         {/* Thunder Strike */}
         <button 
           onClick={triggerThunder} 
-          disabled={s.koku < 150 || s.gameState !== 'COMBAT' || s.thunderCooldown > 0} 
+          disabled={s.command < 150 || s.gameState !== 'COMBAT' || s.thunderCooldown > 0} 
           className="relative group aspect-square flex flex-col items-center justify-center transition-all border-2 bg-[var(--color-ink)] text-[#38bdf8] border-[#38bdf8] hover:bg-[#38bdf8] hover:text-[var(--color-ink-dark)] disabled:opacity-50 disabled:border-[var(--color-ink-dark)] disabled:text-[#8b8574]"
         >
           <span className="text-xl">⚡</span>
@@ -39,7 +39,7 @@ export function SpellShrine({ s, setUiTick, meta, setMeta, triggerThunder, trigg
         {/* Fox Fire */}
         <button 
           onClick={triggerFoxFire} 
-          disabled={s.koku < 250 || s.gameState !== 'COMBAT' || s.foxFireCooldown > 0} 
+          disabled={s.command < 250 || s.gameState !== 'COMBAT' || s.foxFireCooldown > 0} 
           className="relative group aspect-square flex flex-col items-center justify-center transition-all border-2 bg-[var(--color-ink)] text-[#ea580c] border-[#ea580c] hover:bg-[#ea580c] hover:text-[var(--color-ink-dark)] disabled:opacity-50 disabled:border-[var(--color-ink-dark)] disabled:text-[#8b8574]"
         >
           <span className="text-xl">🔥</span>
@@ -58,7 +58,7 @@ export function SpellShrine({ s, setUiTick, meta, setMeta, triggerThunder, trigg
         {/* Dragon Wave */}
         <button 
           onClick={triggerDragonWave} 
-          disabled={s.koku < 600 || s.gameState !== 'COMBAT' || s.dragonCooldown > 0} 
+          disabled={s.command < 600 || s.gameState !== 'COMBAT' || s.dragonCooldown > 0} 
           className="relative group aspect-square flex flex-col items-center justify-center transition-all border-2 bg-[var(--color-ink)] text-[#d4af37] border-[#d4af37] hover:bg-[#d4af37] hover:text-[var(--color-ink-dark)] disabled:opacity-50 disabled:border-[var(--color-ink-dark)] disabled:text-[#8b8574]"
         >
           <span className="text-xl">🌊</span>

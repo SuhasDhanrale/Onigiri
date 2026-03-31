@@ -12,7 +12,7 @@ import { EVENTS } from '../core/events.js';
  * @param {object} metaRef     - React ref to meta state
  */
 export function tickBarracks(s, dt, metaRef) {
-  const isImperial = metaRef.current.equippedHeirloom === 'IMPERIAL_BANNER';
+  const isImperial = metaRef.current.equippedItem === 'IMPERIAL_BANNER';
   const bannerMult = isImperial ? 1.5 : 1.0;
 
   Object.keys(s.barracks).forEach(key => {
@@ -20,7 +20,7 @@ export function tickBarracks(s, dt, metaRef) {
     if (level > 0) {
       const def = BARRACKS_DEFS[key];
       const maxTime = def.spawnRate * bannerMult;
-      const cap = getSquadCap(key, level, metaRef.current.equippedHeirloom, metaRef.current.conqueredRegions);
+      const cap = getSquadCap(key, level, metaRef.current.equippedItem, metaRef.current.conqueredRegions);
       const currentCount = s.units.filter(u => u.name === UNIT_TYPES[def.unit]?.name && u.team === 'player' && u.hp > 0).length;
 
       if (currentCount < cap) {

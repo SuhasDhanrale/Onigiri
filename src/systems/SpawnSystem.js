@@ -59,7 +59,7 @@ export function spawnUnit(s, typeKey, team, customX = null, customY = null, meta
     if (typeKey === 'YUMI' && metaRef.current.conqueredRegions.includes('TENGU_PEAKS')) damage *= 1.5;
     if (typeKey === 'HATAMOTO' && metaRef.current.conqueredRegions.includes('IRON_MINES')) hp *= 1.5;
 
-    if (metaRef.current.equippedHeirloom === 'DEMON_MASK') {
+    if (metaRef.current.equippedItem === 'DEMON_MASK') {
       hp *= 0.5;
       damage *= 3.0;
     }
@@ -82,7 +82,7 @@ export function spawnUnit(s, typeKey, team, customX = null, customY = null, meta
   if (typeKey === 'CHAMPION') lifeSpan = 12.0;
 
   let chargeTimer = 0;
-  if (team === 'player' && typeKey === 'CAVALRY' && metaRef.current.unlockedTechs.includes('TAKEDA_CHARGE')) {
+  if (team === 'player' && typeKey === 'CAVALRY' && metaRef.current.unlockedProvisions.includes('TAKEDA_CHARGE')) {
     chargeTimer = 2.0;
   }
 

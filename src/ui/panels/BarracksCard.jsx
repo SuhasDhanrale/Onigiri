@@ -2,12 +2,12 @@ import { UNIT_TYPES } from '../../config/units.js';
 import { getCost, getSquadCap } from '../../core/utils.js';
 
 export function BarracksCard({ bKey, def, s, meta, setUiTick, changeQuota, buildBarracks, upgradeTroopLevel, upgradeBarracksCap, hireDrill }) {
-  const isImperial = meta.equippedHeirloom === 'IMPERIAL_BANNER';
+  const isImperial = meta.equippedItem === 'IMPERIAL_BANNER';
   const bannerMult = isImperial ? 1.5 : 1.0;
 
   const level = s.barracks[bKey] || 0;
   const isAuto = s.autoUnlocked[bKey];
-  const cap = getSquadCap(bKey, level, meta.equippedHeirloom, meta.conqueredRegions);
+  const cap = getSquadCap(bKey, level, meta.equippedItem, meta.conqueredRegions);
   const currentCount = s.units.filter(u => u.name === UNIT_TYPES[def.unit].name && u.team === 'player' && u.hp > 0).length;
   
   const maxTime = def.spawnRate * bannerMult;
@@ -52,17 +52,17 @@ export function BarracksCard({ bKey, def, s, meta, setUiTick, changeQuota, build
       {isFocused && (
         <div className="flex flex-col border-t-2 border-[var(--color-ink)] bg-[var(--color-parchment)] text-[var(--color-ink)] p-1.5 gap-1.5">
           {level === 0 ? (
-            <button onClick={(e) => { e.stopPropagation(); buildBarracks(bKey, baseCost, maxTime); }} className={`w-full py-2 text-[10px] font-black transition-colors border-2 border-[var(--color-ink)] ${s.koku >= baseCost && s.gameState === 'COMBAT' ? 'bg-[var(--color-ink)] text-[#d4af37] hover:bg-[#2b3d60]' : 'bg-[#cfc4af] text-[var(--color-khaki)] cursor-not-allowed'}`}>BUILD ({baseCost} K)</button>
+            <button onClick={(e) => { e.stopPropagation(); buildBarracks(bKey, baseCost, maxTime); }} className={`w-full py-2 text-[10px] font-black transition-colors border-2 border-[var(--color-ink)] ${s.command >= baseCost && s.gameState === 'COMBAT' ? 'bg-[var(--color-ink)] text-[#d4af37] hover:bg-[#2b3d60]' : 'bg-[#cfc4af] text-[var(--color-khaki)] cursor-not-allowed'}`}>BUILD ({baseCost} K)</button>
           ) : (
             <>
               {!isAuto && (
-                <button onClick={(e) => { e.stopPropagation(); hireDrill(bKey, autoCost); }} className={`w-full py-1.5 text-[10px] font-black transition-colors border-2 border-[var(--color-ink)] ${s.koku >= autoCost && s.gameState === 'COMBAT' ? 'bg-[var(--color-ink)] text-[#d4af37] hover:bg-[#2b3d60]' : 'bg-[#cfc4af] text-[var(--color-khaki)] cursor-not-allowed'}`}>HIRE DRILL ({autoCost} K)</button>
+                <button onClick={(e) => { e.stopPropagation(); hireDrill(bKey, autoCost); }} className={`w-full py-1.5 text-[10px] font-black transition-colors border-2 border-[var(--color-ink)] ${s.command >= autoCost && s.gameState === 'COMBAT' ? 'bg-[var(--color-ink)] text-[#d4af37] hover:bg-[#2b3d60]' : 'bg-[#cfc4af] text-[var(--color-khaki)] cursor-not-allowed'}`}>HIRE DRILL ({autoCost} K)</button>
               )}
               <div className="flex gap-1.5">
-                <button onClick={(e) => { e.stopPropagation(); upgradeTroopLevel(bKey, costLvl); }} className={`flex-1 py-1.5 flex items-center justify-center transition-colors border-2 border-[var(--color-ink)] ${s.koku >= costLvl && s.gameState === 'COMBAT' ? 'bg-[var(--color-ink)] text-[var(--color-parchment)] hover:bg-[#d4af37] hover:text-[var(--color-ink)]' : 'bg-[#cfc4af] text-[var(--color-khaki)] cursor-not-allowed'}`}>
+                <button onClick={(e) => { e.stopPropagation(); upgradeTroopLevel(bKey, costLvl); }} className={`flex-1 py-1.5 flex items-center justify-center transition-colors border-2 border-[var(--color-ink)] ${s.command >= costLvl && s.gameState === 'COMBAT' ? 'bg-[var(--color-ink)] text-[var(--color-parchment)] hover:bg-[#d4af37] hover:text-[var(--color-ink)]' : 'bg-[#cfc4af] text-[var(--color-khaki)] cursor-not-allowed'}`}>
                   <span className="text-[8px] font-black tracking-tighter leading-tight text-center">UPG DMG<br/>{costLvl} K</span>
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); upgradeBarracksCap(bKey, costCap); }} className={`flex-1 py-1.5 flex items-center justify-center transition-colors border-2 border-[var(--color-ink)] ${s.koku >= costCap && s.gameState === 'COMBAT' ? 'bg-[var(--color-ink)] text-[var(--color-parchment)] hover:bg-[#d4af37] hover:text-[var(--color-ink)]' : 'bg-[#cfc4af] text-[var(--color-khaki)] cursor-not-allowed'}`}>
+                <button onClick={(e) => { e.stopPropagation(); upgradeBarracksCap(bKey, costCap); }} className={`flex-1 py-1.5 flex items-center justify-center transition-colors border-2 border-[var(--color-ink)] ${s.command >= costCap && s.gameState === 'COMBAT' ? 'bg-[var(--color-ink)] text-[var(--color-parchment)] hover:bg-[#d4af37] hover:text-[var(--color-ink)]' : 'bg-[#cfc4af] text-[var(--color-khaki)] cursor-not-allowed'}`}>
                   <span className="text-[8px] font-black tracking-tighter leading-tight text-center">+1 CAP<br/>{costCap} K</span>
                 </button>
               </div>

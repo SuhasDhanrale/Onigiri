@@ -2,22 +2,22 @@ import { useEffect, useState } from 'react';
 import { bus } from '../../core/EventBus.js';
 
 export function EconomyHeader({ state, activeTroops, maxTroops }) {
-  const [koku, setKoku] = useState(state.koku);
+  const [command, setCommand] = useState(state.command);
 
-  // 1. Listen to high-frequency KOKU updates via event bus
+  // 1. Listen to high-frequency COMMAND updates via event bus
   useEffect(() => {
-    const handleKokuChanged = (newKoku) => setKoku(newKoku);
-    bus.on('KOKU_CHANGED', handleKokuChanged);
-    return () => bus.off('KOKU_CHANGED', handleKokuChanged);
+    const handleCommandChanged = (newCommand) => setCommand(newCommand.command);
+    bus.on('COMMAND_CHANGED', handleCommandChanged);
+    return () => bus.off('COMMAND_CHANGED', handleCommandChanged);
   }, []);
 
   // 2. Initial sync & structural re-renders
   useEffect(() => {
-    setKoku(state.koku);
-  }, [state.koku]);
+    setCommand(state.command);
+  }, [state.command]);
 
   // But we also want to catch structural updates (when state resets)
-  // We'll rely on the parent (App) passing a fresh `state.koku` prop or `uiTick` when needed,
+  // We'll rely on the parent (App) passing a fresh `state.command` prop or `uiTick` when needed,
   // but let's just use the bus for real-time visual updates.
 
   return (
@@ -26,7 +26,7 @@ export function EconomyHeader({ state, activeTroops, maxTroops }) {
         <div className="flex flex-col">
           <span className="text-[10px] font-bold tracking-widest text-[#8b8574] uppercase">Treasury</span>
           <span className="text-3xl font-black leading-none text-[#d4af37]">
-            {Math.floor(koku).toLocaleString()} <span className="text-sm">K</span>
+            {Math.floor(command).toLocaleString()} <span className="text-sm">K</span>
           </span>
         </div>
         <div className="flex flex-col items-end">

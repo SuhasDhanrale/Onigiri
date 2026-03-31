@@ -82,7 +82,7 @@ export function drawBackground(ctx, s, now, metaRef) {
     ctx.fillRect(gateL - 15, WALL_Y - 50, 30, 80); 
     ctx.fillRect(gateR - 15, WALL_Y - 50, 30, 80);
     
-    const isImperial = metaRef.current.equippedHeirloom === 'IMPERIAL_BANNER';
+    const isImperial = metaRef.current.equippedItem === 'IMPERIAL_BANNER';
     const bannerMult = isImperial ? 1.5 : 1.0;
 
     Object.entries(BARRACKS_DEFS).forEach(([key, def]) => {
@@ -135,7 +135,7 @@ export function drawBackground(ctx, s, now, metaRef) {
         ctx.translate(layout.x, layout.y + 30); 
         if (level > 0) {
             const maxTime = def.spawnRate * bannerMult;
-            const cap = getSquadCap(key, level, metaRef.current.equippedHeirloom, metaRef.current.conqueredRegions);
+            const cap = getSquadCap(key, level, metaRef.current.equippedItem, metaRef.current.conqueredRegions);
             const currentCount = s.units.filter(u => u.name === UNIT_TYPES[def.unit].name && u.team === 'player' && u.hp > 0).length;
             const isAtCap = currentCount >= cap;
             const pct = Math.max(0, Math.min(1, 1 - (s.timers[key] / maxTime)));

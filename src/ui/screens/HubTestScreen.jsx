@@ -42,7 +42,7 @@ export function HubTestScreen() {
   const heirlooms = [
     { id: 'DEMON_MASK', name: 'Demon Mask', desc: '+200% DMG, -50% Max HP', icon: '👹' },
     { id: 'IMPERIAL_BANNER', name: 'Imperial Banner', desc: 'Double Squad Caps', icon: '🎌' },
-    { id: 'BLOOD_KATANA', name: 'Blood Katana', desc: 'Taps grant extreme Koku', icon: '🗡️' },
+    { id: 'BLOOD_KATANA', name: 'Blood Katana', desc: 'Taps grant extreme Command', icon: '🗡️' },
     { id: 'EMPTY_1', name: 'Locked', desc: 'Requires 50 Honor', icon: '' },
     { id: 'EMPTY_2', name: 'Locked', desc: 'Requires 100 Honor', icon: '' },
     { id: 'EMPTY_3', name: 'Locked', desc: 'Requires 150 Honor', icon: '' }
@@ -55,7 +55,7 @@ export function HubTestScreen() {
       { id: 'START', name: 'Stronghold Gates', type: 'event', threat: 0, reward: 'DEPART', x: 8, y: 50, next: ['1A', '1B', '1C'], status: 'completed' },
       
       // Tier 1
-      { id: '1A', name: 'Bandit Camp', type: 'combat', threat: 1, reward: '10 KOKU', x: 25, y: 15, next: ['2A'], status: 'completed' },
+      { id: '1A', name: 'Bandit Camp', type: 'combat', threat: 1, reward: '10 COMMAND', x: 25, y: 15, next: ['2A'], status: 'completed' },
       { id: '1B', name: 'Riverlands', type: 'combat', threat: 1, reward: '25 HONOR', x: 25, y: 50, next: ['2A', '2B'], status: 'active' },
       { id: '1C', name: 'Outskirts', type: 'combat', threat: 2, reward: 'YUMI UNLOCK', x: 25, y: 85, next: ['2C'], status: 'locked' },
       // Tier 2
