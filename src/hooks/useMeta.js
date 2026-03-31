@@ -5,7 +5,8 @@ export function useMeta() {
       honor: 0, 
       unlockedProvisions: [], 
       equippedItem: null,
-      conqueredRegions: []
+      conqueredRegions: [],
+      totalRuns: 0
   });
   
   const metaRef = useRef(meta);

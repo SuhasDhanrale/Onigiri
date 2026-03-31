@@ -30,3 +30,32 @@ export function createInitialState() {
     lastPlayerUnitCount: 0
   };
 }
+
+/**
+ * Returns the initial run state object.
+ * Called when starting a new conquest run.
+ */
+export function createRunState(meta) {
+  const startingCommandBonus =
+    (meta.unlockedProvisions.includes('COMMANDERS_SEAL') ? 15 : 0) +
+    (meta.unlockedProvisions.includes('WAR_CHEST')       ? 25 : 0) +
+    (meta.unlockedProvisions.includes('SHOGUNS_DECREE')  ? 40 : 0);
+
+  return {
+    baseCommand: 100 + startingCommandBonus,
+    honorEarned: 0,
+    blessings: [],
+    curses: [],
+    currentNodeId: 'START',
+    completedNodeIds: [],
+    mapSeed: Date.now(),
+    pendingGarrison: null,
+    shopPurchases: {},
+    runNumber: (meta.totalRuns || 0) + 1,
+    activeItem: meta.equippedItem,
+    currentNodeType: null,
+    currentNodeVariant: null,
+    currentNodeThreat: 1,
+    currentNodeWaves: 3,
+  };
+}
