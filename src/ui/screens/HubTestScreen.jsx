@@ -4,6 +4,7 @@ import { getEvent, applyEventChoice } from '../../systems/EventSystem.js';
 import { generateShopInventory, purchaseItem } from '../../systems/ShopSystem.js';
 import { getRestOptions, getRestBlessingChoices, applyRestChoice } from '../../systems/RestSystem.js';
 import { PROVISIONS, PERMANENT_TECHS, HEIRLOOMS } from '../../config/provisions.js';
+import { COMBAT_VARIANTS, ELITE_VARIANTS } from '../../config/nodes.js';
 import { EventModal } from './EventModal.jsx';
 import { ShopModal }  from './ShopModal.jsx';
 import { RestModal }  from './RestModal.jsx';
@@ -181,6 +182,29 @@ export function HubTestScreen({
         node.next.forEach(targetId => {
           const target = mapNodes.find(n => n.id === targetId);
           if (target) {
+            let stroke = '#8b8574';
+            let strokeWidth = '1';
+            let strokeDasharray = '2 2';
+            let opacity = '0.4';
+
+            if (node.status === 'completed') {
+              stroke = '#d4af37';      // gold
+              strokeWidth = '4';
+              strokeDasharray = 'none';
+              opacity = '0.9';
+            } else if (node.status === 'available') {
+              stroke = '#b84235';      // vermilion (active from-node)
+              strokeWidth = '4';
+              strokeDasharray = 'none';
+              opacity = '0.9';
+            } else if (target.status === 'available') {
+              stroke = '#8b8574';      // muted, dashed
+              strokeWidth = '2';
+              strokeDasharray = '5 5';
+              opacity = '0.6';
+            }
+            // locked: stays as default
+
             lines.push(
               <line
                 key={`${node.id}-${target.id}`}
@@ -188,10 +212,10 @@ export function HubTestScreen({
                 y1={`${node.y}%`}
                 x2={`${target.x}%`}
                 y2={`${target.y}%`}
-                stroke="#b84235"
-                strokeWidth={node.status === 'completed' || node.status === 'available' ? '4' : '2'}
-                strokeDasharray={node.status === 'completed' || node.status === 'available' ? 'none' : '5 5'}
-                className={node.status === 'completed' || node.status === 'available' ? 'opacity-90' : 'opacity-40'}
+                stroke={stroke}
+                strokeWidth={strokeWidth}
+                strokeDasharray={strokeDasharray}
+                opacity={opacity}
               />
             );
           }
@@ -271,66 +295,151 @@ export function HubTestScreen({
           <div className="flex-1 overflow-y-auto custom-scrollbar p-6 relative flex flex-col">
 
             {activeSidebarTab === 'DOJO' && (
-              <div className="flex-1 flex flex-col animate-[fade-in_0.3s_ease-out]">
-                <div className="mb-6 text-center shrink-0">
-                  <p className="text-[9px] font-bold text-[#b84235] tracking-[0.3em] mt-2 uppercase">Permanent Techniques</p>
+              <div className="flex-1 flex flex-col animate-[fade-in_0.3s_ease-out] overflow-hidden">
+                <div className="mb-4 text-center shrink-0">
+                  <p className="text-[9px] font-bold text-[#d4af37] tracking-[0.3em] mt-2 uppercase">Provisions</p>
                   <div className="w-12 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37]/50 to-transparent mx-auto mt-4" />
                 </div>
 
-                <div className="flex-1 relative flex flex-col items-center justify-start pt-4 mt-2">
-                  <div className="absolute inset-0 bg-[#0a0908]/50 border border-[#d4af37]/5 rounded-sm" style={{ backgroundImage: 'linear-gradient(rgba(212,175,55,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(212,175,55,0.03) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-
-                  <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-40">
-                    <line x1="50%" y1="15%" x2="50%" y2="55%" stroke="#d4af37" strokeWidth="1" strokeDasharray="4 4" />
-                    <line x1="25%" y1="55%" x2="75%" y2="55%" stroke="#d4af37" strokeWidth="1" strokeDasharray="4 4" />
-                    <line x1="25%" y1="55%" x2="25%" y2="60%" stroke="#d4af37" strokeWidth="1" strokeDasharray="4 4" />
-                    <line x1="75%" y1="55%" x2="75%" y2="60%" stroke="#d4af37" strokeWidth="1" strokeDasharray="4 4" />
-                  </svg>
-
-                  <div className="relative z-10 w-16 h-16 rounded-full bg-gradient-to-b from-[#b84235] to-[#4a1005] border-2 border-[#d4af37] flex items-center justify-center mb-[20%] shadow-[0_0_20px_rgba(184,66,53,0.5)]">
-                    <span className="text-2xl drop-shadow-lg">🏯</span>
-                  </div>
-
-                  <div className="flex w-full justify-between px-8 relative z-10 border border-transparent">
-                    <div
-                      className="w-14 h-14 rounded-full bg-[#141211] border border-[#d4af37]/40 flex items-center justify-center cursor-pointer hover:border-[#d4af37] hover:bg-[#d4af37]/10 hover:shadow-[0_0_15px_rgba(212,175,55,0.3)] transition-all"
-                      onMouseEnter={() => setHoveredTech('FLAMING_ARROWS')}
-                      onMouseLeave={() => setHoveredTech(null)}
-                    >
-                      <span className="text-xl grayscale">🏹</span>
-                    </div>
-                    <div
-                      className="w-14 h-14 rounded-full bg-gradient-to-b from-[#2b3d60] to-[#0f1b33] border border-[#d4af37] flex items-center justify-center cursor-pointer hover:shadow-[0_0_20px_rgba(43,61,96,0.8)] hover:scale-105 transition-all"
-                      onMouseEnter={() => setHoveredTech('SPIKED_CALTROPS')}
-                      onMouseLeave={() => setHoveredTech(null)}
-                    >
-                      <span className="text-xl">🛡️</span>
-                    </div>
-                    <div
-                      className="w-14 h-14 rounded-full bg-[#141211] border border-[#d4af37]/40 flex items-center justify-center cursor-pointer hover:border-[#d4af37] hover:bg-[#d4af37]/10 hover:shadow-[0_0_15px_rgba(212,175,55,0.3)] transition-all"
-                      onMouseEnter={() => setHoveredTech('TAKEDA_CHARGE')}
-                      onMouseLeave={() => setHoveredTech(null)}
-                    >
-                      <span className="text-xl grayscale">🐎</span>
+                <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
+                  {/* Items Section */}
+                  <div className="mb-5">
+                    <p className="text-[8px] font-bold text-[#b84235] tracking-[0.2em] uppercase mb-2 px-1">Equipment</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {Object.entries(PROVISIONS)
+                        .filter(([, p]) => p.type === 'item')
+                        .map(([key, prov]) => {
+                          const isUnlocked = meta?.unlockedProvisions?.includes(key) ?? false;
+                          const isEquipped = meta?.equippedItem === key;
+                          return (
+                            <button
+                              key={key}
+                              className={`aspect-square flex flex-col items-center justify-center relative p-2 transition-all duration-200
+                                ${isEquipped
+                                  ? 'border border-[#d4af37] bg-[#d4af37]/10 shadow-[0_0_10px_rgba(212,175,55,0.2)]'
+                                  : isUnlocked
+                                    ? 'border border-[#8b8574]/30 bg-[#1a1816]/50 hover:border-[#d4af37]/50 cursor-pointer'
+                                    : 'border border-[#8b8574]/10 bg-[#0a0908]/30 opacity-50'
+                                }`}
+                              onMouseEnter={() => setHoveredTech(key)}
+                              onMouseLeave={() => setHoveredTech(null)}
+                            >
+                              {isEquipped && <div className="absolute inset-0 bg-[#d4af37]/5 blur-md pointer-events-none" />}
+                              <span className={`text-xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-40'}`}>{prov.icon}</span>
+                              <span className="text-[7px] font-bold uppercase text-center tracking-[0.05em] text-[#dfd4ba]/70 leading-tight">{prov.name}</span>
+                            </button>
+                          );
+                        })}
                     </div>
                   </div>
 
-                  <div className="absolute bottom-0 left-0 w-full p-5 bg-gradient-to-t from-[#0a0908] to-transparent border-t border-[#d4af37]/10 flex flex-col justify-end min-h-[140px]">
-                    {hoveredTech ? (
-                      <div className="animate-[fade-in_0.2s_ease-out]">
-                        <div className="flex justify-between items-center mb-2">
-                          <h4 className="font-black tracking-[0.1em] uppercase text-xs text-[#d4af37]">{techs[hoveredTech]?.name}</h4>
-                          <span className="text-[#8b8574] text-[8px] uppercase font-bold px-2 py-0.5 border border-[#8b8574]/30">{techs[hoveredTech]?.unlocked ? 'UNLOCKED' : `${techs[hoveredTech]?.cost} H`}</span>
-                        </div>
-                        <p className="text-xs font-sans leading-relaxed text-[#dfd4ba]/70">{techs[hoveredTech]?.desc}</p>
+                  {/* Starting Bonuses Section */}
+                  <div className="mb-5">
+                    <p className="text-[8px] font-bold text-[#4a5d23] tracking-[0.2em] uppercase mb-2 px-1">Starting Bonuses</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {Object.entries(PROVISIONS)
+                        .filter(([, p]) => p.type === 'starting_bonus')
+                        .map(([key, prov]) => {
+                          const isUnlocked = meta?.unlockedProvisions?.includes(key) ?? false;
+                          return (
+                            <button
+                              key={key}
+                              className={`aspect-square flex flex-col items-center justify-center relative p-2 transition-all duration-200
+                                ${isUnlocked
+                                  ? 'border border-[#4a5d23]/50 bg-[#1a2816]/50 hover:border-[#4a5d23]'
+                                  : 'border border-[#8b8574]/10 bg-[#0a0908]/30 opacity-50 cursor-pointer'
+                                }`}
+                              onMouseEnter={() => setHoveredTech(key)}
+                              onMouseLeave={() => setHoveredTech(null)}
+                            >
+                              <span className={`text-xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-40'}`}>{prov.icon}</span>
+                              <span className="text-[7px] font-bold uppercase text-center tracking-[0.05em] text-[#dfd4ba]/70 leading-tight">{prov.name}</span>
+                            </button>
+                          );
+                        })}
+                    </div>
+                  </div>
+
+                  {/* Tower Upgrades Section */}
+                  <div className="mb-5">
+                    <p className="text-[8px] font-bold text-[#2b3d60] tracking-[0.2em] uppercase mb-2 px-1">Tower Upgrades</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {Object.entries(PROVISIONS)
+                        .filter(([, p]) => p.type === 'tower_upgrade')
+                        .map(([key, prov]) => {
+                          const isUnlocked = meta?.unlockedProvisions?.includes(key) ?? false;
+                          return (
+                            <button
+                              key={key}
+                              className={`aspect-square flex flex-col items-center justify-center relative p-2 transition-all duration-200
+                                ${isUnlocked
+                                  ? 'border border-[#2b3d60]/50 bg-[#1a2233]/50 hover:border-[#2b3d60]'
+                                  : 'border border-[#8b8574]/10 bg-[#0a0908]/30 opacity-50 cursor-pointer'
+                                }`}
+                              onMouseEnter={() => setHoveredTech(key)}
+                              onMouseLeave={() => setHoveredTech(null)}
+                            >
+                              <span className={`text-xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-40'}`}>{prov.icon}</span>
+                              <span className="text-[7px] font-bold uppercase text-center tracking-[0.05em] text-[#dfd4ba]/70 leading-tight">{prov.name}</span>
+                            </button>
+                          );
+                        })}
+                    </div>
+                  </div>
+
+                  {/* Techniques Section */}
+                  <div className="mb-4">
+                    <p className="text-[8px] font-bold text-[#8b1420] tracking-[0.2em] uppercase mb-2 px-1">Techniques</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {Object.entries(PROVISIONS)
+                        .filter(([, p]) => p.type === 'technique')
+                        .map(([key, prov]) => {
+                          const isUnlocked = meta?.unlockedProvisions?.includes(key) ?? false;
+                          return (
+                            <button
+                              key={key}
+                              className={`aspect-square flex flex-col items-center justify-center relative p-2 transition-all duration-200
+                                ${isUnlocked
+                                  ? 'border border-[#8b1420]/50 bg-[#281616]/50 hover:border-[#8b1420]'
+                                  : 'border border-[#8b8574]/10 bg-[#0a0908]/30 opacity-50 cursor-pointer'
+                                }`}
+                              onMouseEnter={() => setHoveredTech(key)}
+                              onMouseLeave={() => setHoveredTech(null)}
+                            >
+                              <span className={`text-xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-40'}`}>{prov.icon}</span>
+                              <span className="text-[7px] font-bold uppercase text-center tracking-[0.05em] text-[#dfd4ba]/70 leading-tight">{prov.name}</span>
+                            </button>
+                          );
+                        })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Detail Panel */}
+                <div className="shrink-0 border-t border-[#d4af37]/10 bg-gradient-to-t from-[#0a0908] to-transparent p-4">
+                  {hoveredTech && PROVISIONS[hoveredTech] ? (
+                    <div className="animate-[fade-in_0.2s_ease-out]">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="font-black tracking-[0.1em] uppercase text-xs text-[#d4af37] flex items-center gap-2">
+                          <span>{PROVISIONS[hoveredTech].icon}</span>
+                          {PROVISIONS[hoveredTech].name}
+                        </h4>
+                        <span className={`text-[8px] uppercase font-bold px-2 py-0.5 border ${
+                          meta?.unlockedProvisions?.includes(hoveredTech)
+                            ? 'border-[#d4af37]/30 text-[#d4af37]'
+                            : 'border-[#8b8574]/30 text-[#8b8574]'
+                        }`}>
+                          {meta?.unlockedProvisions?.includes(hoveredTech) ? 'UNLOCKED' : `${PROVISIONS[hoveredTech].cost} H`}
+                        </span>
                       </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center opacity-30 my-4">
-                        <div className="w-1 h-1 rounded-full bg-[#d4af37] mb-2 animate-ping" />
-                        <p className="text-[9px] font-bold uppercase tracking-[0.3em]">Hover node</p>
-                      </div>
-                    )}
-                  </div>
+                      <p className="text-xs font-sans leading-relaxed text-[#dfd4ba]/70">{PROVISIONS[hoveredTech].desc}</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center opacity-30 my-2">
+                      <div className="w-1 h-1 rounded-full bg-[#d4af37] mb-2 animate-ping" />
+                      <p className="text-[9px] font-bold uppercase tracking-[0.3em]">Hover provision</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -426,6 +535,29 @@ export function HubTestScreen({
                 const isCompleted = node.status === 'completed';
                 const isSelected  = selectedNode?.id === node.id;
 
+                const nodeTypeSizes = {
+                  combat: 'w-16 h-16',
+                  elite:  'w-20 h-20',
+                  event:  'w-16 h-16',
+                  shop:   'w-16 h-16',
+                  rest:   'w-14 h-14',
+                  boss:   'w-24 h-24',
+                };
+                const nodeTypeBorderColors = {
+                  combat: '#b84235',
+                  elite:  '#8b1420',
+                  event:  '#d4af37',
+                  shop:   '#4a5d23',
+                  rest:   '#2b3d60',
+                  boss:   '#dfd4ba',
+                };
+                const size = nodeTypeSizes[node.type] || 'w-16 h-16';
+                const borderColor = nodeTypeBorderColors[node.type] || '#8b8574';
+
+                const availableScale = isAvailable ? 'scale-110' : '';
+                const selectedScale = isSelected ? 'scale-120' : '';
+                const bossScale = isBoss ? 'scale-125' : '';
+
                 return (
                   <div
                     key={node.id}
@@ -435,17 +567,16 @@ export function HubTestScreen({
                     onMouseLeave={() => setHoveredMapNode(null)}
                     onClick={() => handleNodeClick(node)}
                   >
-                    <div className={`w-20 h-20 rounded-full border-2 flex items-center justify-center transition-all duration-300 relative
-                      ${isSelected   ? 'bg-[#1a0f0e] border-[#d4af37] shadow-[0_0_45px_rgba(212,175,55,0.9)] scale-120' :
-                        isAvailable  ? 'bg-[#1a0f0e] border-[#b84235] shadow-[0_0_35px_rgba(184,66,53,0.9)] scale-110' :
-                        isBoss       ? 'bg-[#0a0908] border-[#dfd4ba] shadow-[0_0_60px_rgba(184,66,53,0.6)] scale-125' :
+                    <div className={`${size} rounded-full border-2 flex items-center justify-center transition-all duration-300 relative
+                      ${isSelected   ? `bg-[#1a0f0e] border-[#d4af37] shadow-[0_0_45px_rgba(212,175,55,0.9)] ${selectedScale}` :
+                        isAvailable  ? `bg-[#1a0f0e] border-[${borderColor}] shadow-[0_0_20px_rgba(255,255,255,0.15)] ${availableScale}` :
+                        isBoss       ? `bg-[#0a0908] border-[#dfd4ba] shadow-[0_0_60px_rgba(184,66,53,0.6)] ${bossScale}` :
                         isCompleted  ? 'bg-[#1a0f0e]/80 border-[#d4af37]/80' :
-                        node.type === 'elite' ? 'bg-[#1a0f0e] border-[#8b8574] shadow-[0_0_20px_rgba(139,133,116,0.4)]' :
-                        'bg-[#0a0908] border-[#8b8574]/40 hover:border-[#8b8574]'
+                        `bg-[#0a0908] border-[${borderColor}]/40 hover:border-[${borderColor}]`
                       }`}
                     >
                       {(isAvailable || isSelected) && (
-                        <div className="absolute inset-[-8px] rounded-full border border-[#b84235]/50 animate-ping opacity-50 pointer-events-none" />
+                        <div className="absolute inset-[-8px] rounded-full border border-white/20 animate-ping opacity-50 pointer-events-none" />
                       )}
                       <span className="text-4xl drop-shadow-md pointer-events-none">
                         {isCompleted ? '✅' : getNodeIcon(node.type)}
@@ -453,7 +584,7 @@ export function HubTestScreen({
                     </div>
 
                     {isBoss || isAvailable || isSelected ? (
-                      <div className="absolute top-[110%] mt-2 bg-[#0a0908]/90 border border-[#b84235]/50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#dfd4ba] whitespace-nowrap shadow-xl pointer-events-none">
+                      <div className="absolute top-[110%] mt-2 bg-[#0a0908]/90 border border-[#d4af37]/50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#dfd4ba] whitespace-nowrap shadow-xl pointer-events-none">
                         {node.name}
                       </div>
                     ) : (
@@ -482,7 +613,7 @@ export function HubTestScreen({
                   <h3 className="text-3xl font-black text-white tracking-widest uppercase mb-1">{hoveredMapNode.name}</h3>
                   <span className={`self-start border px-2 py-0.5 uppercase tracking-widest font-bold text-[9px]
                     ${hoveredMapNode.status === 'completed' ? 'bg-[#d4af37]/10 border-[#d4af37]/30 text-[#d4af37]' :
-                      hoveredMapNode.status === 'available' ? 'bg-[#b84235]/10 border-[#b84235]/30 text-[#b84235]' :
+                      hoveredMapNode.status === 'available' ? 'bg-[#2b5e2b]/20 border-[#4a5d23]/50 text-[#6a9e4a]' :
                       'bg-[#8b8574]/10 border-[#8b8574]/30 text-[#8b8574]'
                     }`}
                   >
@@ -495,20 +626,65 @@ export function HubTestScreen({
                     {hoveredMapNode.threat > 0 && (
                       <div className="flex items-center gap-3 text-xs font-bold text-[#8b8574] uppercase tracking-[0.2em]">
                         <span>Threat Level</span>
-                        <span className="text-[#b84235] text-sm">{'💀'.repeat(Math.min(hoveredMapNode.threat, 6))}</span>
+                        <span className={`text-sm ${
+                          hoveredMapNode.threat <= 2 ? 'text-[#dfd4ba]/60' :
+                          hoveredMapNode.threat >= 6 ? 'text-[#d4af37]' :
+                          'text-[#b84235]'
+                        }`}>
+                          {'💀'.repeat(Math.min(hoveredMapNode.threat, 6))}
+                        </span>
                       </div>
                     )}
                     {(hoveredMapNode.type === 'combat' || hoveredMapNode.type === 'elite' || hoveredMapNode.type === 'boss') && (
                       <div className="flex items-center gap-3 text-xs font-bold text-[#8b8574] uppercase tracking-[0.2em]">
                         <span>Enemy Waves</span>
-                        <span className="text-white text-[10px]">{hoveredMapNode.waves ?? 'UNKNOWN'}</span>
+                        <span className="text-white text-[10px]">
+                          {(() => {
+                            if (hoveredMapNode.type === 'elite') {
+                              return ELITE_VARIANTS[hoveredMapNode.variant]?.waves ?? hoveredMapNode.waves ?? '?';
+                            }
+                            return COMBAT_VARIANTS[hoveredMapNode.variant]?.waves ?? hoveredMapNode.waves ?? '?';
+                          })()}
+                        </span>
                       </div>
                     )}
                   </div>
 
-                  <div className="flex flex-col items-center justify-center p-4 bg-[#0a0908] border border-[#d4af37]/20 min-w-[150px]">
-                    <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-[#8b8574] mb-1">Potential Reward</span>
-                    <span className="text-[#dfd4ba] text-xs font-black tracking-widest uppercase text-center">{hoveredMapNode.reward}</span>
+                  <div className="flex flex-col items-center justify-center p-4 bg-[#0a0908] border border-[#d4af37]/20 min-w-[180px]">
+                    <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-[#8b8574] mb-2">Potential Reward</span>
+                    {hoveredMapNode.type === 'combat' && COMBAT_VARIANTS[hoveredMapNode.variant] && (
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="text-[#d4af37] text-[10px] font-black tracking-widest uppercase">
+                          {COMBAT_VARIANTS[hoveredMapNode.variant].command[0]}-{COMBAT_VARIANTS[hoveredMapNode.variant].command[1]} Command
+                        </span>
+                        <span className="text-[#dfd4ba]/60 text-[9px] uppercase tracking-wider">
+                          +{COMBAT_VARIANTS[hoveredMapNode.variant].honor[0]}-{COMBAT_VARIANTS[hoveredMapNode.variant].honor[1]} Honor
+                        </span>
+                      </div>
+                    )}
+                    {hoveredMapNode.type === 'elite' && ELITE_VARIANTS[hoveredMapNode.variant] && (
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="text-[#d4af37] text-[10px] font-black tracking-widest uppercase">
+                          {ELITE_VARIANTS[hoveredMapNode.variant].guarantee?.honor ?? '??'} Honor
+                        </span>
+                        <span className="text-[#dfd4ba]/60 text-[9px] uppercase tracking-wider">Elite Bounty</span>
+                      </div>
+                    )}
+                    {hoveredMapNode.type === 'boss' && (
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="text-[#d4af37] text-[10px] font-black tracking-widest uppercase">Major Honor</span>
+                        <span className="text-[#dfd4ba]/60 text-[9px] uppercase tracking-wider">Domain Conquest</span>
+                      </div>
+                    )}
+                    {hoveredMapNode.type === 'event' && (
+                      <span className="text-[#dfd4ba] text-[10px] font-black tracking-widest uppercase">Variable</span>
+                    )}
+                    {hoveredMapNode.type === 'shop' && (
+                      <span className="text-[#dfd4ba] text-[10px] font-black tracking-widest uppercase">Goods & Services</span>
+                    )}
+                    {hoveredMapNode.type === 'rest' && (
+                      <span className="text-[#dfd4ba] text-[10px] font-black tracking-widest uppercase">Restore & Prepare</span>
+                    )}
                   </div>
                 </div>
               </div>
