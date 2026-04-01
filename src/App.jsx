@@ -14,6 +14,7 @@ import { HubTestScreen } from './ui/screens/HubTestScreen.jsx';
 // --- Phase 2: System imports ---
 import { spawnUnit as _spawnUnit, addParticle as _addParticle } from './systems/SpawnSystem.js';
 import { triggerThunder as _triggerThunder, triggerFoxFire as _triggerFoxFire, triggerDragonWave as _triggerDragonWave, triggerWarDrums as _triggerWarDrums, triggerHarvest as _triggerHarvest, triggerResolve as _triggerResolve } from './systems/SpellSystem.js';
+import { generateMap, applyNodeCompletion } from './systems/MapGenerator.js';
 
 // --- Phase 5: Hook & Input imports ---
 import { useMeta } from './hooks/useMeta.js';
@@ -32,7 +33,10 @@ export default function App() {
   useEffect(() => { armedSpellRef.current = armedSpell; }, [armedSpell]);
   
   const { meta, setMeta, metaRef } = useMeta();
-  const { runState, setRunState, runStateRef, startRun } = useRunState();
+  const { runState, setRunState, runStateRef, startRun, endRun } = useRunState();
+
+  // mapNodes is lifted here so it survives HubTestScreen unmounting during combat.
+  const [mapNodes, setMapNodes] = useState(() => generateMap(Date.now(), 0));
 
   const state = useRef({
     command: 0, totalCommand: 0, wave: 1, fever: 0, feverActive: 0, screenShake: 0, conscriptCooldown: 0,
@@ -116,32 +120,51 @@ export default function App() {
   }, []);
 
   const handleRegionVictory = useCallback(() => {
-    const regionId = state.current.currentRegion;
+    const regionId      = state.current.currentRegion;
+    const currentRun    = runStateRef.current;
+
     if (regionId && !meta.conqueredRegions.includes(regionId)) {
-        setMeta(prev => ({ ...prev, conqueredRegions: [...prev.conqueredRegions, regionId] }));
+      setMeta(prev => ({ ...prev, conqueredRegions: [...prev.conqueredRegions, regionId] }));
     }
-    
-    if (regionId === 'THE_ABYSS') {
-        state.current.gameState = 'CAMPAIGN_OVER';
+
+    // Mark the completed combat node in the map (immutable update)
+    if (regionId) {
+      setMapNodes(prev => prev ? applyNodeCompletion(prev, regionId) : prev);
+    }
+
+    // Boss completion: award honor, increment run counter, end run, fresh map
+    if (currentRun?.currentNodeType === 'boss') {
+      setMeta(prev => ({
+        ...prev,
+        honor:     prev.honor + (currentRun.honorEarned ?? 0),
+        totalRuns: (prev.totalRuns ?? 0) + 1,
+      }));
+      endRun();
+      setMapNodes(generateMap(Date.now(), (meta.totalRuns ?? 0) + 1));
+      state.current.gameState = 'MAP_SCREEN';
+    } else if (regionId === 'THE_ABYSS') {
+      state.current.gameState = 'CAMPAIGN_OVER';
     } else {
-        state.current.gameState = 'MAP_SCREEN';
+      state.current.gameState = 'MAP_SCREEN';
     }
+
     state.current.currentRegion = null;
-    setUiTick(t => t+1);
-  }, [meta.conqueredRegions, setMeta]);
+    setUiTick(t => t + 1);
+  }, [meta.conqueredRegions, meta.totalRuns, runStateRef, setMeta, endRun, setMapNodes]);
 
   const handlePlayNode = useCallback((node) => {
-    if (!runState) return;
+    // Auto-start a run if none is active (first node of a fresh map)
+    const activeRun = runStateRef.current ?? startRun(meta);
     startCombat(node.id);
-    setRunState(prev => ({
-      ...prev,
-      currentNodeId: node.id,
-      currentNodeType: node.type,
-      currentNodeVariant: node.variant,
-      currentNodeThreat: node.threat,
-      currentNodeWaves: node.waves,
+    setRunState(() => ({
+      ...activeRun,
+      currentNodeId:      node.id,
+      currentNodeType:    node.type,
+      currentNodeVariant: node.variant ?? null,
+      currentNodeThreat:  node.threat  ?? 1,
+      currentNodeWaves:   node.waves   ?? 3,
     }));
-  }, [runState, startCombat, setRunState]);
+  }, [meta, runStateRef, startRun, startCombat, setRunState]);
 
   const spawnUnit = useCallback((typeKey, team, customX = null, customY = null) => {
     _spawnUnit(state.current, typeKey, team, customX, customY, metaRef);
@@ -264,8 +287,11 @@ export default function App() {
           meta={meta}
           setMeta={setMeta}
           runState={runState}
+          setRunState={setRunState}
           startRun={startRun}
           onPlayNode={handlePlayNode}
+          mapNodes={mapNodes}
+          setMapNodes={setMapNodes}
           unlockProvision={unlockProvision}
           equipProvision={equipProvision}
         />
