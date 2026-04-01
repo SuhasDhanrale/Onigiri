@@ -576,12 +576,27 @@ export function applyEventChoice(runState, eventId, choiceId) {
  * Compute flat combat multipliers from active blessings.
  * Returns an object with keys: damage, attackSpeed, maxHp, archerRange, moveSpeed, defense.
  * Each value starts at 1.0 and is additively modified by blessing values.
+ * Blessings with combatsRemaining === 0 are skipped (already expired).
  *
- * TODO: Step 9 — replace stubs with real accumulation logic.
+ * @param {Array<{id: string, combatsRemaining: number|typeof Infinity}>} blessings
+ * @returns {{ damage: number, attackSpeed: number, maxHp: number, archerRange: number, moveSpeed: number, defense: number }}
  */
-export function computeBlessingMultipliers(blessings) { // eslint-disable-line no-unused-vars
-  // TODO: Step 9
-  return { damage: 1.0, attackSpeed: 1.0, maxHp: 1.0, archerRange: 1.0, moveSpeed: 1.0, defense: 1.0 };
+export function computeBlessingMultipliers(blessings) {
+  return blessings.reduce((m, b) => {
+    if (b.combatsRemaining === 0) return m;
+    switch (b.id) {
+      case 'WAR_DRUMS':     m.attackSpeed += 0.20; break;
+      case 'BLOODLUST':     m.damage += 0.30; m.maxHp -= 0.10; break;
+      case 'STONE_STANCE':  m.defense += 0.25; break;
+      case 'EAGLE_EYE':     m.archerRange += 0.30; break;
+      case 'SWIFT_FEET':    m.moveSpeed += 0.20; break;
+      case 'ANCESTOR_FURY': m.damage += 0.25; break;
+      case 'IRON_WILL':     m.maxHp += 0.25; break;
+      case 'FOX_SPEED':     m.moveSpeed += 0.20; break;
+      default: break;
+    }
+    return m;
+  }, { damage: 1.0, attackSpeed: 1.0, maxHp: 1.0, archerRange: 1.0, moveSpeed: 1.0, defense: 1.0 });
 }
 
 /**
@@ -589,9 +604,17 @@ export function computeBlessingMultipliers(blessings) { // eslint-disable-line n
  * Returns an object with keys: damage, maxHp.
  * Each value starts at 1.0 and is additively modified by curse values.
  *
- * TODO: Step 9 — replace stubs with real accumulation logic.
+ * @param {Array<{id: string}>} curses
+ * @returns {{ damage: number, maxHp: number }}
  */
-export function computeCurseMultipliers(curses) { // eslint-disable-line no-unused-vars
-  // TODO: Step 9
-  return { damage: 1.0, maxHp: 1.0 };
+export function computeCurseMultipliers(curses) {
+  return curses.reduce((m, c) => {
+    switch (c.id) {
+      case 'WEAKENED':     m.damage += -0.15; break;
+      case 'CURSED_GOODS': m.maxHp  += -0.15; break;
+      case 'DIVINE_WRATH': m.maxHp  += -0.20; break;
+      default: break;
+    }
+    return m;
+  }, { damage: 1.0, maxHp: 1.0 });
 }

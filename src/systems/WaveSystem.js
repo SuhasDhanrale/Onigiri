@@ -5,11 +5,26 @@ import { EVENTS } from '../core/events.js';
 
 /**
  * Generates a list of enemy squads for a given wave number.
+ * nodeContext allows elite/boss nodes to scale the budget.
  * @param {number} waveNum
+ * @param {{ nodeType?: string, nodeVariant?: string, nodeThreat?: number } | null} nodeContext
  * @returns {Array<{type: string, count: number, spread: number}>}
  */
-export function generateWave(waveNum) {
+export function generateWave(waveNum, nodeContext = null) {
   let budget = 40 + (waveNum * 45) + Math.floor(Math.pow(waveNum, 1.3) * 5);
+
+  if (nodeContext?.nodeType === 'elite') {
+    const threatBonus = 1 + ((nodeContext.nodeThreat - 3) * 0.25);
+    budget = Math.floor(budget * Math.max(1.0, threatBonus));
+  }
+  if (nodeContext?.nodeType === 'boss') {
+    budget = Math.floor(budget * 2.0);
+  }
+
+  // TODO: Step 10 — Elite wave special abilities
+  // if (nodeContext?.nodeVariant === 'onmyoji_ritual') applyPoisonPonds(s);
+  // if (nodeContext?.nodeVariant === 'tengu_master')    applyRedThunder(s);
+  // if (nodeContext?.nodeVariant === 'shinobi_squad')   applyExplodingBombers(s);
   const squads = [];
   if (waveNum === 1) { squads.push({ type: 'REBEL', count: 4, spread: 80 }); return squads; }
   if (waveNum === 2) { squads.push({ type: 'REBEL', count: 12, spread: 150 }); return squads; }
@@ -54,7 +69,11 @@ export function tickWaveState(s, dt, metaRef) {
     s.waveTimer -= dt;
     if (s.waveTimer <= 0) {
       s.waveState = 'SPAWNING';
-      s.squadsToSpawn = generateWave(s.wave);
+      s.squadsToSpawn = generateWave(s.wave, {
+        nodeType:    metaRef.current.activeNodeType    ?? 'combat',
+        nodeVariant: metaRef.current.activeNodeVariant ?? null,
+        nodeThreat:  metaRef.current.activeNodeThreat  ?? 1,
+      });
       s.enemiesInWave = s.squadsToSpawn.reduce((sum, sq) => sum + sq.count, 0);
       s.waveTimer = 1.0;
       bus.emit(EVENTS.WAVE_CHANGED, { 
@@ -87,7 +106,10 @@ export function tickWaveState(s, dt, metaRef) {
     const threshold = Math.max(2, Math.floor(s.enemiesInWave * 0.20));
     if (enemies.length <= threshold) {
       const regionDef = CAMPAIGN_MAP[s.currentRegion];
-      if (regionDef && s.wave >= regionDef.waves) {
+      // In conquest mode s.currentRegion is a node ID — CAMPAIGN_MAP returns undefined.
+      // Fall back to activeNodeWaves injected by handlePlayNode (Gap #9 fix).
+      const maxWaves = regionDef?.waves ?? (metaRef.current.activeNodeWaves ?? 3);
+      if (s.wave >= maxWaves) {
         s.gameState = 'REGION_VICTORY';
         bus.emit(EVENTS.GAME_STATE_CHANGED, { state: s.gameState });
       } else {

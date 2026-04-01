@@ -15,6 +15,7 @@ import { HubTestScreen } from './ui/screens/HubTestScreen.jsx';
 import { spawnUnit as _spawnUnit, addParticle as _addParticle } from './systems/SpawnSystem.js';
 import { triggerThunder as _triggerThunder, triggerFoxFire as _triggerFoxFire, triggerDragonWave as _triggerDragonWave, triggerWarDrums as _triggerWarDrums, triggerHarvest as _triggerHarvest, triggerResolve as _triggerResolve } from './systems/SpellSystem.js';
 import { generateMap, applyNodeCompletion } from './systems/MapGenerator.js';
+import { computeBlessingMultipliers, computeCurseMultipliers } from './systems/EventSystem.js';
 
 // --- Phase 5: Hook & Input imports ---
 import { useMeta } from './hooks/useMeta.js';
@@ -111,6 +112,23 @@ export default function App() {
       lastPlayerUnitCount: 0
     };
     
+    // Auto-spawn garrison units if a rest-node garrison was set this run
+    // Read from runStateRef (holds pre-update value at this point — React hasn't re-rendered yet)
+    const garrison = runStateRef.current?.pendingGarrison;
+    if (garrison) {
+      const garrisonUnits = {
+        small:  [{ type: 'HATAMOTO', count: 2 }],
+        medium: [{ type: 'HATAMOTO', count: 2 }, { type: 'YUMI', count: 1 }],
+        large:  [{ type: 'HATAMOTO', count: 2 }, { type: 'YUMI', count: 1 }, { type: 'CAVALRY', count: 1 }],
+      }[garrison.size] ?? [];
+
+      garrisonUnits.forEach(({ type, count }) => {
+        for (let i = 0; i < count; i++) {
+          _spawnUnit(state.current, type, 'player', null, null, metaRef);
+        }
+      });
+    }
+
     const bgCtx = bgCanvasRef.current?.getContext('2d');
     if (bgCtx) {
       bgCtx.fillStyle = COLORS.parchment; 
@@ -122,6 +140,8 @@ export default function App() {
   const handleRegionVictory = useCallback(() => {
     const regionId      = state.current.currentRegion;
     const currentRun    = runStateRef.current;
+    // Honor earned in this specific combat (tracked on game state, not run state)
+    const combatHonor   = state.current.earnedHonor || 0;
 
     if (regionId && !meta.conqueredRegions.includes(regionId)) {
       setMeta(prev => ({ ...prev, conqueredRegions: [...prev.conqueredRegions, regionId] }));
@@ -132,11 +152,12 @@ export default function App() {
       setMapNodes(prev => prev ? applyNodeCompletion(prev, regionId) : prev);
     }
 
-    // Boss completion: award honor, increment run counter, end run, fresh map
+    // Boss completion: award total run honor, increment run counter, end run, fresh map
     if (currentRun?.currentNodeType === 'boss') {
+      const totalHonor = (currentRun.honorEarned ?? 0) + combatHonor;
       setMeta(prev => ({
         ...prev,
-        honor:     prev.honor + (currentRun.honorEarned ?? 0),
+        honor:     prev.honor + totalHonor,
         totalRuns: (prev.totalRuns ?? 0) + 1,
       }));
       endRun();
@@ -148,14 +169,64 @@ export default function App() {
       state.current.gameState = 'MAP_SCREEN';
     }
 
+    // Accumulate combat honor into run state + decrement blessing durations
+    if (currentRun) {
+      setRunState(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          honorEarned: (prev.honorEarned || 0) + combatHonor,
+          blessings: prev.blessings
+            .map(b => typeof b.combatsRemaining === 'number' && b.combatsRemaining !== Infinity
+              ? { ...b, combatsRemaining: b.combatsRemaining - 1 }
+              : b  // 'run' (Infinity) or non-numeric durations pass through unchanged
+            )
+            .filter(b => b.combatsRemaining !== 0),
+        };
+      });
+    }
+
+    // Clear stale node-context fields from meta so they don't bleed into the next combat
+    setMeta(prev => ({
+      ...prev,
+      activeNodeType: null, activeNodeVariant: null, activeNodeThreat: 1, activeNodeWaves: 3,
+      activeDamageMult: 1.0, activeAttackSpeedMult: 1.0, activeMaxHpMult: 1.0,
+      activeArcherRangeMult: 1.0, activeMoveSpeedMult: 1.0,
+      activeCurseDamageMult: 1.0, activeCurseMaxHpMult: 1.0,
+    }));
+
     state.current.currentRegion = null;
     setUiTick(t => t + 1);
-  }, [meta.conqueredRegions, meta.totalRuns, runStateRef, setMeta, endRun, setMapNodes]);
+  }, [meta.conqueredRegions, meta.totalRuns, runStateRef, setMeta, setRunState, endRun, setMapNodes]);
 
   const handlePlayNode = useCallback((node) => {
-    // Auto-start a run if none is active (first node of a fresh map)
+    // 1. Compute blessing/curse multipliers from current run
+    const blessingMults = computeBlessingMultipliers(runStateRef.current?.blessings ?? []);
+    const curseMults    = computeCurseMultipliers(runStateRef.current?.curses ?? []);
+
+    // 2. Inject multipliers + node context into metaRef so combat systems see them immediately
+    setMeta(prev => ({
+      ...prev,
+      // Blessing multipliers (each starts at 1.0, additively modified)
+      activeDamageMult:      blessingMults.damage,
+      activeAttackSpeedMult: blessingMults.attackSpeed,
+      activeMaxHpMult:       blessingMults.maxHp,
+      activeArcherRangeMult: blessingMults.archerRange,
+      activeMoveSpeedMult:   blessingMults.moveSpeed,
+      // Curse multipliers
+      activeCurseDamageMult: curseMults.damage,
+      activeCurseMaxHpMult:  curseMults.maxHp,
+      // Node context — read by WaveSystem (wave count fix) and SpawnSystem (budget scaling)
+      activeNodeType:    node.type,
+      activeNodeVariant: node.variant ?? null,
+      activeNodeThreat:  node.threat  ?? 1,
+      activeNodeWaves:   node.waves   ?? 3,   // ← fixes WaveSystem Gap #9
+      // Carry garrison forward from run state (cleared in setRunState below)
+      pendingGarrison: runStateRef.current?.pendingGarrison ?? null,
+    }));
+
+    // 3. Update runState with current node (and clear pendingGarrison so it is only consumed once)
     const activeRun = runStateRef.current ?? startRun(meta);
-    startCombat(node.id);
     setRunState(() => ({
       ...activeRun,
       currentNodeId:      node.id,
@@ -163,8 +234,12 @@ export default function App() {
       currentNodeVariant: node.variant ?? null,
       currentNodeThreat:  node.threat  ?? 1,
       currentNodeWaves:   node.waves   ?? 3,
+      pendingGarrison:    null,   // consumed — garrison spawns in startCombat
     }));
-  }, [meta, runStateRef, startRun, startCombat, setRunState]);
+
+    // 4. Reset combat state and enter COMBAT screen
+    startCombat(node.id);
+  }, [meta, runStateRef, startRun, startCombat, setRunState, setMeta]);
 
   const spawnUnit = useCallback((typeKey, team, customX = null, customY = null) => {
     _spawnUnit(state.current, typeKey, team, customX, customY, metaRef);

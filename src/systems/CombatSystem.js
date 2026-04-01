@@ -34,9 +34,15 @@ export function tickUnits(s, dt, now, metaRef) {
     if (unit.lifeSpan !== undefined) { unit.lifeSpan -= dt; if (unit.lifeSpan <= 0) { unit.hp = 0; unit.noReward = true; } }
     if (unit.burn > 0) { unit.burn -= dt; unit.hp -= 10 * dt; }
 
-    let uSpeed = (unit.team === 'player' && s.warDrumsActive > 0) ? unit.speed * 1.5 : unit.speed;
+    let uSpeed = unit.speed;
+    if (unit.team === 'player') {
+      if (s.warDrumsActive > 0) uSpeed *= 1.5;
+      uSpeed *= (metaRef.current.activeMoveSpeedMult ?? 1.0);  // SWIFT_FEET / FOX_SPEED blessing
+    }
     if (unit.chargeTimer > 0) uSpeed *= 2.0;
-    const atkSpeedMult = (unit.team === 'player' && s.warDrumsActive > 0) ? 1.5 : 1.0;
+    const atkSpeedMult = unit.team === 'player'
+      ? (s.warDrumsActive > 0 ? 1.5 : 1.0) * (metaRef.current.activeAttackSpeedMult ?? 1.0)  // WAR_DRUMS blessing
+      : 1.0;
 
     // Support healing
     if (unit.type === 'support' && unit.attackCooldown <= 0) {

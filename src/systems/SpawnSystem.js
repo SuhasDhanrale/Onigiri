@@ -63,6 +63,14 @@ export function spawnUnit(s, typeKey, team, customX = null, customY = null, meta
       hp *= 0.5;
       damage *= 3.0;
     }
+
+    // Blessing & curse multipliers — stack multiplicatively with heirloom above.
+    // activeDamageMult affects damage ONLY (not hp) — see Step 9 hallucination guard.
+    hp     *= (metaRef.current.activeMaxHpMult      ?? 1.0);
+    hp     *= (metaRef.current.activeCurseMaxHpMult  ?? 1.0);
+    damage *= (metaRef.current.activeDamageMult      ?? 1.0);
+    damage *= (metaRef.current.activeCurseDamageMult ?? 1.0);
+    // Note: activeAttackSpeedMult and activeMoveSpeedMult are applied per-frame in CombatSystem
   }
 
   if (team === 'enemy') {
