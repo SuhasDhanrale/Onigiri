@@ -9,7 +9,6 @@ import { getCost, getSquadCap } from './core/utils.js';
 
 import { CommandPanel } from './ui/panels/CommandPanel.jsx';
 import { CombatScreen } from './ui/screens/CombatScreen.jsx';
-import { MapScreen } from './ui/screens/MapScreen.jsx';
 import { HubTestScreen } from './ui/screens/HubTestScreen.jsx';
 
 // --- Phase 2: System imports ---
@@ -18,19 +17,13 @@ import { triggerThunder as _triggerThunder, triggerFoxFire as _triggerFoxFire, t
 
 // --- Phase 5: Hook & Input imports ---
 import { useMeta } from './hooks/useMeta.js';
+import { useRunState } from './hooks/useRunState.js';
 import { useGameLoop } from './hooks/useGameLoop.js';
 import { useGameEvents } from './hooks/useGameEvents.js';
 import { createInputHandlers } from './input/InputHandler.js';
 import { spriteRenderer } from './renderer/SpriteRenderer.js';
 
 export default function App() {
-  const [showTestHub, setShowTestHub] = useState(false);
-  
-  useEffect(() => {
-    window.toggleTestHub = () => setShowTestHub(prev => !prev);
-    return () => { delete window.toggleTestHub; };
-  }, []);
-
   const fgCanvasRef = useRef(null);
   const bgCanvasRef = useRef(null);
   const [uiTick, setUiTick] = useState(0);
@@ -39,6 +32,7 @@ export default function App() {
   useEffect(() => { armedSpellRef.current = armedSpell; }, [armedSpell]);
   
   const { meta, setMeta, metaRef } = useMeta();
+  const { runState, setRunState, runStateRef, startRun } = useRunState();
 
   const state = useRef({
     command: 0, totalCommand: 0, wave: 1, fever: 0, feverActive: 0, screenShake: 0, conscriptCooldown: 0,
@@ -135,6 +129,19 @@ export default function App() {
     state.current.currentRegion = null;
     setUiTick(t => t+1);
   }, [meta.conqueredRegions, setMeta]);
+
+  const handlePlayNode = useCallback((node) => {
+    if (!runState) return;
+    startCombat(node.id);
+    setRunState(prev => ({
+      ...prev,
+      currentNodeId: node.id,
+      currentNodeType: node.type,
+      currentNodeVariant: node.variant,
+      currentNodeThreat: node.threat,
+      currentNodeWaves: node.waves,
+    }));
+  }, [runState, startCombat, setRunState]);
 
   const spawnUnit = useCallback((typeKey, team, customX = null, customY = null) => {
     _spawnUnit(state.current, typeKey, team, customX, customY, metaRef);
@@ -251,21 +258,20 @@ export default function App() {
 
   return (
     <div className="flex h-screen w-full bg-[#1b1918] text-[#1b1918] font-serif overflow-hidden select-none relative">
-      {showTestHub && <HubTestScreen />}
+      {/* MAP SCREEN HUB (MACRO UI) */}
+      {s.gameState === 'MAP_SCREEN' && (
+        <HubTestScreen 
+          meta={meta}
+          setMeta={setMeta}
+          runState={runState}
+          startRun={startRun}
+          onPlayNode={handlePlayNode}
+          unlockProvision={unlockProvision}
+          equipProvision={equipProvision}
+        />
+      )}
 
-      {!showTestHub && (
-        <>
-          {/* MAP SCREEN HUB (MACRO UI) */}
-          <MapScreen 
-        s={s} 
-        meta={meta} 
-        setMeta={setMeta} 
-        initRun={initRun} 
-        startCombat={startCombat} 
-        unlockProvision={unlockProvision}
-        equipProvision={equipProvision}
-        resetDynasty={resetDynasty}
-      />
+      {/* COMBAT SCREEN - Always mounted for canvas context persistence */}
       <CombatScreen 
         s={s} 
         meta={meta} 
@@ -280,28 +286,28 @@ export default function App() {
         handleRegionVictory={handleRegionVictory} 
       />
 
-      {/* RIGHT: COMMAND DASHBOARD */}
-      <CommandPanel 
-        s={s} 
-        activeTroops={activeUnits} 
-        maxTroops={maxTroops} 
-        meta={meta} 
-        setMeta={setMeta} 
-        setUiTick={setUiTick} 
-        changeQuota={changeQuota} 
-        triggerWarDrums={triggerWarDrums} 
-        triggerHarvest={triggerHarvest} 
-        triggerResolve={triggerResolve} 
-        triggerThunder={triggerThunder} 
-        triggerFoxFire={triggerFoxFire} 
-        triggerDragonWave={triggerDragonWave}
-        buildBarracks={buildBarracks}
-        upgradeTroopLevel={upgradeTroopLevel}
-        upgradeBarracksCap={upgradeBarracksCap}
-        hireDrill={hireDrill}
-        unlockHero={unlockHero}
-      />
-      </>
+      {/* RIGHT: COMMAND DASHBOARD - Only in combat */}
+      {s.gameState !== 'MAP_SCREEN' && (
+        <CommandPanel 
+          s={s} 
+          activeTroops={activeUnits} 
+          maxTroops={maxTroops} 
+          meta={meta} 
+          setMeta={setMeta} 
+          setUiTick={setUiTick} 
+          changeQuota={changeQuota} 
+          triggerWarDrums={triggerWarDrums} 
+          triggerHarvest={triggerHarvest} 
+          triggerResolve={triggerResolve} 
+          triggerThunder={triggerThunder} 
+          triggerFoxFire={triggerFoxFire} 
+          triggerDragonWave={triggerDragonWave}
+          buildBarracks={buildBarracks}
+          upgradeTroopLevel={upgradeTroopLevel}
+          upgradeBarracksCap={upgradeBarracksCap}
+          hireDrill={hireDrill}
+          unlockHero={unlockHero}
+        />
       )}
     </div>
   );

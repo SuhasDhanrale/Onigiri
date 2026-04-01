@@ -1,12 +1,23 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { generateMap, applyNodeCompletion } from '../../systems/MapGenerator.js';
+import { PROVISIONS, PERMANENT_TECHS, HEIRLOOMS } from '../../config/provisions.js';
 
-export function HubTestScreen() {
-  const [activeSidebarTab, setActiveSidebarTab] = useState('DOJO'); // 'DOJO' | 'SHRINE'
-  const [activeHeirloom, setActiveHeirloom] = useState('DEMON_MASK');
+export function HubTestScreen({ meta, setMeta, runState, startRun, onPlayNode, unlockProvision, equipProvision }) {
+  const [activeSidebarTab, setActiveSidebarTab] = useState('DOJO');
   const [hoveredTech, setHoveredTech] = useState(null);
   const [hoveredMapNode, setHoveredMapNode] = useState(null);
+  const [selectedNode, setSelectedNode] = useState(null);
 
-  // Drag to scroll logic
+  const [mapNodes, setMapNodes] = useState(() => generateMap(Date.now(), meta?.totalRuns || 0));
+
+  useEffect(() => {
+    if (!runState) {
+      const fresh = generateMap(Date.now(), meta?.totalRuns || 0);
+      setMapNodes(fresh);
+      setSelectedNode(null);
+    }
+  }, [runState, meta?.totalRuns]);
+
   const scrollRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
@@ -27,59 +38,57 @@ export function HubTestScreen() {
     if (!isDragging) return;
     e.preventDefault();
     const x = e.pageX - scrollRef.current.offsetLeft;
-    const walk = (x - startX) * 2; // Scroll speed multiplier
+    const walk = (x - startX) * 2;
     scrollRef.current.scrollLeft = scrollLeft - walk;
   };
 
-  // Mock data for display
-  const techs = {
-    ROOT: { name: 'Path of the Shogun', cost: 0, unlocked: true },
-    SPIKED_CALTROPS: { name: 'Spiked Caltrops', desc: 'Barricades reflect 50% melee dmg.', cost: 15, unlocked: true },
-    FLAMING_ARROWS: { name: 'Flaming Arrows', desc: 'Archers 25% ignite chance.', cost: 25, unlocked: false },
-    TAKEDA_CHARGE: { name: 'Takeda Charge', desc: 'Cavalry 2s massive speed.', cost: 30, unlocked: false }
+  const handleNodeClick = (node) => {
+    if (node.status === 'available') {
+      setSelectedNode(node);
+    }
   };
 
-  const heirlooms = [
-    { id: 'DEMON_MASK', name: 'Demon Mask', desc: '+200% DMG, -50% Max HP', icon: '👹' },
-    { id: 'IMPERIAL_BANNER', name: 'Imperial Banner', desc: 'Double Squad Caps', icon: '🎌' },
-    { id: 'BLOOD_KATANA', name: 'Blood Katana', desc: 'Taps grant extreme Command', icon: '🗡️' },
-    { id: 'EMPTY_1', name: 'Locked', desc: 'Requires 50 Honor', icon: '' },
-    { id: 'EMPTY_2', name: 'Locked', desc: 'Requires 100 Honor', icon: '' },
-    { id: 'EMPTY_3', name: 'Locked', desc: 'Requires 150 Honor', icon: '' }
-  ];
+  const handlePlayClick = () => {
+    if (selectedNode && selectedNode.status === 'available') {
+      onPlayNode(selectedNode);
+    }
+  };
 
-  // Slay the spire mock data (Horizontal layout, Left to Right)
-  // Adjusted Y coordinates to be lower (35-85) to avoid overlapping the header at the top
-  const spireNodes = [
-      // Tier 0 (Single Start Node)
-      { id: 'START', name: 'Stronghold Gates', type: 'event', threat: 0, reward: 'DEPART', x: 8, y: 50, next: ['1A', '1B', '1C'], status: 'completed' },
-      
-      // Tier 1
-      { id: '1A', name: 'Bandit Camp', type: 'combat', threat: 1, reward: '10 COMMAND', x: 25, y: 15, next: ['2A'], status: 'completed' },
-      { id: '1B', name: 'Riverlands', type: 'combat', threat: 1, reward: '25 HONOR', x: 25, y: 50, next: ['2A', '2B'], status: 'active' },
-      { id: '1C', name: 'Outskirts', type: 'combat', threat: 2, reward: 'YUMI UNLOCK', x: 25, y: 85, next: ['2C'], status: 'locked' },
-      // Tier 2
-      { id: '2A', name: 'Merchant', type: 'shop', threat: 0, reward: 'SHOP', x: 42, y: 15, next: ['3A', '3B'], status: 'locked' },
-      { id: '2B', name: 'Iron Mines', type: 'elite', threat: 4, reward: 'HEIRLOOM', x: 42, y: 50, next: ['3B'], status: 'locked' },
-      { id: '2C', name: 'Abandoned Shrine', type: 'event', threat: 0, reward: 'MYSTERY', x: 42, y: 85, next: ['3C'], status: 'locked' },
-      // Tier 3
-      { id: '3A', name: 'Tengu Peaks', type: 'combat', threat: 3, reward: '50 HONOR', x: 59, y: 15, next: ['4A'], status: 'locked' },
-      { id: '3B', name: 'Crimson Plains', type: 'combat', threat: 4, reward: 'CAVALRY', x: 59, y: 50, next: ['4A', '4B'], status: 'locked' },
-      { id: '3C', name: 'Ashura Valley', type: 'elite', threat: 5, reward: 'RARE TECH', x: 59, y: 85, next: ['4B'], status: 'locked' },
-      // Tier 4 (Pre-boss rest/event structure)
-      { id: '4A', name: 'War Camp', type: 'rest', threat: 0, reward: 'HEAL', x: 76, y: 30, next: ['BOSS'], status: 'locked' },
-      { id: '4B', name: 'Blood Forge', type: 'event', threat: 0, reward: 'UPGRADE', x: 76, y: 70, next: ['BOSS'], status: 'locked' },
-      // Tier 5 (Boss) - Right
-      { id: 'BOSS', name: 'The Shogun', type: 'boss', threat: 6, reward: 'DYNASTY VICTORY', x: 92, y: 50, next: [], status: 'boss' },
-  ];
+  const techs = useMemo(() => {
+    return Object.fromEntries(
+      Object.entries(PERMANENT_TECHS).map(([key, prov]) => [
+        key,
+        {
+          name: prov.name,
+          desc: prov.desc,
+          cost: prov.cost,
+          unlocked: meta?.unlockedProvisions?.includes(key) ?? false,
+        },
+      ])
+    );
+  }, [meta?.unlockedProvisions]);
+
+  const heirlooms = useMemo(() => {
+    const items = Object.entries(HEIRLOOMS).map(([key, prov]) => ({
+      id: key,
+      name: prov.name,
+      desc: prov.desc,
+      icon: prov.icon,
+      unlocked: meta?.unlockedProvisions?.includes(key) ?? false,
+    }));
+    while (items.length < 6) {
+      items.push({ id: `EMPTY_${items.length}`, name: 'Locked', desc: `Requires ${(items.length + 1) * 50} Honor`, icon: '', unlocked: false });
+    }
+    return items;
+  }, [meta?.unlockedProvisions]);
 
   // Helper to draw lines
   const getSvgLines = () => {
       let lines = [];
-      spireNodes.forEach(node => {
+      mapNodes.forEach(node => {
           if (node.next && node.next.length > 0) {
               node.next.forEach(targetId => {
-                  const target = spireNodes.find(n => n.id === targetId);
+                  const target = mapNodes.find(n => n.id === targetId);
                   if (target) {
                       lines.push(
                           <line 
@@ -89,9 +98,9 @@ export function HubTestScreen() {
                               x2={`${target.x}%`} 
                               y2={`${target.y}%`}
                               stroke="#b84235" 
-                              strokeWidth={node.status === 'completed' || node.status === 'active' ? '4' : '2'} 
-                              strokeDasharray={node.status === 'completed' || node.status === 'active' ? 'none' : '5 5'}
-                              className={node.status === 'completed' || node.status === 'active' ? 'opacity-90' : 'opacity-40'}
+                              strokeWidth={node.status === 'completed' || node.status === 'available' ? '4' : '2'} 
+                              strokeDasharray={node.status === 'completed' || node.status === 'available' ? 'none' : '5 5'}
+                              className={node.status === 'completed' || node.status === 'available' ? 'opacity-90' : 'opacity-40'}
                           />
                       );
                   }
@@ -134,15 +143,15 @@ export function HubTestScreen() {
               </h1>
            </div>
            
-           <div className="flex items-center gap-6 pointer-events-auto">
-              <div className="flex flex-col text-right">
-                  <span className="font-bold text-[8px] tracking-[0.3em] uppercase text-[#8b8574]">Ancestral Honor</span>
-                  <div className="flex items-baseline gap-1 justify-end">
-                      <span className="text-3xl font-black text-[#d4af37] drop-shadow-[0_0_15px_rgba(212,175,55,0.4)]">1,250</span>
-                      <span className="text-xs text-[#d4af37]/60">H</span>
-                  </div>
-              </div>
-           </div>
+            <div className="flex items-center gap-6 pointer-events-auto">
+               <div className="flex flex-col text-right">
+                   <span className="font-bold text-[8px] tracking-[0.3em] uppercase text-[#8b8574]">Ancestral Honor</span>
+                   <div className="flex items-baseline gap-1 justify-end">
+                       <span className="text-3xl font-black text-[#d4af37] drop-shadow-[0_0_15px_rgba(212,175,55,0.4)]">{(meta?.honor ?? 0).toLocaleString()}</span>
+                       <span className="text-xs text-[#d4af37]/60">H</span>
+                   </div>
+               </div>
+            </div>
         </div>
 
         {/* MAIN SPATIAL IA - Optimized Padding */}
@@ -242,50 +251,60 @@ export function HubTestScreen() {
                                 <div className="w-12 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37]/50 to-transparent mx-auto mt-4" />
                             </div>
                             
-                            <div className="flex-1 flex flex-col gap-6 mt-2 relative z-10 overflow-hidden">
-                                {/* Active Slot */}
-                                <div className="w-full relative p-[1px] bg-gradient-to-b from-[#d4af37]/50 to-transparent rounded-sm shadow-[0_10px_30px_rgba(0,0,0,0.8)] shrink-0">
-                                    <div className="bg-[#0a0908] p-4 flex items-center gap-4 w-full h-full rounded-sm">
-                                        <div className="w-14 h-14 bg-gradient-to-br from-[#1a1816] to-[#0a0908] border border-[#d4af37]/30 flex items-center justify-center text-2xl shrink-0 shadow-inner [box-shadow:inset_0_0_20px_rgba(0,0,0,1)]">
-                                            {heirlooms.find(h => h.id === activeHeirloom)?.icon || '❓'}
-                                        </div>
-                                        <div className="flex flex-col flex-1 overflow-hidden">
-                                            <span className="text-[8px] text-[#8b8574] font-bold tracking-[0.3em] uppercase mb-1">Equipped</span>
-                                            <span className="text-[#d4af37] font-black tracking-widest uppercase text-[10px] mb-1 truncate">{heirlooms.find(h => h.id === activeHeirloom)?.name || 'None'}</span>
-                                            <span className="text-[10px] text-[#dfd4ba]/60 font-sans leading-tight line-clamp-2">{heirlooms.find(h => h.id === activeHeirloom)?.desc}</span>
-                                        </div>
-                                    </div>
-                                </div>
+                             <div className="flex-1 flex flex-col gap-6 mt-2 relative z-10 overflow-hidden">
+                                 {/* Active Slot */}
+                                 <div className="w-full relative p-[1px] bg-gradient-to-b from-[#d4af37]/50 to-transparent rounded-sm shadow-[0_10px_30px_rgba(0,0,0,0.8)] shrink-0">
+                                     <div className="bg-[#0a0908] p-4 flex items-center gap-4 w-full h-full rounded-sm">
+                                         <div className="w-14 h-14 bg-gradient-to-br from-[#1a1816] to-[#0a0908] border border-[#d4af37]/30 flex items-center justify-center text-2xl shrink-0 shadow-inner [box-shadow:inset_0_0_20px_rgba(0,0,0,1)]">
+                                             {heirlooms.find(h => h.id === meta?.equippedItem)?.icon || '❓'}
+                                         </div>
+                                         <div className="flex flex-col flex-1 overflow-hidden">
+                                             <span className="text-[8px] text-[#8b8574] font-bold tracking-[0.3em] uppercase mb-1">Equipped</span>
+                                             <span className="text-[#d4af37] font-black tracking-widest uppercase text-[10px] mb-1 truncate">{heirlooms.find(h => h.id === meta?.equippedItem)?.name || 'None'}</span>
+                                             <span className="text-[10px] text-[#dfd4ba]/60 font-sans leading-tight line-clamp-2">{heirlooms.find(h => h.id === meta?.equippedItem)?.desc}</span>
+                                         </div>
+                                     </div>
+                                 </div>
 
-                                {/* Inventory Grid */}
-                                <div className="grid grid-cols-2 gap-3 overflow-y-auto custom-scrollbar content-start pb-4 pr-1">
-                                    {heirlooms.map(item => {
-                                        const isEmpty = item.id.startsWith('EMPTY');
-                                        const isActive = activeHeirloom === item.id;
-                                        
-                                        return (
-                                          <button 
-                                              key={item.id}
-                                              onClick={() => !isEmpty && setActiveHeirloom(item.id)}
-                                              className={`aspect-square flex flex-col items-center justify-center relative p-2 transition-all duration-300
-                                                  ${isActive 
-                                                      ? 'border border-[#d4af37] bg-gradient-to-b from-[#d4af37]/10 to-transparent shadow-[0_0_15px_rgba(212,175,55,0.2)]' 
-                                                      : isEmpty 
-                                                        ? 'border border-[#8b8574]/10 bg-[#0a0908]/30 cursor-not-allowed opacity-50' 
-                                                        : 'border border-[#8b8574]/30 bg-[#1a1816]/50 hover:border-[#d4af37]/50 hover:bg-[#1a1816] cursor-pointer'
-                                                  }
-                                              `}
-                                          >
-                                              {isActive && <div className="absolute inset-0 bg-[#d4af37]/5 blur-md pointer-events-none" />}
-                                              <span className={`text-2xl mb-2 drop-shadow-md ${isEmpty ? 'opacity-20 text-[#8b8574]' : ''}`}>{item.icon || '⬛'}</span>
-                                              <span className="text-[8px] font-bold uppercase text-center tracking-[0.1em] text-[#dfd4ba]/80 leading-tight w-full truncate px-1">
-                                                  {item.name}
-                                              </span>
-                                          </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
+                                 {/* Inventory Grid */}
+                                 <div className="grid grid-cols-2 gap-3 overflow-y-auto custom-scrollbar content-start pb-4 pr-1">
+                                     {heirlooms.map(item => {
+                                         const isEmpty = item.id.startsWith('EMPTY');
+                                         const isActive = meta?.equippedItem === item.id;
+                                         const isLocked = !item.unlocked && !isEmpty;
+                                         
+                                         return (
+                                           <button 
+                                               key={item.id}
+                                               onClick={() => {
+                                                   if (isEmpty) return;
+                                                   if (isLocked && meta?.honor >= 50) {
+                                                       unlockProvision(item.id, PROVISIONS[item.id]?.cost ?? 50);
+                                                   } else if (item.unlocked) {
+                                                       equipProvision(item.id);
+                                                   }
+                                               }}
+                                               className={`aspect-square flex flex-col items-center justify-center relative p-2 transition-all duration-300
+                                                   ${isActive 
+                                                       ? 'border border-[#d4af37] bg-gradient-to-b from-[#d4af37]/10 to-transparent shadow-[0_0_15px_rgba(212,175,55,0.2)]' 
+                                                       : isEmpty 
+                                                         ? 'border border-[#8b8574]/10 bg-[#0a0908]/30 cursor-not-allowed opacity-50' 
+                                                         : isLocked
+                                                           ? 'border border-[#8b8574]/20 bg-[#0a0908]/50 cursor-pointer hover:border-[#d4af37]/30'
+                                                           : 'border border-[#8b8574]/30 bg-[#1a1816]/50 hover:border-[#d4af37]/50 hover:bg-[#1a1816] cursor-pointer'
+                                                   }
+                                               `}
+                                           >
+                                               {isActive && <div className="absolute inset-0 bg-[#d4af37]/5 blur-md pointer-events-none" />}
+                                               <span className={`text-2xl mb-2 drop-shadow-md ${isEmpty || isLocked ? 'opacity-20 text-[#8b8574]' : ''}`}>{item.icon || '⬛'}</span>
+                                               <span className="text-[8px] font-bold uppercase text-center tracking-[0.1em] text-[#dfd4ba]/80 leading-tight w-full truncate px-1">
+                                                   {item.name}
+                                               </span>
+                                           </button>
+                                         );
+                                     })}
+                                 </div>
+                             </div>
                         </div>
                     )}
                 </div>
@@ -310,48 +329,51 @@ export function HubTestScreen() {
                              {getSvgLines()}
                          </svg>
 
-                         {/* Render Interactive Nodes */}
-                         {spireNodes.map(node => {
-                             const isActive = node.status === 'active';
-                             const isBoss = node.status === 'boss';
-                             const isLocked = node.status === 'locked';
-                             const isCompleted = node.status === 'completed';
+                          {/* Render Interactive Nodes */}
+                          {mapNodes.map(node => {
+                              const isAvailable = node.status === 'available';
+                              const isBoss = node.status === 'boss';
+                              const isLocked = node.status === 'locked';
+                              const isCompleted = node.status === 'completed';
+                              const isSelected = selectedNode?.id === node.id;
 
-                             return (
-                                 <div 
-                                     key={node.id}
-                                     className="absolute translate-x-[-50%] translate-y-[-50%] flex flex-col items-center justify-center cursor-pointer z-10 group/node"
-                                     style={{ left: `${node.x}%`, top: `${node.y}%` }}
-                                     onMouseEnter={() => setHoveredMapNode(node)}
-                                     onMouseLeave={() => setHoveredMapNode(null)}
-                                 >
-                                     <div className={`w-20 h-20 rounded-full border-2 flex items-center justify-center transition-all duration-300 relative
-                                            ${isActive ? 'bg-[#1a0f0e] border-[#b84235] shadow-[0_0_35px_rgba(184,66,53,0.9)] scale-110' : 
-                                              isBoss ? 'bg-[#0a0908] border-[#dfd4ba] shadow-[0_0_60px_rgba(184,66,53,0.6)] scale-125' :
-                                              isCompleted ? 'bg-[#1a0f0e]/80 border-[#d4af37]/80' :
-                                              node.type === 'elite' ? 'bg-[#1a0f0e] border-[#8b8574] shadow-[0_0_20px_rgba(139,133,116,0.4)]' :
-                                              'bg-[#0a0908] border-[#8b8574]/40 hover:border-[#8b8574]'
-                                            }`}
-                                     >
-                                         {isActive && <div className="absolute inset-[-8px] rounded-full border border-[#b84235]/50 animate-ping opacity-50 pointer-events-none" />}
-                                         <span className="text-4xl drop-shadow-md pointer-events-none">
-                                             {isCompleted ? '✅' : getNodeIcon(node.type)}
-                                         </span>
-                                     </div>
-                                     
-                                     {/* Map Node Label */}
-                                     {isBoss || isActive ? (
-                                        <div className="absolute top-[110%] mt-2 bg-[#0a0908]/90 border border-[#b84235]/50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#dfd4ba] whitespace-nowrap shadow-xl pointer-events-none">
-                                            {node.name}
-                                        </div>
-                                     ) : (
-                                        <div className="absolute top-[110%] mt-2 text-[8px] font-bold uppercase tracking-wider text-[#8b8574] group-hover/node:text-[#dfd4ba] group-hover/node:scale-110 transition-all bg-[#0a0908]/60 px-2 rounded backdrop-blur-sm whitespace-nowrap pointer-events-none">
-                                            {node.name}
-                                        </div>
-                                     )}
-                                 </div>
-                             );
-                         })}
+                              return (
+                                  <div 
+                                      key={node.id}
+                                      className="absolute translate-x-[-50%] translate-y-[-50%] flex flex-col items-center justify-center cursor-pointer z-10 group/node"
+                                      style={{ left: `${node.x}%`, top: `${node.y}%` }}
+                                      onMouseEnter={() => setHoveredMapNode(node)}
+                                      onMouseLeave={() => setHoveredMapNode(null)}
+                                      onClick={() => handleNodeClick(node)}
+                                  >
+                                      <div className={`w-20 h-20 rounded-full border-2 flex items-center justify-center transition-all duration-300 relative
+                                             ${isSelected ? 'bg-[#1a0f0e] border-[#d4af37] shadow-[0_0_45px_rgba(212,175,55,0.9)] scale-120' :
+                                               isAvailable ? 'bg-[#1a0f0e] border-[#b84235] shadow-[0_0_35px_rgba(184,66,53,0.9)] scale-110' : 
+                                               isBoss ? 'bg-[#0a0908] border-[#dfd4ba] shadow-[0_0_60px_rgba(184,66,53,0.6)] scale-125' :
+                                               isCompleted ? 'bg-[#1a0f0e]/80 border-[#d4af37]/80' :
+                                               node.type === 'elite' ? 'bg-[#1a0f0e] border-[#8b8574] shadow-[0_0_20px_rgba(139,133,116,0.4)]' :
+                                               'bg-[#0a0908] border-[#8b8574]/40 hover:border-[#8b8574]'
+                                             }`}
+                                      >
+                                          {(isAvailable || isSelected) && <div className="absolute inset-[-8px] rounded-full border border-[#b84235]/50 animate-ping opacity-50 pointer-events-none" />}
+                                          <span className="text-4xl drop-shadow-md pointer-events-none">
+                                              {isCompleted ? '✅' : getNodeIcon(node.type)}
+                                          </span>
+                                      </div>
+                                      
+                                      {/* Map Node Label */}
+                                      {isBoss || isAvailable || isSelected ? (
+                                         <div className="absolute top-[110%] mt-2 bg-[#0a0908]/90 border border-[#b84235]/50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#dfd4ba] whitespace-nowrap shadow-xl pointer-events-none">
+                                             {node.name}
+                                         </div>
+                                      ) : (
+                                         <div className="absolute top-[110%] mt-2 text-[8px] font-bold uppercase tracking-wider text-[#8b8574] group-hover/node:text-[#dfd4ba] group-hover/node:scale-110 transition-all bg-[#0a0908]/60 px-2 rounded backdrop-blur-sm whitespace-nowrap pointer-events-none">
+                                             {node.name}
+                                         </div>
+                                      )}
+                                  </div>
+                              );
+                          })}
                      </div>
                 </div>
 
@@ -364,12 +386,12 @@ export function HubTestScreen() {
                                     {hoveredMapNode.type === 'boss' ? 'Domain Boss' : hoveredMapNode.type === 'elite' ? 'Elite Threat' : hoveredMapNode.type === 'event' ? 'Mystery Event' : hoveredMapNode.type === 'shop' ? 'Traveling Merchant' : hoveredMapNode.type === 'rest' ? 'War Camp' : 'Combat Encounter'}
                                 </span>
                                 <h3 className="text-3xl font-black text-white tracking-widest uppercase mb-1">{hoveredMapNode.name}</h3>
-                                <span className={`self-start border px-2 py-0.5 uppercase tracking-widest font-bold text-[9px]
-                                    ${hoveredMapNode.status === 'completed' ? 'bg-[#d4af37]/10 border-[#d4af37]/30 text-[#d4af37]' :
-                                      hoveredMapNode.status === 'active' ? 'bg-[#b84235]/10 border-[#b84235]/30 text-[#b84235]' :
-                                      'bg-[#8b8574]/10 border-[#8b8574]/30 text-[#8b8574]'
-                                    }`}
-                                >
+                                 <span className={`self-start border px-2 py-0.5 uppercase tracking-widest font-bold text-[9px]
+                                     ${hoveredMapNode.status === 'completed' ? 'bg-[#d4af37]/10 border-[#d4af37]/30 text-[#d4af37]' :
+                                       hoveredMapNode.status === 'available' ? 'bg-[#b84235]/10 border-[#b84235]/30 text-[#b84235]' :
+                                       'bg-[#8b8574]/10 border-[#8b8574]/30 text-[#8b8574]'
+                                     }`}
+                                 >
                                      {hoveredMapNode.status.replace('_', ' ')}
                                 </span>
                             </div>
@@ -407,12 +429,30 @@ export function HubTestScreen() {
 
         {/* BOTTOM FOOTER - Compressed */}
         <div className="relative z-10 py-2 px-12 flex justify-between items-center bg-[#0a0908]/80 backdrop-blur-md border-t border-[#b84235]/30">
-            <p className="text-[#8b8574]/60 text-[8px] font-bold uppercase tracking-[0.3em]">Dev Mode Active</p>
+            <div className="flex items-center gap-4">
+                {selectedNode ? (
+                    <div className="flex items-center gap-3">
+                        <span className="text-2xl">{getNodeIcon(selectedNode.type)}</span>
+                        <div className="flex flex-col">
+                            <span className="text-[#d4af37] font-black tracking-widest uppercase text-sm">{selectedNode.name}</span>
+                            <span className="text-[#8b8574] text-[10px] uppercase tracking-wider">
+                                {selectedNode.type.toUpperCase()} • Threat: {'💀'.repeat(selectedNode.threat || 0) || 'None'}
+                            </span>
+                        </div>
+                    </div>
+                ) : (
+                    <p className="text-[#8b8574]/60 text-[8px] font-bold uppercase tracking-[0.3em]">Select an available node to begin</p>
+                )}
+            </div>
             
-            <button className="relative group overflow-hidden shadow-[0_0_20px_rgba(184,66,53,0.3)] pointer-events-auto cursor-pointer scale-90 origin-right">
+            <button 
+                onClick={handlePlayClick}
+                disabled={!selectedNode || selectedNode.status !== 'available'}
+                className={`relative group overflow-hidden shadow-[0_0_20px_rgba(184,66,53,0.3)] pointer-events-auto cursor-pointer scale-90 origin-right transition-opacity ${selectedNode?.status === 'available' ? '' : 'opacity-40 cursor-not-allowed'}`}
+            >
                 <div className="absolute inset-0 bg-gradient-to-r from-[#b84235] to-[#802a20] translate-x-[-100%] group-hover:translate-x-[0%] transition-transform duration-500" />
                 <div className="relative z-10 px-12 py-3 border border-[#b84235] bg-[#1a0f0e] text-[#dfd4ba] text-lg uppercase tracking-[0.3em] font-black group-hover:text-white transition-colors group-hover:border-[#d4af37]">
-                    Play Selected Area
+                    {selectedNode ? `Begin ${selectedNode.name}` : 'Select a Node'}
                 </div>
             </button>
         </div>
