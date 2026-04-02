@@ -50,14 +50,38 @@ export function HubTestScreen({
   };
 
   const handleNodeClick = (node) => {
+    console.log('[handleNodeClick] node:', node.id, 'status:', node.status, 'type:', node.type);
     if (node.status === 'available') {
+      console.log('[handleNodeClick] Setting selectedNode to:', node.id);
       setSelectedNode(node);
+    } else {
+      console.log('[handleNodeClick] REJECTED - node is not available, status:', node.status);
     }
   };
 
   // Mark a node completed in the map and clear selection
   const completeNode = (nodeId) => {
-    setMapNodes(applyNodeCompletion(mapNodes, nodeId));
+    // Use functional update to ensure we always work with latest mapNodes
+    setMapNodes(prevMapNodes => {
+      console.log('[completeNode] BEFORE - nodeId:', nodeId, 'prevMapNodes count:', prevMapNodes?.length);
+      const beforeNode = prevMapNodes?.find(n => n.id === nodeId);
+      console.log('[completeNode] BEFORE - node status:', beforeNode?.status, 'next:', beforeNode?.next, 'tier:', beforeNode?.tierId);
+      
+      const newMapNodes = applyNodeCompletion(prevMapNodes, nodeId);
+      console.log('[completeNode] AFTER - newMapNodes count:', newMapNodes?.length);
+      
+      const afterNode = newMapNodes?.find(n => n.id === nodeId);
+      console.log('[completeNode] AFTER - completed node status:', afterNode?.status);
+      
+      // Find newly available nodes
+      const newlyAvailable = newMapNodes?.filter(n => {
+        const old = prevMapNodes?.find(o => o.id === n.id);
+        return old?.status === 'locked' && n.status === 'available';
+      });
+      console.log('[completeNode] Newly available nodes:', newlyAvailable?.map(n => ({ id: n.id, tier: n.tierId, type: n.type })));
+      
+      return newMapNodes;
+    });
     setSelectedNode(null);
     setActiveModal(null);
   };
@@ -99,8 +123,11 @@ export function HubTestScreen({
   // ─── Event modal callbacks ─────────────────────────────────────────────────
   const handleEventChoice = (choiceId) => {
     const { node, eventData } = activeModal;
+    console.log('[handleEventChoice] choiceId:', choiceId, 'node:', node.id, 'event:', eventData.id, 'activeModal node next:', node.next);
+    
     const activeRun = runState ?? startRun(meta);
     const newRunState = applyEventChoice(activeRun, eventData.id, choiceId);
+    console.log('[handleEventChoice] newRunState has pendingCombat:', !!newRunState.pendingCombat);
 
     if (newRunState.pendingCombat) {
       // This choice triggers a combat — route to CombatScreen
@@ -110,12 +137,14 @@ export function HubTestScreen({
         variant: newRunState.pendingCombat.variant,
         waves:   3,
       };
+      console.log('[handleEventChoice] Combat pending, routing to combat with variant:', combatNode.variant);
       // Remove pendingCombat before storing
       const { pendingCombat, ...cleanRunState } = newRunState;
       setRunState(cleanRunState);
       completeNode(node.id);
       onPlayNode(combatNode);
     } else {
+      console.log('[handleEventChoice] No combat, completing node:', node.id);
       setRunState(newRunState);
       completeNode(node.id);
     }

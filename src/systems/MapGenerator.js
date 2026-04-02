@@ -224,10 +224,18 @@ export function applyNodeCompletion(mapNodes, completedNodeId) {
     }
   }
 
-  // Build a quick lookup of current statuses (treating completedNodeId as completed)
+  console.log('[applyNodeCompletion] completedNodeId:', completedNodeId);
+  console.log('[applyNodeCompletion] completedNode.next:', mapNodes.find(n => n.id === completedNodeId)?.next);
+  console.log('[applyNodeCompletion] predecessorMap for 2A:', predecessorMap['2A']);
+
+  // Build a quick lookup of current statuses (treating completedNodeId as completed
+  // and treating 'available' nodes as effectively 'completed' for unlocking purposes)
   const statusOf = (id) => {
     if (id === completedNodeId) return 'completed';
-    return mapNodes.find(n => n.id === id)?.status ?? 'locked';
+    const node = mapNodes.find(n => n.id === id);
+    // Treat 'available' as 'completed' for unlocking (they were made available by earlier completions)
+    if (node?.status === 'available' || node?.status === 'completed') return 'completed';
+    return 'locked';
   };
 
   const completedNode = mapNodes.find(n => n.id === completedNodeId);
@@ -244,7 +252,10 @@ export function applyNodeCompletion(mapNodes, completedNodeId) {
       completedNode?.next.includes(node.id)
     ) {
       const preds = predecessorMap[node.id] ?? [];
+      const predStatuses = preds.map(predId => ({ id: predId, status: statusOf(predId) }));
+      console.log('[applyNodeCompletion] Checking node:', node.id, 'preds:', predStatuses);
       const allDone = preds.every(predId => statusOf(predId) === 'completed');
+      console.log('[applyNodeCompletion] allDone:', allDone, 'for node:', node.id);
       if (allDone) {
         return { ...node, status: 'available' };
       }

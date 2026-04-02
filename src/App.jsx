@@ -143,13 +143,24 @@ export default function App() {
     // Honor earned in this specific combat (tracked on game state, not run state)
     const combatHonor   = state.current.earnedHonor || 0;
 
+    console.log('[handleRegionVictory] regionId:', regionId, 'currentRun node type:', currentRun?.currentNodeType);
+
     if (regionId && !meta.conqueredRegions.includes(regionId)) {
       setMeta(prev => ({ ...prev, conqueredRegions: [...prev.conqueredRegions, regionId] }));
     }
 
     // Mark the completed combat node in the map (immutable update)
     if (regionId) {
-      setMapNodes(prev => prev ? applyNodeCompletion(prev, regionId) : prev);
+      console.log('[handleRegionVictory] Calling applyNodeCompletion for:', regionId);
+      setMapNodes(prev => {
+        console.log('[handleRegionVictory] setMapNodes callback, prev count:', prev?.length);
+        const result = prev ? applyNodeCompletion(prev, regionId) : prev;
+        const completedNode = result?.find(n => n.id === regionId);
+        console.log('[handleRegionVictory] After completion, region status:', completedNode?.status);
+        return result;
+      });
+    } else {
+      console.log('[handleRegionVictory] NO regionId - node NOT completed!');
     }
 
     // Boss completion: award total run honor, increment run counter, end run, fresh map
