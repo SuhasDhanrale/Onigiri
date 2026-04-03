@@ -100,7 +100,16 @@ export function HubTestScreen({
   const handleEventChoice = (choiceId) => {
     const { node, eventData } = activeModal;
     const activeRun = runState ?? startRun(meta);
+    const prevHonor = activeRun.honorEarned ?? 0;
+    
     const newRunState = applyEventChoice(activeRun, eventData.id, choiceId);
+    const newHonor = newRunState.honorEarned ?? 0;
+    const honorDelta = newHonor - prevHonor;
+
+    // IMMEDIATE HONOR: Add honor delta to meta.honor right away
+    if (honorDelta !== 0) {
+      setMeta(prev => ({ ...prev, honor: prev.honor + honorDelta }));
+    }
 
     if (newRunState.pendingCombat) {
       const combatNode = {

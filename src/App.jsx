@@ -148,12 +148,15 @@ export default function App() {
       setMapNodes(prev => prev ? applyNodeCompletion(prev, regionId) : prev);
     }
 
-    // Boss completion: award total run honor, increment run counter, end run, fresh map
+    // IMMEDIATE HONOR: Add combat honor to meta.honor right away (for all node types)
+    if (combatHonor > 0) {
+      setMeta(prev => ({ ...prev, honor: prev.honor + combatHonor }));
+    }
+
+    // Boss completion: increment run counter, end run, generate fresh map
     if (currentRun?.currentNodeType === 'boss') {
-      const totalHonor = (currentRun.honorEarned ?? 0) + combatHonor;
       setMeta(prev => ({
         ...prev,
-        honor:     prev.honor + totalHonor,
         totalRuns: (prev.totalRuns ?? 0) + 1,
       }));
       endRun();
