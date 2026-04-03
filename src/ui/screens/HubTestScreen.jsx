@@ -6,8 +6,8 @@ import { getRestOptions, getRestBlessingChoices, applyRestChoice } from '../../s
 import { PROVISIONS, PERMANENT_TECHS, HEIRLOOMS } from '../../config/provisions.js';
 import { COMBAT_VARIANTS, ELITE_VARIANTS } from '../../config/nodes.js';
 import { EventModal } from './EventModal.jsx';
-import { ShopModal }  from './ShopModal.jsx';
-import { RestModal }  from './RestModal.jsx';
+import { ShopModal } from './ShopModal.jsx';
+import { RestModal } from './RestModal.jsx';
 
 export function HubTestScreen({
   meta,
@@ -40,8 +40,8 @@ export function HubTestScreen({
     setScrollLeft(scrollRef.current.scrollLeft);
   };
   const handleMouseLeave = () => setIsDragging(false);
-  const handleMouseUp    = () => setIsDragging(false);
-  const handleMouseMove  = (e) => {
+  const handleMouseUp = () => setIsDragging(false);
+  const handleMouseMove = (e) => {
     if (!isDragging) return;
     e.preventDefault();
     const x = e.pageX - scrollRef.current.offsetLeft;
@@ -85,9 +85,9 @@ export function HubTestScreen({
       if (!runState) setRunState(activeRun);
       setActiveModal({ type: 'shop', node, inventory });
     } else if (node.type === 'rest') {
-      const activeRun   = runState ?? startRun(meta);
-      const options     = getRestOptions(activeRun);
-      const blessings   = getRestBlessingChoices(activeRun);
+      const activeRun = runState ?? startRun(meta);
+      const options = getRestOptions(activeRun);
+      const blessings = getRestBlessingChoices(activeRun);
       if (!runState) setRunState(activeRun);
       setActiveModal({ type: 'rest', node, restOptions: options, blessingChoices: blessings });
     } else {
@@ -101,7 +101,7 @@ export function HubTestScreen({
     const { node, eventData } = activeModal;
     const activeRun = runState ?? startRun(meta);
     const prevHonor = activeRun.honorEarned ?? 0;
-    
+
     const newRunState = applyEventChoice(activeRun, eventData.id, choiceId);
     const newHonor = newRunState.honorEarned ?? 0;
     const honorDelta = newHonor - prevHonor;
@@ -114,9 +114,9 @@ export function HubTestScreen({
     if (newRunState.pendingCombat) {
       const combatNode = {
         ...node,
-        type:    'combat',
+        type: 'combat',
         variant: newRunState.pendingCombat.variant,
-        waves:   3,
+        waves: 3,
       };
       const { pendingCombat, ...cleanRunState } = newRunState;
       setRunState(cleanRunState);
@@ -158,9 +158,9 @@ export function HubTestScreen({
       Object.entries(PERMANENT_TECHS).map(([key, prov]) => [
         key,
         {
-          name:     prov.name,
-          desc:     prov.desc,
-          cost:     prov.cost,
+          name: prov.name,
+          desc: prov.desc,
+          cost: prov.cost,
           unlocked: meta?.unlockedProvisions?.includes(key) ?? false,
         },
       ])
@@ -169,10 +169,10 @@ export function HubTestScreen({
 
   const heirlooms = useMemo(() => {
     const items = Object.entries(HEIRLOOMS).map(([key, prov]) => ({
-      id:       key,
-      name:     prov.name,
-      desc:     prov.desc,
-      icon:     prov.icon,
+      id: key,
+      name: prov.name,
+      desc: prov.desc,
+      icon: prov.icon,
       unlocked: meta?.unlockedProvisions?.includes(key) ?? false,
     }));
     while (items.length < 6) {
@@ -194,21 +194,26 @@ export function HubTestScreen({
             let strokeDasharray = '2 2';
             let opacity = '0.4';
 
-            if (node.status === 'completed') {
+            const hasCompletedNext = node.next?.some(id => {
+              const n = mapNodes.find(m => m.id === id);
+              return n && n.status === 'completed';
+            });
+
+            if (node.status === 'completed' && target.status === 'completed') {
               stroke = '#d4af37';      // gold
               strokeWidth = '4';
               strokeDasharray = 'none';
               opacity = '0.9';
-            } else if (node.status === 'available') {
-              stroke = '#b84235';      // vermilion (active from-node)
-              strokeWidth = '4';
+            } else if (node.status === 'completed' && target.status === 'available' && !hasCompletedNext) {
+              stroke = '#b84235';      // red
+              strokeWidth = '2';
               strokeDasharray = 'none';
               opacity = '0.9';
-            } else if (target.status === 'available') {
+            } else {
               stroke = '#8b8574';      // muted, dashed
-              strokeWidth = '2';
-              strokeDasharray = '5 5';
-              opacity = '0.6';
+              strokeWidth = '1';
+              strokeDasharray = '2 2';
+              opacity = '0.4';
             }
             // locked: stays as default
 
@@ -235,12 +240,12 @@ export function HubTestScreen({
   const getNodeIcon = (type) => {
     switch (type) {
       case 'combat': return '⚔️';
-      case 'elite':  return '💀';
-      case 'event':  return '❓';
-      case 'shop':   return '💰';
-      case 'rest':   return '⛺';
-      case 'boss':   return '👹';
-      default:       return '📍';
+      case 'elite': return '💀';
+      case 'event': return '❓';
+      case 'shop': return '💰';
+      case 'rest': return '⛺';
+      case 'boss': return '👹';
+      default: return '📍';
     }
   };
 
@@ -431,11 +436,10 @@ export function HubTestScreen({
                           <span>{PROVISIONS[hoveredTech].icon}</span>
                           {PROVISIONS[hoveredTech].name}
                         </h4>
-                        <span className={`text-[8px] uppercase font-bold px-2 py-0.5 border ${
-                          meta?.unlockedProvisions?.includes(hoveredTech)
-                            ? 'border-[#d4af37]/30 text-[#d4af37]'
-                            : 'border-[#8b8574]/30 text-[#8b8574]'
-                        }`}>
+                        <span className={`text-[8px] uppercase font-bold px-2 py-0.5 border ${meta?.unlockedProvisions?.includes(hoveredTech)
+                          ? 'border-[#d4af37]/30 text-[#d4af37]'
+                          : 'border-[#8b8574]/30 text-[#8b8574]'
+                          }`}>
                           {meta?.unlockedProvisions?.includes(hoveredTech) ? 'UNLOCKED' : `${PROVISIONS[hoveredTech].cost} H`}
                         </span>
                       </div>
@@ -476,7 +480,7 @@ export function HubTestScreen({
                   {/* Inventory Grid */}
                   <div className="grid grid-cols-2 gap-3 overflow-y-auto custom-scrollbar content-start pb-4 pr-1">
                     {heirlooms.map(item => {
-                      const isEmpty  = item.id.startsWith('EMPTY');
+                      const isEmpty = item.id.startsWith('EMPTY');
                       const isActive = meta?.equippedItem === item.id;
                       const isLocked = !item.unlocked && !isEmpty;
 
@@ -538,25 +542,25 @@ export function HubTestScreen({
               {/* Nodes */}
               {mapNodes.map(node => {
                 const isAvailable = node.status === 'available';
-                const isBoss      = node.status === 'boss';
+                const isBoss = node.status === 'boss';
                 const isCompleted = node.status === 'completed';
-                const isSelected  = selectedNode?.id === node.id;
+                const isSelected = selectedNode?.id === node.id;
 
                 const nodeTypeSizes = {
                   combat: 'w-16 h-16',
-                  elite:  'w-20 h-20',
-                  event:  'w-16 h-16',
-                  shop:   'w-16 h-16',
-                  rest:   'w-14 h-14',
-                  boss:   'w-24 h-24',
+                  elite: 'w-20 h-20',
+                  event: 'w-16 h-16',
+                  shop: 'w-16 h-16',
+                  rest: 'w-14 h-14',
+                  boss: 'w-24 h-24',
                 };
                 const nodeTypeBorderColors = {
                   combat: '#b84235',
-                  elite:  '#8b1420',
-                  event:  '#d4af37',
-                  shop:   '#4a5d23',
-                  rest:   '#2b3d60',
-                  boss:   '#dfd4ba',
+                  elite: '#8b1420',
+                  event: '#d4af37',
+                  shop: '#4a5d23',
+                  rest: '#2b3d60',
+                  boss: '#dfd4ba',
                 };
                 const size = nodeTypeSizes[node.type] || 'w-16 h-16';
                 const borderColor = nodeTypeBorderColors[node.type] || '#8b8574';
@@ -575,11 +579,11 @@ export function HubTestScreen({
                     onClick={() => handleNodeClick(node)}
                   >
                     <div className={`${size} rounded-full border-2 flex items-center justify-center transition-all duration-300 relative
-                      ${isSelected   ? `bg-[#1a0f0e] border-[#d4af37] shadow-[0_0_45px_rgba(212,175,55,0.9)] ${selectedScale}` :
-                        isAvailable  ? `bg-[#1a0f0e] border-[${borderColor}] shadow-[0_0_20px_rgba(255,255,255,0.15)] ${availableScale}` :
-                        isBoss       ? `bg-[#0a0908] border-[#dfd4ba] shadow-[0_0_60px_rgba(184,66,53,0.6)] ${bossScale}` :
-                        isCompleted  ? 'bg-[#1a0f0e]/80 border-[#d4af37]/80' :
-                        `bg-[#0a0908] border-[${borderColor}]/40 hover:border-[${borderColor}]`
+                      ${isSelected ? `bg-[#1a0f0e] border-[#d4af37] shadow-[0_0_45px_rgba(212,175,55,0.9)] ${selectedScale}` :
+                        isAvailable ? `bg-[#1a0f0e] border-[${borderColor}] shadow-[0_0_20px_rgba(255,255,255,0.15)] ${availableScale}` :
+                          isBoss ? `bg-[#0a0908] border-[#dfd4ba] shadow-[0_0_60px_rgba(184,66,53,0.6)] ${bossScale}` :
+                            isCompleted ? 'bg-[#1a0f0e]/80 border-[#d4af37]/80' :
+                              `bg-[#0a0908] border-[${borderColor}]/40 hover:border-[${borderColor}]`
                       }`}
                     >
                       {(isAvailable || isSelected) && (
@@ -611,17 +615,17 @@ export function HubTestScreen({
               <div className="flex w-full items-center justify-between animate-[fade-in_0.2s_ease-out]">
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#d4af37] block mb-2">
-                    {hoveredMapNode.type === 'boss'  ? 'Domain Boss' :
-                     hoveredMapNode.type === 'elite' ? 'Elite Threat' :
-                     hoveredMapNode.type === 'event' ? 'Mystery Event' :
-                     hoveredMapNode.type === 'shop'  ? 'Traveling Merchant' :
-                     hoveredMapNode.type === 'rest'  ? 'War Camp' : 'Combat Encounter'}
+                    {hoveredMapNode.type === 'boss' ? 'Domain Boss' :
+                      hoveredMapNode.type === 'elite' ? 'Elite Threat' :
+                        hoveredMapNode.type === 'event' ? 'Mystery Event' :
+                          hoveredMapNode.type === 'shop' ? 'Traveling Merchant' :
+                            hoveredMapNode.type === 'rest' ? 'War Camp' : 'Combat Encounter'}
                   </span>
                   <h3 className="text-3xl font-black text-white tracking-widest uppercase mb-1">{hoveredMapNode.name}</h3>
                   <span className={`self-start border px-2 py-0.5 uppercase tracking-widest font-bold text-[9px]
                     ${hoveredMapNode.status === 'completed' ? 'bg-[#d4af37]/10 border-[#d4af37]/30 text-[#d4af37]' :
                       hoveredMapNode.status === 'available' ? 'bg-[#2b5e2b]/20 border-[#4a5d23]/50 text-[#6a9e4a]' :
-                      'bg-[#8b8574]/10 border-[#8b8574]/30 text-[#8b8574]'
+                        'bg-[#8b8574]/10 border-[#8b8574]/30 text-[#8b8574]'
                     }`}
                   >
                     {hoveredMapNode.status.replace('_', ' ')}
@@ -633,11 +637,10 @@ export function HubTestScreen({
                     {hoveredMapNode.threat > 0 && (
                       <div className="flex items-center gap-3 text-xs font-bold text-[#8b8574] uppercase tracking-[0.2em]">
                         <span>Threat Level</span>
-                        <span className={`text-sm ${
-                          hoveredMapNode.threat <= 2 ? 'text-[#dfd4ba]/60' :
+                        <span className={`text-sm ${hoveredMapNode.threat <= 2 ? 'text-[#dfd4ba]/60' :
                           hoveredMapNode.threat >= 6 ? 'text-[#d4af37]' :
-                          'text-[#b84235]'
-                        }`}>
+                            'text-[#b84235]'
+                          }`}>
                           {'💀'.repeat(Math.min(hoveredMapNode.threat, 6))}
                         </span>
                       </div>
@@ -731,9 +734,9 @@ export function HubTestScreen({
           <div className="relative z-10 px-12 py-3 border border-[#b84235] bg-[#1a0f0e] text-[#dfd4ba] text-lg uppercase tracking-[0.3em] font-black group-hover:text-white transition-colors group-hover:border-[#d4af37]">
             {selectedNode
               ? (selectedNode.type === 'event' ? `Investigate: ${selectedNode.name}`
-                  : selectedNode.type === 'shop' ? `Visit: ${selectedNode.name}`
+                : selectedNode.type === 'shop' ? `Visit: ${selectedNode.name}`
                   : selectedNode.type === 'rest' ? `Rest: ${selectedNode.name}`
-                  : `Begin ${selectedNode.name}`)
+                    : `Begin ${selectedNode.name}`)
               : 'Select a Node'
             }
           </div>
