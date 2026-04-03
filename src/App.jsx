@@ -82,9 +82,7 @@ export default function App() {
 
   const startCombat = useCallback((regionId) => {
     if (!spriteRenderer.isLoaded()) {
-      spriteRenderer.loadAllSprites().then(() => {
-        console.log('[Sprites] All sprites loaded');
-      }).catch(err => {
+      spriteRenderer.loadAllSprites().catch(err => {
         console.warn('[Sprites] Failed to load some sprites:', err);
       });
     }
@@ -140,27 +138,14 @@ export default function App() {
   const handleRegionVictory = useCallback(() => {
     const regionId      = state.current.currentRegion;
     const currentRun    = runStateRef.current;
-    // Honor earned in this specific combat (tracked on game state, not run state)
     const combatHonor   = state.current.earnedHonor || 0;
-
-    console.log('[handleRegionVictory] regionId:', regionId, 'currentRun node type:', currentRun?.currentNodeType);
 
     if (regionId && !meta.conqueredRegions.includes(regionId)) {
       setMeta(prev => ({ ...prev, conqueredRegions: [...prev.conqueredRegions, regionId] }));
     }
 
-    // Mark the completed combat node in the map (immutable update)
     if (regionId) {
-      console.log('[handleRegionVictory] Calling applyNodeCompletion for:', regionId);
-      setMapNodes(prev => {
-        console.log('[handleRegionVictory] setMapNodes callback, prev count:', prev?.length);
-        const result = prev ? applyNodeCompletion(prev, regionId) : prev;
-        const completedNode = result?.find(n => n.id === regionId);
-        console.log('[handleRegionVictory] After completion, region status:', completedNode?.status);
-        return result;
-      });
-    } else {
-      console.log('[handleRegionVictory] NO regionId - node NOT completed!');
+      setMapNodes(prev => prev ? applyNodeCompletion(prev, regionId) : prev);
     }
 
     // Boss completion: award total run honor, increment run counter, end run, fresh map

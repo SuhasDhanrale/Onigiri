@@ -155,7 +155,7 @@ export function generateMap(seed, runNumber) {
       x,
       y:       yPos[i],
       next:    [],
-      status:  tier === 0 ? 'available' : (tier === 5 ? 'boss' : 'locked'),
+      status:  tier === 0 ? 'available' : 'locked',
     }));
 
     tiers.push(tierNodes);
@@ -224,10 +224,6 @@ export function applyNodeCompletion(mapNodes, completedNodeId) {
     }
   }
 
-  console.log('[applyNodeCompletion] completedNodeId:', completedNodeId);
-  console.log('[applyNodeCompletion] completedNode.next:', mapNodes.find(n => n.id === completedNodeId)?.next);
-  console.log('[applyNodeCompletion] predecessorMap for 2A:', predecessorMap['2A']);
-
   // Build a quick lookup of current statuses (treating completedNodeId as completed
   // and treating 'available' nodes as effectively 'completed' for unlocking purposes)
   const statusOf = (id) => {
@@ -252,11 +248,8 @@ export function applyNodeCompletion(mapNodes, completedNodeId) {
       completedNode?.next.includes(node.id)
     ) {
       const preds = predecessorMap[node.id] ?? [];
-      const predStatuses = preds.map(predId => ({ id: predId, status: statusOf(predId) }));
-      console.log('[applyNodeCompletion] Checking node:', node.id, 'preds:', predStatuses);
-      const allDone = preds.every(predId => statusOf(predId) === 'completed');
-      console.log('[applyNodeCompletion] allDone:', allDone, 'for node:', node.id);
-      if (allDone) {
+      const anyDone = preds.some(predId => statusOf(predId) === 'completed');
+      if (anyDone) {
         return { ...node, status: 'available' };
       }
     }
