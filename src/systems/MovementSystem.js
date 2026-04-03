@@ -16,7 +16,8 @@ export function calculateVelocity(unit, target, closestSq, s, now, uSpeed, enemi
       if (friendlyCount > 0) avgX /= (friendlyCount + 1);
       const dxCenter = avgX - unit.x;
       vx = Math.sign(dxCenter) * Math.min(Math.abs(dxCenter) * 0.5, 10);
-      vy = 0;
+      
+      vy = unit.team === 'enemy' ? uSpeed : 0;
       return { vx, vy };
     }
 

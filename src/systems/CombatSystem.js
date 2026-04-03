@@ -126,9 +126,23 @@ export function tickUnits(s, dt, now, metaRef) {
           }
         }
       } else if (unit.stance_override === 'SCREENING') {
-        // Same target, slots were full — retry in case a slot opened up this frame
-        const retry = claimSlot(unit, target);
-        if (retry) unit.stance_override = null;
+        // Enemy units: scan ALL nearby targets for available slots while advancing
+        if (unit.team === 'enemy') {
+          for (const potentialTarget of targetList) {
+            if (potentialTarget.meleeSlots) {
+              const retry = claimSlot(unit, potentialTarget);
+              if (retry) {
+                unit.stance_override = null;
+                target = potentialTarget;
+                break;
+              }
+            }
+          }
+        } else {
+          // Player units: retry same target only
+          const retry = claimSlot(unit, target);
+          if (retry) unit.stance_override = null;
+        }
       } else if (unit.claimedSlotIdx !== null) {
         // Target hasn't changed — recalculate slot position since target may have moved this frame
         const slotPos = calculateSlotPosition(unit, target, unit.claimedSlotIdx);
