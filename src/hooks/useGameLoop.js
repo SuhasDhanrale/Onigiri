@@ -46,8 +46,8 @@ export function useGameLoop(state, fgCanvasRef, bgCanvasRef, metaRef, setUiTick)
       tickProjectiles(s, dt);
       tickUnits(s, dt, now, metaRef);
 
-      const bgCtx = bgCanvasRef.current?.getContext('2d');
-      processDeaths(s, bgCtx, metaRef);
+      processDeaths(s, metaRef);
+
 
       tickParticles(s, dt);
       tickEffects(s, dt);

@@ -4,13 +4,12 @@ import { bus } from '../core/EventBus.js';
 import { EVENTS } from '../core/events.js';
 
 /**
- * Processes all dead units (hp <= 0): grants command, honor, blood splats, particles.
+ * Processes all dead units (hp <= 0): grants command, honor, particles.
  * Removes dead units from s.units after processing.
  * @param {object} s       - game state
- * @param {object} bgCtx   - background canvas 2d context (for blood splats)
  * @param {object} metaRef - React ref to meta state
  */
-export function processDeaths(s, bgCtx, metaRef) {
+export function processDeaths(s, metaRef) {
   for (let i = s.units.length - 1; i >= 0; i--) {
     if (s.units[i].hp <= 0) {
       const u = s.units[i];
@@ -50,21 +49,8 @@ export function processDeaths(s, bgCtx, metaRef) {
 
       addParticle(s, u.x, u.y, COLORS.ink, 12);
 
-      // Blood splat on background canvas
-      if (bgCtx && u.name !== 'Bamboo Barricade') {
-        bgCtx.save();
-        bgCtx.globalCompositeOperation = 'multiply';
-        bgCtx.fillStyle = Math.random() > 0.5 ? 'rgba(184, 66, 53, 0.25)' : 'rgba(27, 25, 24, 0.35)';
-        bgCtx.beginPath();
-        for (let splat = 0; splat < 4 + Math.random() * 3; splat++) {
-          const splatR = (u.radius * (0.3 + Math.random() * 0.8));
-          const splatX = u.x + (Math.random() - 0.5) * u.radius * 2;
-          const splatY = u.y + (Math.random() - 0.5) * u.radius * 2;
-          bgCtx.arc(splatX, splatY, Math.max(0.1, splatR), 0, Math.PI * 2);
-        }
-        bgCtx.fill();
-        bgCtx.restore();
-      }
+      // No blood splats on background canvas
+
 
       bus.emit(EVENTS.UNIT_DIED, { unit: u });
       s.units.splice(i, 1);
