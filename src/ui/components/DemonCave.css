@@ -1,0 +1,67 @@
+.demon-cave-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 120px;
+  pointer-events: none;
+  z-index: 20; /* Above units on canvas, below main HUD */
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow: visible;
+}
+
+.demon-cave-svg {
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.5));
+}
+
+/* Pulsing red glow */
+.cave-pulse-glow {
+  animation: cavePulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes cavePulse {
+  0% { opacity: 0.3; rx: 250; ry: 60; }
+  100% { opacity: 0.8; rx: 350; ry: 100; }
+}
+
+/* Spirit Mist Particles */
+.spirit-mist-container {
+  position: absolute;
+  top: 40px;
+  width: 100%;
+  height: 100px;
+  display: flex;
+  justify-content: space-around;
+  opacity: 0.6;
+}
+
+.mist-particle {
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle, #b84235 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(15px);
+  animation: floatMist 8s ease-in-out infinite;
+}
+
+/* Individual mist particle variations */
+.mist-0 { animation-delay: 0s; left: 10%; }
+.mist-1 { animation-delay: 2s; left: 25%; background: radial-gradient(circle, #4c4947 0%, transparent 70%); }
+.mist-2 { animation-delay: 4s; left: 45%; }
+.mist-3 { animation-delay: 1s; left: 60%; background: radial-gradient(circle, #4c4947 0%, transparent 70%); }
+.mist-4 { animation-delay: 5s; left: 80%; }
+.mist-5 { animation-delay: 3s; left: 95%; background: radial-gradient(circle, #b84235 0%, transparent 70%); }
+
+@keyframes floatMist {
+  0% { transform: translate(0, 0) scale(1); opacity: 0; }
+  25% { opacity: 0.4; }
+  50% { transform: translate(20px, 40px) scale(1.5); opacity: 0.2; }
+  75% { opacity: 0.4; }
+  100% { transform: translate(-10px, 80px) scale(2); opacity: 0; }
+}
+
+/* Cave mouth rough edges animation (optional for "shaking" effect) */
