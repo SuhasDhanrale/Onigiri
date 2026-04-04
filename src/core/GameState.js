@@ -1,3 +1,4 @@
+import { CAVE_CONFIG } from '../config/cave.js';
 
 /**
  * Returns the initial game state object.
@@ -11,6 +12,22 @@ export function createInitialState() {
     particles: [], slashTrails: [], lightnings: [], dragonWaves: [], foxFires: [],
     isSlashing: false, lastSlashPos: null,
     focusedBuilding: null,
+    cave: {
+      x: CAVE_CONFIG.cave.x,
+      y: CAVE_CONFIG.cave.y,
+      hp: CAVE_CONFIG.cave.maxHp,
+      maxHp: CAVE_CONFIG.cave.maxHp,
+      radius: CAVE_CONFIG.cave.radius,
+    },
+    orb: {
+      x: CAVE_CONFIG.orb.x,
+      y: CAVE_CONFIG.orb.y,
+      hp: CAVE_CONFIG.orb.maxHp,
+      maxHp: CAVE_CONFIG.orb.maxHp,
+      radius: CAVE_CONFIG.orb.radius,
+      active: true,
+      respawnTimer: undefined,
+    },
     barracks:    { HATAMOTO: 0, YUMI: 0, CAVALRY: 0, HOROKU: 0 },
     troopLevel:  { HATAMOTO: 1, YUMI: 1, CAVALRY: 1, HOROKU: 1 },
     autoUnlocked:{ HATAMOTO: false, YUMI: false, CAVALRY: false, HOROKU: false },

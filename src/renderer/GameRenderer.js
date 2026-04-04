@@ -2,6 +2,7 @@ import { V_WIDTH, V_HEIGHT } from '../config/constants.js';
 import { drawBackground } from './drawBackground.js';
 import { drawBackgroundEffects, drawForegroundEffects } from './drawEffects.js';
 import { drawUnitTopDown } from './drawUnits.js';
+import { drawCave } from './drawCave.js';
 
 export const initRenderer = (canvas) => {
     canvas.width = V_WIDTH;
@@ -71,6 +72,7 @@ export const drawGame = (ctx, s, dt, now, metaRef) => {
 
     drawBackground(ctx, s, now, metaRef);
     drawBackgroundEffects(ctx, s);
+    drawCave(ctx, s, now);
 
     // Sort and draw units — semantic layer first, Y-second within layer
     [...s.units]

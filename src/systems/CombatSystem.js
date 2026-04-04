@@ -5,6 +5,7 @@ import { calculateVelocity, applySeparation } from './MovementSystem.js';
 import { bus } from '../core/EventBus.js';
 import { EVENTS } from '../core/events.js';
 import { claimSlot, releaseSlot, calculateSlotPosition, shouldBypassSlotClaiming } from './SlotManager.js';
+import { canAttackOrb, damageOrb } from './CaveSystem.js';
 
 /**
  * Full unit movement + combat loop. Processes all units each frame.
@@ -104,6 +105,15 @@ export function tickUnits(s, dt, now, metaRef) {
           }
           if (distSq < closestSq) { closestSq = rawDistSq; target = e; }
         }
+      }
+    }
+
+    // Orb targeting for ranged/siege player units
+    let orbTarget = null;
+    if (unit.team === 'player' && (unit.type === 'ranged' || unit.type === 'siege') && canAttackOrb(s, unit)) {
+      const orbDistSq = Math.pow(s.orb.x - unit.x, 2) + Math.pow(s.orb.y - unit.y, 2);
+      if (orbDistSq < closestSq) {
+        orbTarget = s.orb;
       }
     }
 
@@ -222,6 +232,33 @@ export function tickUnits(s, dt, now, metaRef) {
       if (unit.type === 'ranged') {
         const minRangeSq = Math.pow(unit.range * 0.4, 2);
         if (closestSq < minRangeSq) { vy = (unit.team === 'player' ? 1 : -1) * uSpeed * 0.8; vx = 0; }
+      }
+    }
+
+    // Orb attack for ranged/siege units
+    if (orbTarget && unit.attackCooldown <= 0) {
+      const orbDist = Math.hypot(orbTarget.x - unit.x, orbTarget.y - unit.y);
+      if (orbDist <= unit.range) {
+        if (unit.type === 'ranged') {
+          const angle = Math.atan2(orbTarget.y - unit.y, orbTarget.x - unit.x);
+          s.projectiles.push({ 
+            x: unit.x, y: unit.y, 
+            vx: Math.cos(angle) * 1200, 
+            vy: Math.sin(angle) * 1200, 
+            damage: unit.damage, team: unit.team, 
+            isOrbAttack: true 
+          });
+        } else if (unit.type === 'siege') {
+          s.projectiles.push({ 
+            type: 'lob', 
+            startX: unit.x, startY: unit.y, 
+            targetX: orbTarget.x, targetY: orbTarget.y, 
+            progress: 0, travelTime: 1.2, 
+            damage: unit.damage, team: unit.team, 
+            z: 0, isOrbAttack: true 
+          });
+        }
+        unit.attackCooldown = unit.attackSpeed / atkSpeedMult;
       }
     }
 
