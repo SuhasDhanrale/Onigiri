@@ -80,12 +80,39 @@ export function CombatScreen({
         {/* --- DECORATIONS --- */}
         <DemonCave />
 
-        <div className="absolute top-[140px] left-8 flex justify-between items-start pointer-events-none z-30">
+        <div className="absolute top-[140px] left-8 flex flex-col gap-2 pointer-events-none z-30">
+          {/* Wave status */}
           <div className="flex flex-col bg-[var(--color-parchment)]/90 px-4 py-2 border-2 border-[var(--color-ink-dark)]">
             <span className={`${waveStatusColor} text-xs uppercase tracking-[0.3em] font-bold`}>{waveStatusText}</span>
             <span className="text-3xl font-black text-[var(--color-ink-dark)] tracking-widest">WAVE {s.wave} <span className="text-xl">/ {CAMPAIGN_MAP[s.currentRegion]?.waves || '?'}</span></span>
           </div>
+
+          {/* Cave HP indicator */}
+          {s.cave && (
+            (() => {
+              const hpPct = s.cave.hp / s.cave.maxHp;
+              const isRaging = hpPct < 0.5;
+              const barColor = hpPct > 0.66 ? '#b84235' : hpPct > 0.33 ? '#d4af37' : '#ff3b1f';
+              return (
+                <div className={`flex flex-col bg-[var(--color-parchment)]/90 px-3 py-2 border-2 ${isRaging ? 'border-[#ff3b1f]' : 'border-[var(--color-ink-dark)]'}`}>
+                  <span className={`text-[10px] uppercase tracking-[0.25em] font-bold ${isRaging ? 'text-[#ff3b1f]' : 'text-[#8b8574]'}`}>
+                    {isRaging ? '⚠ CAVE RAGE' : 'DEMON CAVE'}
+                  </span>
+                  <div className="w-full h-2 bg-[#4c4947] mt-1 relative overflow-hidden">
+                    <div
+                      className="h-full transition-all duration-300"
+                      style={{ width: `${Math.max(0, hpPct * 100)}%`, backgroundColor: barColor }}
+                    />
+                  </div>
+                  <span className="text-[9px] text-[#8b8574] mt-0.5 font-mono">
+                    {Math.ceil(s.cave.hp)} / {s.cave.maxHp}
+                  </span>
+                </div>
+              );
+            })()
+          )}
         </div>
+
 
         <ResultScreens s={s} meta={meta} setMeta={setMeta} initRun={initRun} handleRegionVictory={handleRegionVictory} />
       </div>

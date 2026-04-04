@@ -6,7 +6,7 @@ import { tickWaveState } from '../systems/WaveSystem.js';
 import { tickFoxFires, tickDragonWaves } from '../systems/SpellSystem.js';
 import { tickProjectiles } from '../systems/ProjectileSystem.js';
 import { tickUnits } from '../systems/CombatSystem.js';
-import { tickCave } from '../systems/CaveSystem.js';
+import { tickCave, tickMeleeCaveDamage } from '../systems/CaveSystem.js';
 import { processDeaths } from '../systems/RewardSystem.js';
 import { drawGame } from '../renderer/GameRenderer.js';
 import { BARRACKS_DEFS } from '../config/barracks.js';
@@ -42,7 +42,8 @@ export function useGameLoop(state, fgCanvasRef, bgCanvasRef, metaRef, setUiTick)
       tickBarracks(s, dt, metaRef);
       tickInkLine(s, dt);
       tickWaveState(s, dt, metaRef);
-      tickCave(s, dt);
+      tickCave(s, dt, metaRef);
+      tickMeleeCaveDamage(s, dt);
       tickFoxFires(s, dt);
       tickDragonWaves(s, dt);
       tickProjectiles(s, dt);
