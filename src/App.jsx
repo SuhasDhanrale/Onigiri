@@ -6,6 +6,7 @@ import { COLORS } from './config/colors.js';
 import { UNIT_TYPES } from './config/units.js';
 import { BARRACKS_DEFS, BARRACKS_LAYOUT } from './config/barracks.js';
 import { getCost, getSquadCap } from './core/utils.js';
+import { CAVE_CONFIG } from './config/cave.js';
 
 import { CommandPanel } from './ui/panels/CommandPanel.jsx';
 import { CombatScreen } from './ui/screens/CombatScreen.jsx';
@@ -61,7 +62,24 @@ export default function App() {
     
     guardQuotas: { HATAMOTO: 0, YUMI: 0, CAVALRY: 0, HOROKU: 0 },
     recalcGuardsFlag: false,
-    lastPlayerUnitCount: 0
+    lastPlayerUnitCount: 0,
+    
+    cave: {
+      x: CAVE_CONFIG.cave.x,
+      y: CAVE_CONFIG.cave.y,
+      hp: CAVE_CONFIG.cave.maxHp,
+      maxHp: CAVE_CONFIG.cave.maxHp,
+      radius: CAVE_CONFIG.cave.radius,
+    },
+    orb: {
+      x: CAVE_CONFIG.orb.x,
+      y: CAVE_CONFIG.orb.y,
+      hp: CAVE_CONFIG.orb.maxHp,
+      maxHp: CAVE_CONFIG.orb.maxHp,
+      radius: CAVE_CONFIG.orb.radius,
+      active: true,
+      respawnTimer: undefined,
+    },
   });
 
   const initRun = useCallback(() => {
@@ -72,13 +90,13 @@ export default function App() {
       focusedBuilding: null,
       earnedHonor: 0
     };
+    // Reset conqueredRegions here so mount + resetDynasty both go through one path
+    setMeta(prev => ({ ...prev, conqueredRegions: [] }));
     setUiTick(t => t + 1);
-  }, []);
+  }, [setMeta]);
 
-  useEffect(() => { 
-      setMeta(prev => ({ ...prev, conqueredRegions: [] }));
-      initRun(); 
-  }, [initRun, setMeta]);
+  // Single call on mount — setMeta + setUiTick are batched together by React 18
+  useEffect(() => { initRun(); }, [initRun]);
 
   const startCombat = useCallback((regionId) => {
     if (!spriteRenderer.isLoaded()) {
@@ -107,7 +125,24 @@ export default function App() {
       
       guardQuotas: { HATAMOTO: 0, YUMI: 0, CAVALRY: 0, HOROKU: 0 },
       recalcGuardsFlag: true,
-      lastPlayerUnitCount: 0
+      lastPlayerUnitCount: 0,
+      
+      cave: {
+        x: CAVE_CONFIG.cave.x,
+        y: CAVE_CONFIG.cave.y,
+        hp: CAVE_CONFIG.cave.maxHp,
+        maxHp: CAVE_CONFIG.cave.maxHp,
+        radius: CAVE_CONFIG.cave.radius,
+      },
+      orb: {
+        x: CAVE_CONFIG.orb.x,
+        y: CAVE_CONFIG.orb.y,
+        hp: CAVE_CONFIG.orb.maxHp,
+        maxHp: CAVE_CONFIG.orb.maxHp,
+        radius: CAVE_CONFIG.orb.radius,
+        active: true,
+        respawnTimer: undefined,
+      },
     };
     
     // Auto-spawn garrison units if a rest-node garrison was set this run
@@ -160,7 +195,8 @@ export default function App() {
         totalRuns: (prev.totalRuns ?? 0) + 1,
       }));
       endRun();
-      setMapNodes(generateMap(Date.now(), (meta.totalRuns ?? 0) + 1));
+      // Use metaRef to avoid reading a stale totalRuns from the closure
+      setMapNodes(generateMap(Date.now(), (metaRef.current.totalRuns ?? 0) + 1));
       state.current.gameState = 'MAP_SCREEN';
     } else if (regionId === 'THE_ABYSS') {
       state.current.gameState = 'CAMPAIGN_OVER';

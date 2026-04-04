@@ -11,17 +11,30 @@
             "id": "40c432be722a0285",
             "type": "leaf",
             "state": {
-              "type": "markdown",
+              "type": "bases",
               "state": {
-                "file": "doc/game_design_analysis.md",
-                "mode": "preview",
-                "source": false
+                "file": "Untitled.base",
+                "viewName": "Table"
               },
-              "icon": "lucide-file",
-              "title": "game_design_analysis"
+              "icon": "lucide-table",
+              "title": "Untitled"
+            }
+          },
+          {
+            "id": "f28ce15a724813c7",
+            "type": "leaf",
+            "state": {
+              "type": "bases",
+              "state": {
+                "file": "Untitled.base",
+                "viewName": "Table"
+              },
+              "icon": "lucide-table",
+              "title": "Untitled"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -94,7 +107,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "doc/conquest_map_implementation_plan_v2.md",
+                "file": "Untitled.base",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +117,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for conquest_map_implementation_plan_v2"
+              "title": "Backlinks for Untitled"
             }
           },
           {
@@ -169,8 +182,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -183,8 +195,13 @@
       "bases:Create new base": false
     }
   },
-  "active": "40c432be722a0285",
+  "active": "2d43ae3a4f0e2cdf",
   "lastOpenFiles": [
+    "Untitled",
+    "Untitled.base",
+    "README.md",
+    "ARCHITECTURE_PLAN.md",
+    "doc/game_design_analysis.md",
     "dist/assets/index-XsRl-ivT.js",
     "dist/assets/index-CUnGudyW.css",
     "src/renderer/drawCave.js",
@@ -194,8 +211,6 @@
     "src/ui/components/ForestBackground.jsx",
     "src/ui/components/DemonCave.css",
     "src/ui/components/DemonCave.jsx",
-    "src/hooks/useRunState.js",
-    "src/systems/EventSystem.js",
     "doc/ai_movement_analysis.md",
     "doc/micro_ai_behavior_analysis.md",
     "doc/SYSTEM_MAP.md",
@@ -212,7 +227,6 @@
     "dist/assets/sprites/sakura-1.svg",
     "node_modules/@alloc/quick-lru/readme.md",
     "doc/DEVELOPER_GUIDE.md",
-    "ARCHITECTURE_PLAN.md",
     "node_modules/ms/license.md"
   ]
 }
