@@ -110,8 +110,18 @@ export function tickWaveState(s, dt, metaRef) {
       // Fall back to activeNodeWaves injected by handlePlayNode (Gap #9 fix).
       const maxWaves = regionDef?.waves ?? (metaRef.current.activeNodeWaves ?? 3);
       if (s.wave >= maxWaves) {
-        s.gameState = 'REGION_VICTORY';
-        bus.emit(EVENTS.GAME_STATE_CHANGED, { state: s.gameState });
+        if (s.isBossNode) {
+          s.waveState = 'BOSS_PHASE';
+          if (s.orb) s.orb.active = true;
+          bus.emit(EVENTS.WAVE_CHANGED, { 
+            wave: s.wave, 
+            waveState: s.waveState, 
+            waveTimer: 0 
+          });
+        } else {
+          s.gameState = 'REGION_VICTORY';
+          bus.emit(EVENTS.GAME_STATE_CHANGED, { state: s.gameState });
+        }
       } else {
         const isReformation = s.wave % 3 === 0;
         s.wave++;

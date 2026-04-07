@@ -3,7 +3,6 @@ import { COLORS } from '../config/colors.js';
 
 export function drawCave(ctx, s, now) {
   if (!s.cave || !s.orb) {
-    console.log('drawCave: missing cave or orb state', { cave: s.cave, orb: s.orb });
     return;
   }
 
@@ -62,7 +61,7 @@ export function drawCave(ctx, s, now) {
   ctx.fill();
 
   // "RAGE" label when in rage mode
-  if (isRaging) {
+  if (isRaging && s.waveState === 'BOSS_PHASE') {
     const rageTextAlpha = 0.7 + Math.sin(now / 200) * 0.3;
     ctx.globalAlpha = rageTextAlpha;
     ctx.fillStyle = '#ff3b1f';
@@ -73,8 +72,10 @@ export function drawCave(ctx, s, now) {
     ctx.globalAlpha = 1;
   }
 
-  // --- Cave HP bar ---
-  const barW = 140;
+  // Only draw game-mechanic UI and orb if we are in BOSS_PHASE
+  if (s.waveState === 'BOSS_PHASE') {
+    // --- Cave HP bar ---
+    const barW = 140;
   const barH = 14;
   const barX = cave.x - barW / 2;
   const barY = cave.y - cave.radius - 38;
@@ -114,6 +115,8 @@ export function drawCave(ctx, s, now) {
     ctx.textAlign = 'center';
     ctx.fillText('▲ TARGET: DESTROY THE CAVE', cave.x, barY - 14);
     ctx.globalAlpha = 1;
+  }
+
   }
 
   ctx.restore();

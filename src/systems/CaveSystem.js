@@ -4,7 +4,7 @@ import { bus } from '../core/EventBus.js';
 import { EVENTS } from '../core/events.js';
 
 export function tickCave(s, dt, metaRef) {
-  if (!s.cave || !s.orb) return;
+  if (!s.cave || !s.orb || s.waveState !== 'BOSS_PHASE') return;
 
   if (s.cave.hp <= 0) {
     s.gameState = 'REGION_VICTORY';
@@ -103,7 +103,7 @@ export function damageOrb(s, damage) {
  * Weak by design — rewards aggressive play without replacing the orb path.
  */
 export function tickMeleeCaveDamage(s, dt) {
-  if (!s.cave || s.cave.hp <= 0) return;
+  if (!s.cave || s.cave.hp <= 0 || s.waveState !== 'BOSS_PHASE') return;
 
   const cfg = CAVE_CONFIG.meleePush;
   const reachY = s.cave.y + s.cave.radius + cfg.reachY;

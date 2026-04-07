@@ -66,6 +66,13 @@ export function CombatScreen({
     waveStatusText = "MOPPING UP...";
     waveStatusColor = "text-[#8b8574]";
   }
+  else if (s.waveState === 'BOSS_PHASE') {
+    waveStatusText = "DESTROY THE CAVE";
+    waveStatusColor = "text-[#ff3b1f]";
+  }
+
+  const maxWaves = meta.activeNodeWaves ?? CAMPAIGN_MAP[s.currentRegion]?.waves ?? 3;
+  const isBoss = meta.activeNodeType === 'boss';
 
   return (
     <>
@@ -77,14 +84,62 @@ export function CombatScreen({
         <canvas ref={bgCanvasRef} width={size.w} height={size.h} className="absolute top-0 left-0 w-full h-full block touch-none" />
         <canvas ref={fgCanvasRef} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} width={size.w} height={size.h} className={`absolute top-0 left-0 w-full h-full block touch-none z-10 ${armedSpell ? 'cursor-crosshair' : 'cursor-default'}`} />
 
-        {/* --- DECORATIONS --- */}
-        <DemonCave />
+        {s.cave && <DemonCave />}
 
         <div className="absolute top-[140px] left-8 flex flex-col gap-2 pointer-events-none z-30">
-          {/* Wave status */}
-          <div className="flex flex-col bg-[var(--color-parchment)]/90 px-4 py-2 border-2 border-[var(--color-ink-dark)]">
-            <span className={`${waveStatusColor} text-xs uppercase tracking-[0.3em] font-bold`}>{waveStatusText}</span>
-            <span className="text-3xl font-black text-[var(--color-ink-dark)] tracking-widest">WAVE {s.wave} <span className="text-xl">/ {CAMPAIGN_MAP[s.currentRegion]?.waves || '?'}</span></span>
+          {/* March Bar */}
+          <div className="flex flex-col bg-[var(--color-parchment)]/90 px-4 py-2 border-2 border-[var(--color-ink-dark)] w-[260px]">
+            <div className="flex justify-between items-end mb-1">
+              <span className={`${waveStatusColor} text-xs uppercase tracking-[0.3em] font-bold`}>{waveStatusText}</span>
+              <span className="text-[10px] uppercase font-bold text-[#8b8574]">{Math.min(s.wave, maxWaves)} / {maxWaves}</span>
+            </div>
+            
+              <div className="relative h-6 flex items-center mt-2 mb-1">
+                {/* Progress Line */}
+                <div className="absolute left-2 right-4 h-[2px] bg-[#8b8574]/30" />
+                <div className="absolute left-2 h-[2px] bg-[#d4af37] transition-all duration-500" 
+                  style={{ width: `calc(${Math.min(100, ((s.wave - 1) / Math.max(1, maxWaves - 1)) * 100)}% - 16px)` }} 
+                />
+              
+              {/* Nodes */}
+              <div className="w-full flex justify-between relative z-10 px-1 items-center">
+                {Array.from({ length: Math.max(0, maxWaves - 1) }).map((_, i) => {
+                  const isPast = (i + 1) < s.wave || s.gameState === 'REGION_VICTORY';
+                  const isCurrent = (i + 1) === s.wave && s.waveState !== 'BOSS_PHASE' && s.gameState !== 'REGION_VICTORY';
+                  return (
+                    <div key={i} className={`w-2.5 h-2.5 rounded-full border-2 transition-colors duration-300 relative bg-[#2a2826] ${
+                      isPast ? 'border-[#d4af37] bg-[#d4af37]/50' : 
+                      isCurrent ? 'border-[#b84235] bg-[#b84235] shadow-[0_0_8px_rgba(184,66,53,0.8)] scale-125' : 
+                      'border-[#8b8574]/40'
+                    }`} />
+                  );
+                })}
+                
+                {/* End Destination */}
+                {(() => {
+                  const isPast = s.gameState === 'REGION_VICTORY' || s.gameState === 'CAMPAIGN_OVER';
+                  const isCurrent = s.wave === maxWaves && !isPast;
+                  
+                  return (
+                    <div className={`w-4 h-4 ml-2 rounded-sm rotate-45 border-2 transition-all duration-300 bg-[#1b1918] flex items-center justify-center shrink-0 ${
+                      s.waveState === 'BOSS_PHASE' ? 'border-[#ff3b1f] bg-[#ff3b1f]/20 scale-125 shadow-[0_0_12px_rgba(255,59,31,0.8)]' : 
+                      isPast ? 'border-[#d4af37] bg-[#d4af37]/50' :
+                      isCurrent && !isBoss ? 'border-[#b84235] bg-[#b84235] shadow-[0_0_8px_rgba(184,66,53,0.8)] scale-125' :
+                      isBoss ? 'border-[#dfd4ba]/80' :
+                      'border-[#8b8574]/80'
+                    }`}>
+                      <div className={`w-1.5 h-1.5 ${
+                        s.waveState === 'BOSS_PHASE' ? 'bg-[#ff3b1f]' : 
+                        isPast ? 'bg-[#d4af37]' :
+                        isCurrent && !isBoss ? 'bg-[#b84235]' :
+                        isBoss ? 'bg-[#dfd4ba]/80' : 
+                        'bg-[#8b8574]/80'
+                      } rounded-sm`} />
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
           </div>
 
           {/* Cave HP indicator */}

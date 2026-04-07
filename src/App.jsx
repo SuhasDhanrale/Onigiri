@@ -64,22 +64,8 @@ export default function App() {
     recalcGuardsFlag: false,
     lastPlayerUnitCount: 0,
     
-    cave: {
-      x: CAVE_CONFIG.cave.x,
-      y: CAVE_CONFIG.cave.y,
-      hp: CAVE_CONFIG.cave.maxHp,
-      maxHp: CAVE_CONFIG.cave.maxHp,
-      radius: CAVE_CONFIG.cave.radius,
-    },
-    orb: {
-      x: CAVE_CONFIG.orb.x,
-      y: CAVE_CONFIG.orb.y,
-      hp: CAVE_CONFIG.orb.maxHp,
-      maxHp: CAVE_CONFIG.orb.maxHp,
-      radius: CAVE_CONFIG.orb.radius,
-      active: true,
-      respawnTimer: undefined,
-    },
+    cave: null,
+    orb: null,
   });
 
   const initRun = useCallback(() => {
@@ -98,12 +84,15 @@ export default function App() {
   // Single call on mount — setMeta + setUiTick are batched together by React 18
   useEffect(() => { initRun(); }, [initRun]);
 
-  const startCombat = useCallback((regionId) => {
+  const startCombat = useCallback((regionId, explicitNode = null) => {
     if (!spriteRenderer.isLoaded()) {
       spriteRenderer.loadAllSprites().catch(err => {
         console.warn('[Sprites] Failed to load some sprites:', err);
       });
     }
+    
+    // Determine safely if this is a boss battle
+    const isBoss = explicitNode ? explicitNode.type === 'boss' : metaRef.current.activeNodeType === 'boss';
     
     state.current = {
       ...state.current, 
@@ -122,27 +111,28 @@ export default function App() {
       backlineSlots: new Array(9).fill(null),
       gameState: 'COMBAT', currentRegion: regionId,
       waveState: 'PRE_WAVE', waveTimer: 6.0, squadsToSpawn: [], enemiesInWave: 0, inkLineY: 0,
+      isBossNode: isBoss,
       
       guardQuotas: { HATAMOTO: 0, YUMI: 0, CAVALRY: 0, HOROKU: 0 },
       recalcGuardsFlag: true,
       lastPlayerUnitCount: 0,
       
-      cave: {
+      cave: isBoss ? {
         x: CAVE_CONFIG.cave.x,
         y: CAVE_CONFIG.cave.y,
         hp: CAVE_CONFIG.cave.maxHp,
         maxHp: CAVE_CONFIG.cave.maxHp,
         radius: CAVE_CONFIG.cave.radius,
-      },
-      orb: {
+      } : null,
+      orb: isBoss ? {
         x: CAVE_CONFIG.orb.x,
         y: CAVE_CONFIG.orb.y,
         hp: CAVE_CONFIG.orb.maxHp,
         maxHp: CAVE_CONFIG.orb.maxHp,
         radius: CAVE_CONFIG.orb.radius,
-        active: true,
+        active: false,
         respawnTimer: undefined,
-      },
+      } : null,
     };
     
     // Auto-spawn garrison units if a rest-node garrison was set this run
@@ -273,7 +263,7 @@ export default function App() {
     }));
 
     // 4. Reset combat state and enter COMBAT screen
-    startCombat(node.id);
+    startCombat(node.id, node);
   }, [meta, runStateRef, startRun, startCombat, setRunState, setMeta]);
 
   const spawnUnit = useCallback((typeKey, team, customX = null, customY = null) => {
