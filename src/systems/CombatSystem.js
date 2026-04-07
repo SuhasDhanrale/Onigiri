@@ -203,8 +203,9 @@ export function tickUnits(s, dt, now, metaRef) {
           expectedHpMap.set(target.id, (expectedHpMap.get(target.id) ?? target.hp) - unit.damage);
         } else if (unit.type === 'siege') {
           s.projectiles.push({ type: 'lob', startX: unit.x, startY: unit.y, targetX: target.x, targetY: target.y, progress: 0, travelTime: 1.2, damage: unit.damage, team: unit.team, z: 0 });
-        } else {
+          } else {
           target.hp -= unit.damage;
+          if (unit.team === 'player' && s.combatStats) s.combatStats.damageDealt += unit.damage;
           unit.swingPhase = 1.0;
           if (target.name === 'Bamboo Barricade' && target.team === 'player' && metaRef.current.unlockedProvisions.includes('SPIKED_CALTROPS')) {
             unit.hp -= unit.damage * 0.5;

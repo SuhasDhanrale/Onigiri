@@ -11,6 +11,7 @@ import { CAVE_CONFIG } from './config/cave.js';
 import { CommandPanel } from './ui/panels/CommandPanel.jsx';
 import { CombatScreen } from './ui/screens/CombatScreen.jsx';
 import { HubTestScreen } from './ui/screens/HubTestScreen.jsx';
+import { SumiResultScreen } from './ui/screens/SumiResultScreen.jsx';
 
 // --- Phase 2: System imports ---
 import { spawnUnit as _spawnUnit, addParticle as _addParticle } from './systems/SpawnSystem.js';
@@ -36,6 +37,9 @@ export default function App() {
   
   const { meta, setMeta, metaRef } = useMeta();
   const { runState, setRunState, runStateRef, startRun, endRun } = useRunState();
+
+  // For testing our new Sumi Result screen
+  const [testResultContext, setTestResultContext] = useState(null);
 
   // mapNodes is lifted here so it survives HubTestScreen unmounting during combat.
   const [mapNodes, setMapNodes] = useState(() => generateMap(Date.now(), 0));
@@ -66,6 +70,8 @@ export default function App() {
     
     cave: null,
     orb: null,
+    
+    combatStats: null,
   });
 
   const initRun = useCallback(() => {
@@ -82,7 +88,48 @@ export default function App() {
   }, [setMeta]);
 
   // Single call on mount — setMeta + setUiTick are batched together by React 18
-  useEffect(() => { initRun(); }, [initRun]);
+  useEffect(() => { 
+    initRun(); 
+
+    // Setup global hooks for testing the Sumi Result Screen
+    window.testSumiScreen = (type = 'battle_win') => {
+      const mockData = {
+        type,
+        time: '4m 12s',
+        title: type === 'battle_win' ? 'VICTORY' : type === 'battle_loss' ? 'DEFEAT' : type === 'event' ? 'FATE' : 'MARKET',
+        stats: ['battle_win', 'battle_loss'].includes(type) ? {
+          wavesConquered: type === 'battle_win' ? '5' : '3',
+          totalWaves: '5',
+          damageDealt: 14502,
+          enemiesSlain: {
+            total: 104,
+            types: [
+              { name: 'Peasant', count: 68 },
+              { name: 'Oni', count: 24 },
+              { name: 'Tengu', count: 12 }
+            ]
+          }
+        } : null,
+        resources: [
+          { name: 'Honor', change: type === 'battle_loss' ? '-25' : '+150', color: type === 'battle_loss' ? 'text-[#b84235]' : 'text-[#d4af37]' },
+          { name: 'Command', change: '+75', color: 'text-[#4a5d23]' }
+        ],
+        impacts: type === 'event' ? [
+          { description: "The troops are inspired by the shrine.", color: "text-[#d4af37]" },
+          { description: "+10% Max HP for next combat.", color: "text-[#4a5d23]" }
+        ] : []
+      };
+      // If it's shop or event, we maybe don't have battle stats
+      setTestResultContext(mockData);
+    };
+
+    window.closeSumiScreen = () => setTestResultContext(null);
+
+    return () => {
+      delete window.testSumiScreen;
+      delete window.closeSumiScreen;
+    };
+  }, [initRun]);
 
   const startCombat = useCallback((regionId, explicitNode = null) => {
     if (!spriteRenderer.isLoaded()) {
@@ -133,6 +180,14 @@ export default function App() {
         active: false,
         respawnTimer: undefined,
       } : null,
+      
+      combatStats: {
+        damageDealt: 0,
+        enemiesSlain: { total: 0, types: {} },
+        startTime: performance.now(),
+        lastTimeElapsedStr: '',
+        conqueredWaves: 0 // Will track highest wave reached
+      }
     };
     
     // Auto-spawn garrison units if a rest-node garrison was set this run
@@ -381,6 +436,7 @@ export default function App() {
 
   return (
     <div className="flex h-screen w-full bg-[#1b1918] text-[#1b1918] font-serif overflow-hidden select-none relative">
+      <SumiResultScreen data={testResultContext} onClose={() => setTestResultContext(null)} />
       {/* MAP SCREEN HUB (MACRO UI) */}
       {s.gameState === 'MAP_SCREEN' && (
         <HubTestScreen 

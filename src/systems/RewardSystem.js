@@ -45,6 +45,13 @@ export function processDeaths(s, metaRef) {
           bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
           if (reward > 0) s.floatingTexts.push({ x: u.x, y: u.y, text: `+${reward}`, color: '#ffb703', life: 1.0, vy: -60 });
         }
+        
+        // Track slain stats
+        if (s.combatStats) {
+           s.combatStats.enemiesSlain.total += 1;
+           const tName = u.name || 'Unknown Enemy';
+           s.combatStats.enemiesSlain.types[tName] = (s.combatStats.enemiesSlain.types[tName] || 0) + 1;
+        }
       }
 
       addParticle(s, u.x, u.y, COLORS.ink, 12);

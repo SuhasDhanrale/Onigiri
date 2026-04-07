@@ -25,6 +25,7 @@ export function tickProjectiles(s, dt) {
           s.units.forEach(u => {
             if (u.team !== p.team && u.type !== 'flying' && Math.hypot(u.x - p.x, u.y - p.y) < 120) {
               u.hp -= p.damage;
+              if (p.team === 'player' && s.combatStats) s.combatStats.damageDealt += p.damage;
               if (u.type !== 'shield' && u.type !== 'boss') {
                 const angle = Math.atan2(u.y - p.y, u.x - p.x);
                 u.x += Math.cos(angle) * 80;
@@ -55,6 +56,7 @@ export function tickProjectiles(s, dt) {
             let dmg = p.damage;
             if (u.type === 'shield' && p.vy > 0 && u.team === 'enemy') dmg *= 0.2;
             u.hp -= dmg;
+            if (p.team === 'player' && s.combatStats) s.combatStats.damageDealt += dmg;
             if (p.isFlaming) u.burn = Math.max(u.burn || 0, 4.0);
             if (!p.pierce) hit = true;
             if (hit) break;
