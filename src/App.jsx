@@ -38,8 +38,8 @@ export default function App() {
   const { meta, setMeta, metaRef } = useMeta();
   const { runState, setRunState, runStateRef, startRun, endRun } = useRunState();
 
-  // For testing our new Sumi Result screen
-  const [testResultContext, setTestResultContext] = useState(null);
+  // Result screen context for combat
+  const [resultContext, setResultContext] = useState(null);
 
   // mapNodes is lifted here so it survives HubTestScreen unmounting during combat.
   const [mapNodes, setMapNodes] = useState(() => generateMap(Date.now(), 0));
@@ -87,49 +87,80 @@ export default function App() {
     setUiTick(t => t + 1);
   }, [setMeta]);
 
-  // Single call on mount — setMeta + setUiTick are batched together by React 18
   useEffect(() => { 
     initRun(); 
-
-    // Setup global hooks for testing the Sumi Result Screen
-    window.testSumiScreen = (type = 'battle_win') => {
-      const mockData = {
-        type,
-        time: '4m 12s',
-        title: type === 'battle_win' ? 'VICTORY' : type === 'battle_loss' ? 'DEFEAT' : type === 'event' ? 'FATE' : 'MARKET',
-        stats: ['battle_win', 'battle_loss'].includes(type) ? {
-          wavesConquered: type === 'battle_win' ? '5' : '3',
-          totalWaves: '5',
-          damageDealt: 14502,
-          enemiesSlain: {
-            total: 104,
-            types: [
-              { name: 'Peasant', count: 68 },
-              { name: 'Oni', count: 24 },
-              { name: 'Tengu', count: 12 }
-            ]
-          }
-        } : null,
-        resources: [
-          { name: 'Honor', change: type === 'battle_loss' ? '-25' : '+150', color: type === 'battle_loss' ? 'text-[#b84235]' : 'text-[#d4af37]' },
-          { name: 'Command', change: '+75', color: 'text-[#4a5d23]' }
-        ],
-        impacts: type === 'event' ? [
-          { description: "The troops are inspired by the shrine.", color: "text-[#d4af37]" },
-          { description: "+10% Max HP for next combat.", color: "text-[#4a5d23]" }
-        ] : []
-      };
-      // If it's shop or event, we maybe don't have battle stats
-      setTestResultContext(mockData);
-    };
-
-    window.closeSumiScreen = () => setTestResultContext(null);
-
-    return () => {
-      delete window.testSumiScreen;
-      delete window.closeSumiScreen;
-    };
   }, [initRun]);
+
+  useEffect(() => {
+    const s = state.current;
+    if (s.gameState === 'REGION_VICTORY' && !resultContext) {
+      const combatStats = s.combatStats;
+      if (combatStats) {
+        const elapsed = performance.now() - combatStats.startTime;
+        const minutes = Math.floor(elapsed / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+        const timeStr = `${minutes}m ${seconds}s`;
+
+        const enemiesSlainTypes = Object.entries(combatStats.enemiesSlain.types)
+          .map(([name, count]) => ({ name, count }));
+
+        const combatHonor = s.earnedHonor || 0;
+        
+        setResultContext({
+          type: 'battle_win',
+          time: timeStr,
+          title: 'VICTORY',
+          stats: {
+            wavesConquered: combatStats.conqueredWaves,
+            totalWaves: s.wave - 1,
+            damageDealt: combatStats.damageDealt,
+            enemiesSlain: {
+              total: combatStats.enemiesSlain.total,
+              types: enemiesSlainTypes
+            }
+          },
+          resources: [
+            { name: 'Honor', change: `+${combatHonor}`, color: 'text-[#d4af37]' }
+          ],
+          impacts: []
+        });
+      }
+    }
+    
+    if (s.gameState === 'GAMEOVER' && !resultContext) {
+      const combatStats = s.combatStats;
+      if (combatStats) {
+        const elapsed = performance.now() - combatStats.startTime;
+        const minutes = Math.floor(elapsed / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+        const timeStr = `${minutes}m ${seconds}s`;
+
+        const enemiesSlainTypes = Object.entries(combatStats.enemiesSlain.types)
+          .map(([name, count]) => ({ name, count }));
+
+        const combatHonor = s.earnedHonor || 0;
+        
+        setResultContext({
+          type: 'battle_loss',
+          time: timeStr,
+          title: 'DEFEAT',
+          stats: {
+            wavesConquered: combatStats.conqueredWaves,
+            totalWaves: s.wave - 1,
+            damageDealt: combatStats.damageDealt,
+            enemiesSlain: {
+              total: combatStats.enemiesSlain.total,
+              types: enemiesSlainTypes
+            }
+          },
+          resources: [
+            { name: 'Honor', change: `+${combatHonor}`, color: 'text-[#d4af37]' }
+          ],
+          impacts: []
+        });
+      }
+    }
+  }, [uiTick, resultContext]);
 
   const startCombat = useCallback((regionId, explicitNode = null) => {
     if (!spriteRenderer.isLoaded()) {
@@ -228,19 +259,16 @@ export default function App() {
       setMapNodes(prev => prev ? applyNodeCompletion(prev, regionId) : prev);
     }
 
-    // IMMEDIATE HONOR: Add combat honor to meta.honor right away (for all node types)
     if (combatHonor > 0) {
       setMeta(prev => ({ ...prev, honor: prev.honor + combatHonor }));
     }
 
-    // Boss completion: increment run counter, end run, generate fresh map
     if (currentRun?.currentNodeType === 'boss') {
       setMeta(prev => ({
         ...prev,
         totalRuns: (prev.totalRuns ?? 0) + 1,
       }));
       endRun();
-      // Use metaRef to avoid reading a stale totalRuns from the closure
       setMapNodes(generateMap(Date.now(), (metaRef.current.totalRuns ?? 0) + 1));
       state.current.gameState = 'MAP_SCREEN';
     } else if (regionId === 'THE_ABYSS') {
@@ -249,7 +277,6 @@ export default function App() {
       state.current.gameState = 'MAP_SCREEN';
     }
 
-    // Accumulate combat honor into run state + decrement blessing durations
     if (currentRun) {
       setRunState(prev => {
         if (!prev) return prev;
@@ -259,14 +286,13 @@ export default function App() {
           blessings: prev.blessings
             .map(b => typeof b.combatsRemaining === 'number' && b.combatsRemaining !== Infinity
               ? { ...b, combatsRemaining: b.combatsRemaining - 1 }
-              : b  // 'run' (Infinity) or non-numeric durations pass through unchanged
+              : b
             )
             .filter(b => b.combatsRemaining !== 0),
         };
       });
     }
 
-    // Clear stale node-context fields from meta so they don't bleed into the next combat
     setMeta(prev => ({
       ...prev,
       activeNodeType: null, activeNodeVariant: null, activeNodeThreat: 1, activeNodeWaves: 3,
@@ -277,7 +303,7 @@ export default function App() {
 
     state.current.currentRegion = null;
     setUiTick(t => t + 1);
-  }, [meta.conqueredRegions, meta.totalRuns, runStateRef, setMeta, setRunState, endRun, setMapNodes]);
+  }, [meta.conqueredRegions, meta.totalRuns, runStateRef, setMeta, setRunState, endRun, setMapNodes, metaRef]);
 
   const handlePlayNode = useCallback((node) => {
     // 1. Compute blessing/curse multipliers from current run
@@ -417,6 +443,22 @@ export default function App() {
       setUiTick(t => t+1);
   }, [metaRef]);
 
+  const handleResultClose = useCallback(() => {
+    const isLoss = resultContext?.type === 'battle_loss';
+    setResultContext(null);
+    
+    if (isLoss) {
+      setMeta(prev => ({ 
+        ...prev, 
+        honor: prev.honor + state.current.earnedHonor, 
+        conqueredRegions: [] 
+      }));
+      initRun();
+    } else {
+      handleRegionVictory();
+    }
+  }, [resultContext, setMeta, initRun, handleRegionVictory]);
+
   // Hook up Game Loop
   useGameLoop(state, fgCanvasRef, bgCanvasRef, metaRef, setUiTick);
 
@@ -436,7 +478,7 @@ export default function App() {
 
   return (
     <div className="flex h-screen w-full bg-[#1b1918] text-[#1b1918] font-serif overflow-hidden select-none relative">
-      <SumiResultScreen data={testResultContext} onClose={() => setTestResultContext(null)} />
+      <SumiResultScreen data={resultContext} onClose={handleResultClose} />
       {/* MAP SCREEN HUB (MACRO UI) */}
       {s.gameState === 'MAP_SCREEN' && (
         <HubTestScreen 

@@ -7,6 +7,7 @@ export function SumiResultScreen({ data, onClose }) {
   const isLoss = data.type === 'battle_loss';
   const isEvent = data.type === 'event';
   const isShop = data.type === 'shop';
+  const isRest = data.type === 'rest';
 
   let theme = {
     color: 'text-[#1a1818]',
@@ -20,6 +21,7 @@ export function SumiResultScreen({ data, onClose }) {
   if (isLoss) theme = { color: 'text-[#b84235]', accent: '#b84235', glow: 'rgba(184, 66, 53, 0.4)', kanji: '敗', bgElement: 'from-[#b84235]/20' };
   if (isShop) theme = { color: 'text-[#4a5d23]', accent: '#4a5d23', glow: 'rgba(74, 93, 35, 0.4)', kanji: '商', bgElement: 'from-[#4a5d23]/20' };
   if (isEvent) theme = { color: 'text-[#483d8b]', accent: '#483d8b', glow: 'rgba(72, 61, 139, 0.4)', kanji: '運', bgElement: 'from-[#483d8b]/20' };
+  if (isRest) theme = { color: 'text-[#2b3d60]', accent: '#2b3d60', glow: 'rgba(43, 61, 96, 0.4)', kanji: '休', bgElement: 'from-[#2b3d60]/20' };
 
   return (
     <div className="fixed inset-0 z-[100] parchment-bg animate-stamp flex justify-center items-center pointer-events-auto transition-opacity duration-500 border-[16px] border-[#1a1818]/90 overflow-hidden"

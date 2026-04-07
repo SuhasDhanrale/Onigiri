@@ -8,6 +8,7 @@ import { COMBAT_VARIANTS, ELITE_VARIANTS } from '../../config/nodes.js';
 import { EventModal } from './EventModal.jsx';
 import { ShopModal } from './ShopModal.jsx';
 import { RestModal } from './RestModal.jsx';
+import { SumiResultScreen } from './SumiResultScreen.jsx';
 
 export function HubTestScreen({
   meta,
@@ -28,6 +29,10 @@ export function HubTestScreen({
 
   // activeModal: null | { type: 'event'|'shop'|'rest', node, eventData?, inventory?, restOptions?, blessingChoices? }
   const [activeModal, setActiveModal] = useState(null);
+
+  // Session tracking for SumiResultScreen
+  const [nodeSessionData, setNodeSessionData] = useState(null);
+  const [shopPurchases, setShopPurchases] = useState([]);
 
   const scrollRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -101,12 +106,14 @@ export function HubTestScreen({
     const { node, eventData } = activeModal;
     const activeRun = runState ?? startRun(meta);
     const prevHonor = activeRun.honorEarned ?? 0;
+    const prevCommand = activeRun.command ?? 0;
 
     const newRunState = applyEventChoice(activeRun, eventData.id, choiceId);
     const newHonor = newRunState.honorEarned ?? 0;
+    const newCommand = newRunState.command ?? 0;
     const honorDelta = newHonor - prevHonor;
+    const commandDelta = newCommand - prevCommand;
 
-    // IMMEDIATE HONOR: Add honor delta to meta.honor right away
     if (honorDelta !== 0) {
       setMeta(prev => ({ ...prev, honor: prev.honor + honorDelta }));
     }
@@ -124,6 +131,18 @@ export function HubTestScreen({
       onPlayNode(combatNode);
     } else {
       setRunState(newRunState);
+      const choice = eventData.choices?.find(c => c.id === choiceId);
+      const resources = [];
+      if (commandDelta !== 0) resources.push({ name: 'Command', change: `${commandDelta >= 0 ? '+' : ''}${commandDelta}`, color: commandDelta >= 0 ? 'text-[#4a5d23]' : 'text-[#b84235]' });
+      if (honorDelta !== 0) resources.push({ name: 'Honor', change: `${honorDelta >= 0 ? '+' : ''}${honorDelta}`, color: honorDelta >= 0 ? 'text-[#d4af37]' : 'text-[#b84235]' });
+      
+      setNodeSessionData({
+        type: 'event',
+        title: eventData.name ?? 'Event',
+        time: null,
+        resources,
+        impacts: [{ description: choice?.label ?? `Chose: ${choiceId}`, color: 'text-[#483d8b]' }]
+      });
       completeNode(node.id);
     }
   };
@@ -133,24 +152,73 @@ export function HubTestScreen({
     const activeRun = runState ?? startRun(meta);
     const newRunState = purchaseItem(activeRun, itemId, price);
     setRunState(newRunState);
-    // Keep modal open — player may want to buy more
+    setShopPurchases(prev => [...prev, { itemId, price }]);
   };
 
   const handleShopLeave = () => {
+    const totalSpent = shopPurchases.reduce((sum, p) => sum + p.price, 0);
+    setNodeSessionData({
+      type: 'shop',
+      title: 'Market Visit',
+      time: null,
+      resources: [
+        { name: 'Command Spent', change: `-${totalSpent}`, color: totalSpent > 0 ? 'text-[#b84235]' : 'text-[#8b8574]' },
+        { name: 'Items Acquired', change: `${shopPurchases.length}`, color: 'text-[#4a5d23]' }
+      ],
+      impacts: shopPurchases.length > 0 
+        ? shopPurchases.map(p => ({ description: `Purchased ${p.itemId}`, color: 'text-[#dfd4ba]/70' }))
+        : [{ description: 'Left empty-handed', color: 'text-[#8b8574]' }]
+    });
     completeNode(activeModal.node.id);
   };
 
   // ─── Rest modal callbacks ──────────────────────────────────────────────────
   const handleRestChoice = (optionId, payload) => {
     const activeRun = runState ?? startRun(meta);
+    const prevHonor = activeRun.honorEarned ?? 0;
     const newRunState = applyRestChoice(activeRun, optionId, payload);
+    const newHonor = newRunState.honorEarned ?? 0;
+    const honorDelta = newHonor - prevHonor;
     setRunState(newRunState);
+
+    if (honorDelta !== 0) {
+      setMeta(prev => ({ ...prev, honor: prev.honor + honorDelta }));
+    }
+
+    const resources = [];
+    if (honorDelta !== 0) resources.push({ name: 'Honor', change: `${honorDelta >= 0 ? '+' : ''}${honorDelta}`, color: honorDelta >= 0 ? 'text-[#d4af37]' : 'text-[#b84235]' });
+
+    const impactDesc = getRestImpactDescription(optionId, payload, newRunState);
+    setNodeSessionData({
+      type: 'rest',
+      title: 'War Camp',
+      time: null,
+      resources,
+      impacts: [{ description: impactDesc, color: 'text-[#2b3d60]' }]
+    });
     completeNode(activeModal.node.id);
   };
 
   const handleRestLeave = () => {
+    setNodeSessionData({
+      type: 'rest',
+      title: 'War Camp',
+      time: null,
+      resources: [],
+      impacts: [{ description: 'Resumed journey without rest', color: 'text-[#8b8574]' }]
+    });
     completeNode(activeModal.node.id);
   };
+
+  function getRestImpactDescription(optionId, payload, newRunState) {
+    switch (optionId) {
+      case 'heal': return 'Healed wounded towers';
+      case 'honor': return 'Meditated for spiritual clarity';
+      case 'blessing': return payload?.blessing ? `Received blessing: ${payload.blessing}` : 'Received a blessing';
+      case 'recruit': return 'Recruited new defenders';
+      default: return `Chose: ${optionId}`;
+    }
+  }
 
   // ─── Sidebar data ──────────────────────────────────────────────────────────
   const techs = useMemo(() => {
@@ -767,6 +835,17 @@ export function HubTestScreen({
           runState={runState}
           onChoice={handleRestChoice}
           onLeave={handleRestLeave}
+        />
+      )}
+
+      {/* SUMI RESULT SCREEN */}
+      {nodeSessionData && (
+        <SumiResultScreen
+          data={nodeSessionData}
+          onClose={() => {
+            setNodeSessionData(null);
+            setShopPurchases([]);
+          }}
         />
       )}
 
