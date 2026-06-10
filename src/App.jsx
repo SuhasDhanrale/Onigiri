@@ -177,9 +177,19 @@ export default function App() {
       command: 150, totalCommand: 150, wave: 1, fever: 0, feverActive: 0, screenShake: 0, conscriptCooldown: 0,
       units: [], projectiles: [], explosions: [], floatingTexts: [], particles: [], slashTrails: [], lightnings: [], dragonWaves: [], foxFires: [],
       focusedBuilding: null,
-      barracks: { HATAMOTO: 0, YUMI: 0, CAVALRY: 0, HOROKU: 0 },
+      barracks: { 
+        HATAMOTO: metaRef.current.unlockedBarracks?.includes('HATAMOTO') ? 1 : 0, 
+        YUMI: metaRef.current.unlockedBarracks?.includes('YUMI') ? 1 : 0, 
+        CAVALRY: metaRef.current.unlockedBarracks?.includes('CAVALRY') ? 1 : 0, 
+        HOROKU: metaRef.current.unlockedBarracks?.includes('HOROKU') ? 1 : 0 
+      },
       troopLevel: { HATAMOTO: 1, YUMI: 1, CAVALRY: 1, HOROKU: 1 },
-      autoUnlocked: { HATAMOTO: false, YUMI: false, CAVALRY: false, HOROKU: false },
+      autoUnlocked: { 
+        HATAMOTO: metaRef.current.unlockedBarracks?.includes('HATAMOTO') || false, 
+        YUMI: metaRef.current.unlockedBarracks?.includes('YUMI') || false, 
+        CAVALRY: metaRef.current.unlockedBarracks?.includes('CAVALRY') || false, 
+        HOROKU: metaRef.current.unlockedBarracks?.includes('HOROKU') || false 
+      },
       timers: { HATAMOTO: 0, YUMI: 0, CAVALRY: 0, HOROKU: 0 },
       visuals: { HATAMOTO: 0, YUMI: 0, CAVALRY: 0, HOROKU: 0 },
       
@@ -236,6 +246,12 @@ export default function App() {
           _spawnUnit(state.current, type, 'player', null, null, metaRef);
         }
       });
+    }
+
+    // Pre-spawn Hatamotos if unlocked
+    if (metaRef.current.unlockedBarracks?.includes('HATAMOTO')) {
+      _spawnUnit(state.current, 'HATAMOTO', 'player', null, null, metaRef);
+      _spawnUnit(state.current, 'HATAMOTO', 'player', null, null, metaRef);
     }
 
     const bgCtx = bgCanvasRef.current?.getContext('2d');

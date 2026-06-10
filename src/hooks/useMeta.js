@@ -6,7 +6,9 @@ export function useMeta() {
       unlockedProvisions: [], 
       equippedItem: null,
       conqueredRegions: [],
-      totalRuns: 0
+      totalRuns: 0,
+      unlockedBarracks: ['HATAMOTO', 'YUMI'],
+      focusMult: 1.2
   });
   
   const metaRef = useRef(meta);

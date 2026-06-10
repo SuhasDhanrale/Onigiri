@@ -24,7 +24,7 @@ export function tickBarracks(s, dt, metaRef) {
       const currentCount = s.units.filter(u => u.name === UNIT_TYPES[def.unit]?.name && u.team === 'player' && u.hp > 0).length;
 
       if (currentCount < cap) {
-        const focusMult = (s.focusedBuilding === key) ? 2.0 : 1.0;
+        const focusMult = (s.focusedBuilding === key) ? (metaRef.current.focusMult || 1.2) : 1.0;
         if (s.autoUnlocked[key]) s.timers[key] -= dt * focusMult;
 
         if (s.timers[key] <= 0) {

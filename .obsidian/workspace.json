@@ -11,30 +11,17 @@
             "id": "40c432be722a0285",
             "type": "leaf",
             "state": {
-              "type": "bases",
+              "type": "markdown",
               "state": {
-                "file": "Untitled.base",
-                "viewName": "Table"
+                "file": "README.md",
+                "mode": "source",
+                "source": false
               },
-              "icon": "lucide-table",
-              "title": "Untitled"
-            }
-          },
-          {
-            "id": "f28ce15a724813c7",
-            "type": "leaf",
-            "state": {
-              "type": "bases",
-              "state": {
-                "file": "Untitled.base",
-                "viewName": "Table"
-              },
-              "icon": "lucide-table",
-              "title": "Untitled"
+              "icon": "lucide-file",
+              "title": "README"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -107,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Untitled.base",
+                "file": "README.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -117,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for Untitled"
+              "title": "Backlinks for README"
             }
           },
           {
@@ -197,20 +184,20 @@
   },
   "active": "2d43ae3a4f0e2cdf",
   "lastOpenFiles": [
-    "Untitled",
-    "Untitled.base",
-    "README.md",
     "ARCHITECTURE_PLAN.md",
+    "README.md",
+    "Untitled.base",
+    "Untitled.canvas",
+    "Untitled 1.base",
+    "Untitled 2.base",
+    "Untitled 3.base",
+    "Untitled",
     "doc/game_design_analysis.md",
     "dist/assets/index-XsRl-ivT.js",
     "dist/assets/index-CUnGudyW.css",
     "src/renderer/drawCave.js",
     "src/systems/CaveSystem.js",
     "src/config/cave.js",
-    "src/ui/components/ForestBackground.css",
-    "src/ui/components/ForestBackground.jsx",
-    "src/ui/components/DemonCave.css",
-    "src/ui/components/DemonCave.jsx",
     "doc/ai_movement_analysis.md",
     "doc/micro_ai_behavior_analysis.md",
     "doc/SYSTEM_MAP.md",

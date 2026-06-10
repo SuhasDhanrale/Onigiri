@@ -19,10 +19,12 @@ export function BarracksCard({ bKey, def, s, meta, setUiTick, changeQuota, build
   const costLvl = Math.floor(getCost(def.baseCost * 1.5, 1.7, s.troopLevel[bKey] - 1) * bannerMult);
   const isFocused = s.focusedBuilding === bKey;
 
+  const isUnlocked = meta.unlockedBarracks?.includes(bKey);
+
   return (
     <div 
-      onClick={() => { s.focusedBuilding = isFocused ? null : bKey; setUiTick(t => t + 1); }}
-      className={`bg-[var(--color-ink)] border-2 flex flex-col text-[var(--color-parchment)] transition-all cursor-pointer overflow-hidden ${isFocused ? 'border-[#d4af37] shadow-[0_0_15px_rgba(212,175,55,0.25)]' : 'border-[var(--color-ink-dark)] hover:border-[#8b8574]'}`}
+      onClick={() => { if (isUnlocked) { s.focusedBuilding = isFocused ? null : bKey; setUiTick(t => t + 1); } }}
+      className={`bg-[var(--color-ink)] border-2 flex flex-col text-[var(--color-parchment)] transition-all ${isUnlocked ? 'cursor-pointer hover:border-[#8b8574]' : 'opacity-60 grayscale'} overflow-hidden ${isFocused ? 'border-[#d4af37] shadow-[0_0_15px_rgba(212,175,55,0.25)]' : 'border-[var(--color-ink-dark)]'}`}
     >
       <div className="flex items-center h-14 px-2 relative">
         {isFocused && <div className="absolute inset-0 bg-[#d4af37]/10 animate-pulse pointer-events-none" />}
@@ -33,12 +35,12 @@ export function BarracksCard({ bKey, def, s, meta, setUiTick, changeQuota, build
         </div>
 
         <div className="flex-1 flex flex-col justify-center relative z-10 pr-1">
-          {level === 0 ? (
-            <div className="text-[10px] font-bold text-[var(--color-khaki)] text-center tracking-widest">TAP TO BUILD</div>
+          {!isUnlocked ? (
+            <div className="text-[10px] font-bold text-[#8b8574] text-center tracking-widest leading-tight">LOCKED<br/><span className="text-[6px] opacity-70">Progress campaign</span></div>
           ) : (
             <>
               <div className="flex justify-between text-[8px] font-bold tracking-widest text-[var(--color-khaki)] mb-1">
-                <span>{isAuto ? 'AUTO' : 'MANUAL'}</span>
+                <span className={isFocused ? 'text-[#d4af37]' : ''}>{isFocused ? `> FOCUS ${meta.focusMult || 1.2}x <` : 'AUTO RUN'}</span>
                 <span className={currentCount >= cap ? 'text-[#b84235]' : (isFocused ? 'text-[#d4af37]' : '')}>{currentCount}/{cap}</span>
               </div>
               <div className="w-full h-2 bg-[var(--color-parchment)]/20 relative border border-[var(--color-ink)]">
@@ -49,15 +51,8 @@ export function BarracksCard({ bKey, def, s, meta, setUiTick, changeQuota, build
         </div>
       </div>
 
-      {isFocused && (
+      {isFocused && isUnlocked && (
         <div className="flex flex-col border-t-2 border-[var(--color-ink)] bg-[var(--color-parchment)] text-[var(--color-ink)] p-1.5 gap-1.5">
-          {level === 0 ? (
-            <button onClick={(e) => { e.stopPropagation(); buildBarracks(bKey, baseCost, maxTime); }} className={`w-full py-2 text-[10px] font-black transition-colors border-2 border-[var(--color-ink)] ${s.command >= baseCost && s.gameState === 'COMBAT' ? 'bg-[var(--color-ink)] text-[#d4af37] hover:bg-[#2b3d60]' : 'bg-[#cfc4af] text-[var(--color-khaki)] cursor-not-allowed'}`}>BUILD ({baseCost} K)</button>
-          ) : (
-            <>
-              {!isAuto && (
-                <button onClick={(e) => { e.stopPropagation(); hireDrill(bKey, autoCost); }} className={`w-full py-1.5 text-[10px] font-black transition-colors border-2 border-[var(--color-ink)] ${s.command >= autoCost && s.gameState === 'COMBAT' ? 'bg-[var(--color-ink)] text-[#d4af37] hover:bg-[#2b3d60]' : 'bg-[#cfc4af] text-[var(--color-khaki)] cursor-not-allowed'}`}>HIRE DRILL ({autoCost} K)</button>
-              )}
               <div className="flex gap-1.5">
                 <button onClick={(e) => { e.stopPropagation(); upgradeTroopLevel(bKey, costLvl); }} className={`flex-1 py-1.5 flex items-center justify-center transition-colors border-2 border-[var(--color-ink)] ${s.command >= costLvl && s.gameState === 'COMBAT' ? 'bg-[var(--color-ink)] text-[var(--color-parchment)] hover:bg-[#d4af37] hover:text-[var(--color-ink)]' : 'bg-[#cfc4af] text-[var(--color-khaki)] cursor-not-allowed'}`}>
                   <span className="text-[8px] font-black tracking-tighter leading-tight text-center">UPG DMG<br/>{costLvl} K</span>
@@ -75,8 +70,6 @@ export function BarracksCard({ bKey, def, s, meta, setUiTick, changeQuota, build
                   <button onClick={(e) => { e.stopPropagation(); changeQuota(bKey, 1); }} className="hover:text-[#d4af37] text-lg leading-none cursor-pointer text-[var(--color-parchment)] px-1 font-bold">+</button>
                 </div>
               </div>
-            </>
-          )}
         </div>
       )}
     </div>
