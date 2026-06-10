@@ -7,6 +7,7 @@ import { HomeMock } from './screens/HomeMock.jsx';
 import { DemonsMock } from './screens/DemonsMock.jsx';
 import { BossAnimMock } from './screens/BossAnimMock.jsx';
 import { BaseMock, BaseControls } from './screens/BaseMock.jsx';
+import { MusicMock } from './screens/MusicMock.jsx';
 
 export const mockScreens = [
   {
@@ -51,5 +52,11 @@ export const mockScreens = [
     component: BaseMock,
     initialState: { wallType: 'bamboo' },
     controls: BaseControls,
+  },
+  {
+    id: 'music_engine',
+    title: 'Music Engine',
+    description: 'Procedural Web Audio API synthesis for game tracks.',
+    component: MusicMock,
   },
 ];

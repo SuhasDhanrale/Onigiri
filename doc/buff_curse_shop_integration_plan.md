@@ -2,7 +2,7 @@
 
 > **Goal:** Make shop purchases, event blessings, and curses actually affect gameplay — incrementally, without breaking anything that currently works.
 > **Audited against:** Actual source code, 2026-06-10
-> **Status:** Planning — _awaiting answers to the Open Questions section before implementation_
+> **Status:** Planning — §4 answered (decisions locked in §4b). §6: wire first, refactor after. Still pending: the Tower sub-spec (T-Q1–T-Q3). Chapters (§7) deferred.
 > **Rule for this doc:** No code is written until the Open Questions are answered. Answers go **inline in this file** (look for `**Answer:**` placeholders).
 
 ---
@@ -15,7 +15,8 @@
 4. **Section 4** — **Open Questions you must answer** before we touch code.
 5. **Section 5** — the stepwise, low-risk-first implementation plan.
 6. **Section 6** — how to make the system structurally better (optional, recommended).
-7. **Section 7** — explicitly out of scope.
+7. **Section 7** — Chapters & difficulty ramp (separate workstream; deferred TODO + its own questions).
+8. **Section 8** — explicitly out of scope.
 
 ---
 
@@ -88,10 +89,10 @@ Keeping to this pattern is what makes the work low-risk — we are extending a p
 
 Today `baseCommand` (shop/event currency, starts 100) and combat `command` (starts 150, earned from kills) are **two disconnected pools sharing a name**.
 
-- **Option A (Recommended):** Unify — combat starts from `runState.baseCommand`, and leftover command banks back to `baseCommand` at combat end. Makes `command_expansion` and all event command rewards meaningful in battle.
+- **Option A (Recommended):** Unify — combat starts from `runState.baseCommand`, and leftover command banks back to `baseCommand` at combat end. Makes `command_expansion` and all event command rewards meaningful in battle.ok 
 - **Option B:** Keep them separate — `baseCommand` is purely a between-combat/shop wallet; combat keeps its own 150 pool. Then `command_expansion` must be repurposed (it can't affect combat).
 
-**Answer:** _(pending)_
+**Answer:** _(pending)_ A
 
 ### Q2 — What is a "tower"? (for `quick_repairs`, `iron_fortifications`)
 
@@ -101,14 +102,14 @@ No tower entity exists. Options:
 - **Option B:** Reinterpret "towers" as the boss cave/orb (only matters on boss nodes).
 - **Option C (Recommended for now):** Repurpose these two items to existing, mappable effects (e.g. flat HP buff to all units, or a one-time heal of all living units) and drop the "tower" wording.
 
-**Answer:** _(pending)_
+**Answer:** _(pending)_ towe is the new builld withc we can billd with relode time is huge shoot arrow for defence perpose 
 
 ### Q3 — Dragon Wave unlock
 
 - **Option A (Recommended):** Lock Dragon Wave by default; `dragon_scroll` (and/or a meta unlock) enables it for the run. Gives the item purpose.
 - **Option B:** Leave Dragon Wave always available; repurpose `dragon_scroll` to something else (e.g. +1 charge / reduced cost).
 
-**Answer:** _(pending)_
+**Answer:** _(pending)_A
 
 ### Q4 — Defense mechanic for Stone Stance
 
@@ -118,11 +119,11 @@ There is no damage-reduction stat today (player units take raw `hp -= damage`).
 - **Option B (Recommended):** Convert Stone Stance to an existing mechanic (e.g. +max HP) so it works through the current bridge with zero new systems.
 - **Option C:** Drop Stone Stance.
 
-**Answer:** _(pending)_
+**Answer:** _(pending)_B
 
 ### Q5 — Curse durations
 
-- **Option A (Recommended):** Implement expiry counters (per-combat for "3 combats", per-node for "5 nodes", `Infinity` for run) — mirrors how blessings already work, so curses become balanced trade-offs.
+- **Option A (Recommended):** Implement expiry counters (per-combat for "3 combats", per-node for "5 nodes", `Infinity` for run) — mirrors how blessings already work, so curses become balanced trade-offs.A
 - **Option B:** Make all curses last the whole run and simplify the config (drop duration fields).
 
 **Answer:** _(pending)_
@@ -134,14 +135,14 @@ There's already a `// TODO Necromancer event` stub in EventSystem.
 - **Option A (Recommended):** Defer — keep out of scope for this pass; leave those 3 effects flagged as unimplemented.
 - **Option B:** Build a minimal revive mechanic now.
 
-**Answer:** _(pending)_
+**Answer:** _(pending)_A
 
 ### Q7 — Items that need a choice UI (`fresh_recruits`, `curse_removal`)
 
 - **Option A:** Build small picker modals (choose which unit / which curse).
 - **Option B (Recommended for speed):** Auto-resolve — `fresh_recruits` grants a fixed/best unit; `curse_removal` removes the oldest curse. Add pickers later.
 
-**Answer:** _(pending)_
+**Answer:** _(pending)_A
 
 ### Q8 — Balance during wiring
 
@@ -150,7 +151,30 @@ When we connect an effect, do we keep config values as-authored (e.g. +25% fire,
 - **Option A (Recommended):** Keep values as-is now; treat balancing as a separate later pass. Reduces risk of conflating "wired" with "tuned."
 - **Option B:** Re-balance as we wire.
 
-**Answer:** _(pending)_
+**Answer:** _(pending)_A
+
+---
+
+## 4b. Decisions locked (from your §4 answers — 2026-06-10)
+
+| Q | Decision | Effect on plan |
+|---|---|---|
+| Q1 | **A — Unify command.** Combat seeds from `baseCommand`; winnings bank back. | Phase B is in. |
+| Q2 | **New mechanic — Defensive Arrow Tower.** A buildable structure with HP + a long reload that auto-fires arrows for defense. `quick_repairs`/`iron_fortifications` act on it. | E2 becomes a new-building feature — see Tower sub-spec (T-Q1–T-Q3). |
+| Q3 | **A — Lock Dragon Wave**; `dragon_scroll` unlocks it for the run. | E3 in. |
+| Q4 | **B — Stone Stance → +max HP** (no new defense stat). | E1 trivial (reuse HP bridge). |
+| Q5 | **A — Curse expiry counters** (per-combat / per-node / run). | Phase D1 in. |
+| Q6 | **A — Defer necromancer** (Haunted / Necro's Wrath / Holy Protection stay unimplemented). | E4 dropped this pass. |
+| Q7 | **A — Picker modals** for `fresh_recruits` (unit) and `curse_removal` (curse). | C3 builds small pick UIs. |
+| Q8 | **A — Keep config values**; balance later. | No tuning this pass. |
+
+### Tower sub-spec — still needs answers (T-Q1–T-Q3)
+
+The Tower (Q2) is a *new building*, not a tweak — it needs specifics before E2 / `quick_repairs` / `iron_fortifications` can be built:
+
+- **T-Q1 — Build & placement:** built from the command economy like barracks and placed in fixed slots, or free-placed? Build cost? **Answer:** _(pending)_
+- **T-Q2 — Combat profile:** arrow damage / range / reload seconds ("huge reload" = how long?), and base HP? **Answer:** _(pending)_
+- **T-Q3 — Persistence:** rebuilt fresh each combat (like barracks), or persists across nodes in a run? **Answer:** _(pending)_
 
 ---
 
@@ -185,7 +209,7 @@ Only if Q1 = Option A.
 |---|---|---|---|
 | C1 | Add `computeShopModifiers(shopPurchases)` (parallel to blessing fn) + publish to meta in `handlePlayNode` | ShopSystem.js, [App.jsx:330-348](../src/App.jsx#L330-L348) | Dev overlay shows shop flags during combat |
 | C2 | Wire run-duration items to their read sites: `flaming_arrows_shop`→SpawnSystem, `rapid_deployment`→[BarracksSystem.js:22](../src/systems/BarracksSystem.js#L22), `spell_mastery`→[SpellSystem.js:56-90](../src/systems/SpellSystem.js#L56-L90), `elite_training`→SpawnSystem | each system | each effect observable in combat |
-| C3 | Immediate items: `curse_removal` + `command_expansion` handled inside `purchaseItem`; `scout_report` reveals next tier in map; `fresh_recruits` per **Q7** | ShopSystem.js, HubTestScreen.jsx, MapGenerator.js | purchase produces the stated effect |
+| C3 | Immediate items: `command_expansion`→`baseCommand` in `purchaseItem`; `scout_report` reveals next tier in map; `curse_removal` + `fresh_recruits` → **picker modals** (Q7=A: choose curse / choose unit) | ShopSystem.js, HubTestScreen.jsx, MapGenerator.js, new pick modals | purchase produces the stated effect |
 
 ### Phase D — Activate the dead curses (Risk: **Medium** — depends on **Q5**)
 
@@ -194,15 +218,15 @@ Only if Q1 = Option A.
 | D1 | Curse expiry tracking (mirror blessing countdown) | EventSystem.js (curse entry shape), App.jsx (decrement) | curses expire on schedule |
 | D2 | `OUTLAW` (−honor), `FOX_DEBT` (−boss reward), `VILLAGE_WRATH` (worse events) | RewardSystem.js, EventSystem.js (`applyEventChoice`) | penalties measurable |
 
-### Phase E — New mechanics / design-dependent (Risk: **High** — gated on Q2/Q3/Q4/Q6)
-Only the options you pick get built.
+### Phase E — New mechanics / design-dependent (Risk: **High**)
+Resolved from §4b:
 
-| Step | Depends on | Change |
-|---|---|---|
-| E1 | Q4 | Stone Stance (defense mechanic or HP conversion) |
-| E2 | Q2 | "Tower" items (`quick_repairs`, `iron_fortifications`) |
-| E3 | Q3 | Dragon Wave unlock gate (`dragon_scroll`) |
-| E4 | Q6 | Necromancer effects (Haunted, Necro's Wrath, Holy Protection) |
+| Step | Decision | Change | Risk |
+|---|---|---|---|
+| E1 | Q4=B | Stone Stance → +max HP buff (reuse existing HP bridge — trivial) | Low |
+| E2 | Q2 | **Build the Defensive Arrow Tower** (new building: HP + auto-fire arrows + long reload), then wire `quick_repairs` (heal towers) and `iron_fortifications` (+tower HP) to it. **Blocked on Tower sub-spec T-Q1–T-Q3.** | High |
+| E3 | Q3=A | Lock Dragon Wave by default; `dragon_scroll` (run flag) unlocks it | Low-Med |
+| E4 | Q6=A | **Deferred** — necromancer effects out of scope this pass | — |
 
 ---
 
@@ -217,11 +241,48 @@ These reduce the chance this class of bug ("computed but never read") ever recur
 
 > These are improvements, not prerequisites. We can ship Phases A–D on the current structure and refactor toward #1/#2 afterward, or do #1 first as the foundation for Phase C. **Preference?**
 >
-> **Answer:** _(pending)_
+> **Answer:** Wire first, refactor after. Ship Phases A–D on the current structure; the unified `computeRunModifiers` / data-driven refactor (#1, #2) happens as a follow-up pass once effects are proven working.
 
 ---
 
-## 7. Out of scope (this pass)
+## 7. Chapters & difficulty ramp (separate workstream)
+
+> From the design discussion 2026-06-10. Its own workstream — ships independently of §5 — but a rising difficulty curve is what makes the buff/curse/shop upgrades matter. **Marked DEFERRED — we do this later.**
+
+### Concept
+- Each **run = one chapter**; **5 chapters** total; ~30 min each.
+- Runs already auto-generate: `generateMap(seed, runNumber)`, and `runNumber` increments on every boss kill ([App.jsx:285-288](../src/App.jsx#L285-L288)).
+- **Recommendation: bind chapter ↔ region.** `CAMPAIGN_MAP` already defines 5 regions (Riverlands → The Abyss) with ascending threat (1, 2, 3, 3, 5) and a permanent reward each, ending in "Campaign Victory" ([campaign.js:1-7](../src/config/campaign.js#L1-L7)). Reuse it as the 5 chapters rather than inventing a 3rd progression system.
+
+### Current-state findings (the gaps)
+| Finding | Detail | Where |
+|---|---|---|
+| Chapter-over-chapter difficulty does NOT exist | `runNumber` drives map layout only — nothing reads it for scaling | MapGenerator.js:132-134 |
+| Per-enemy threat scaling is DEAD in run mode | `CAMPAIGN_MAP[s.currentRegion]` is `undefined` (currentRegion is a node ID) → threatMult always 1 | SpawnSystem.js:77 |
+| Node threat scales composition only | `nodeThreat` feeds `generateWave` (enemy *types*), not enemy *stats* | WaveSystem.js:72-76 |
+| runState resets each run | blessings/curses/baseCommand/shopPurchases wiped by `createRunState`; only `meta` (conqueredRegions) persists | GameState.js:55-78 |
+
+### The difficulty tweak (small, same bridge pattern)
+Inject an `activeChapterThreat` into meta (from region `threatLevel` or a `1 + chapter×N%` curve) and have SpawnSystem's enemy multiplier read it — same mechanism as `activeNodeThreat`/`activeNodeWaves`. Isolated, low-risk.
+
+### Front-end is already prototyped
+`HomeMock` (mock id `home`, [src/mocks/screens/HomeMock.jsx](../src/mocks/screens/HomeMock.jsx)) already mocks the chapter hub: title + PLAY (Continue) + CHAPTER SELECT list with completed / current / locked states (Ch I "The Awakening", Ch II "Siege of Kyoto" — current, Ch III "Descent into Yomi" — locked).
+
+### TODO — DEFERRED (do later)
+- [ ] **Promote `HomeMock` into the real home screen as the chapter hub.** Home screen holds the 5 chapters and shows progress (completed / current / locked) so the player can gauge progress and continue/select a chapter. Wire it to real `meta` (conqueredRegions + current chapter) instead of mock data.
+- [ ] Wire the per-chapter difficulty ramp (`activeChapterThreat` → SpawnSystem).
+- [ ] Bind each generated run to its chapter's region (theme + threat + clear-reward).
+
+### Open Questions (answer inline, like §4)
+- **C-Q1 — Chapter ↔ region binding:** reuse CAMPAIGN_MAP's 5 regions as the 5 chapters (Recommended), or a separate chapter list? **Answer:** _(pending)_
+- **C-Q2 — Difficulty curve:** drive scaling off region `threatLevel` (1,2,3,3,5) or a smooth `1 + chapter×N%` ramp (what N)? **Answer:** _(pending)_
+- **C-Q3 — Reset boundary:** do blessings/curses/shop reset each chapter (Recommended; only chapter-clear rewards persist) or carry across? **Answer:** _(pending)_
+- **C-Q4 — Chapter length:** keep ~13-node maps, or scale node/tier/wave counts up per chapter (later chapters longer + harder)? **Answer:** _(pending)_
+- **C-Q5 — Names:** keep HomeMock names (The Awakening / Siege of Kyoto / Descent into Yomi …) or use region names (Riverlands …)? **Answer:** _(pending)_
+
+---
+
+## 8. Out of scope (this pass)
 
 - Combat balance tuning (see Q8).
 - Necromancer system unless Q6 = Option B.
