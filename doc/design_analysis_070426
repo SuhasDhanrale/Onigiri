@@ -1,0 +1,51 @@
+# Critical Design Analysis: Onigiri Auto-Battler Transition
+
+Now that the game has successfully shifted from a manual-deploy "clicker" model to an automated "macro-manager" model, the foundational design of *Onigiri* has fundamentally changed. This document provides a critical analysis of the current state of the game, highlighting both the new strengths and the specific vulnerabilities we must address to keep the game engaging.
+
+---
+
+## 1. The Core Loop Evaluation
+
+**What changed:** The player no longer spends 'Command' to push units onto the field one by one. Instead, the focus is entirely on *Economic Investment* and *Attention Allocation* (Focusing, Upgrades, Spells).
+
+### The Strengths
+* **Reduced Friction:** APM (actions per minute) is dramatically reduced. The player isn't punished for having slow hands; they are rewarded for making smart decisions regarding resource allocation.
+* **Higher Spectacle:** The game feels more like "General commanding an army" rather than "Soldier managing a line." You get to zoom out, watch the beautiful Ukiyo-e aesthetics, and enjoy the visual clash of massive armies.
+* **Granular Progression:** Making the Barracks (Cavalry, Horoku, etc.) unlockable via the Map Campaign creates an immensely satisfying reward loop—an entire new automated income stream is much more exciting than just unlocking a single unit type.
+
+---
+
+## 2. Critical Vulnerabilities (Areas to Improve)
+
+While the new system is smooth, it naturally introduces standard "Auto-Battler" traps. Here is what we need to watch out for and improve:
+
+### A. The "Idle" Problem (Lack of Active Engagement)
+**The Issue:** If passive spawning is too effective, the player will realize they can just take their hands off the keyboard and win. The "Focus" mechanic is good, but toggling a 1.2x boost isn't interactive enough to sustain excitement over a 5-minute battle.
+**Solutions to Implement:**
+1. **Meaningful Spell Casting:** Ensure the Shrine Spells (Thunder, Fox Fire, Dragon Wave) feel intensely impactful and require precise timing. They should be the player's primary "active" joy.
+2. **Focus Trade-offs:** Right now, there's no reason *not* to focus a building. What if "Focusing" a building slowly drained Command per second, or paused the timers on other buildings? If it costs something, it becomes a strategic choice instead of a passive toggle.
+3. **Active Defense:** Consider bringing back the mechanic where clicking on the background fires a basic arrow volley or weak attack. Even a slight active-damage output gives players something to do between macro decisions.
+
+### B. The Economic Snowball
+**The Issue:** Because units are now free to generate, your primary currency (`Command`) is completely diverted into permanent Upgrades (Damage/Cap) or Spells. If the player earns Command too fast, they will upgrade everything to max level locally and obliterate the late waves.
+**Solutions to Implement:**
+1. **Exponential Upgrade Scaling:** Ensure the cost of `UPG DMG` and `+1 CAP` scales very steeply for each subsequent level during a single battle.
+2. **Cap Penalties or 'Upkeep':** As the player fields more units, perhaps the passive gain of Command from slain enemies is slightly taxed, forcing them to rely on efficient Wave clearing rather than overwhelming swarm tactics.
+
+### C. "Spike" Damage vs. Passive Generation
+**The Issue:** In the old system, if an Elite Enemy suddenly pushed hard, the player could instantly dump 100 Command to spawn 5 Hatamotos. In an auto-battler, if a sudden burst wipes your frontline, waiting 12 seconds for the Barracks timer to tick down feels agonizing and unfair.
+**Solutions to Implement:**
+1. **The "Panic Button" (Overdraft Deploy):** Add a mechanic where the player can forcefully complete a Barracks timer instantly at a massive Command premium (e.g., pay 60 Command to force an instant Hatamoto spawn, bypassing the timer).
+2. **Softer Enemy Pacing:** Stagger elite enemy spawns so the player's passive unit wave has time to regenerate between major clashes. 
+
+---
+
+## 3. The Future: "Chapters" & Build Diversity
+
+Since you plan to add Chapters and expanding arsenals, consider shifting the design toward **Build Diversity** rather than "just unlock everything."
+
+* **The 4-Slot Arsenal:** Right now there are exactly 4 barracks. If you add 6 or 8 types in the future (e.g. Healer Shrine, Shield Bearers, Ninja), force the player to select only **4 active Barracks** before a battle starts. This creates high replayability, as players have to decide: *"Do I run a pure ranged/artillery build, or a heavy infantry attrition build?"*
+* **Synergy Upgrades:** In the Map Shop, offer provisions that alter how specific barracks function, e.g., "Archers spawn 30% slower but apply Burn" vs "Archers spawn 50% faster but lose 25% range." 
+
+## Key Takeaway
+The transition is a massive upgrade to the game's identity. Moving forward, the development focus should be entirely on **making the Command decisions (Upgrades, Focus, Spells) feel weighty and consequential**, and ensuring the player always feels like the mastermind orchestrating the battle, even if they aren't swinging the sword themselves.
