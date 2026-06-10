@@ -6,7 +6,8 @@ export const DEFAULT_VIEWPORTS = [
   { id: 'phone', label: 'Phone', icon: Smartphone, width: 400, height: 700 },
   { id: 'tall', label: 'Tall', icon: TabletSmartphone, width: 390, height: 844 },
   { id: 'compact', label: 'Compact', icon: Smartphone, width: 360, height: 640 },
-  { id: 'wide', label: 'Wide', icon: Maximize2, width: 900, height: 700 },
+  { id: 'wide', label: '16:9 Wide', icon: TabletSmartphone, width: 1280, height: 720 },
+  { id: 'fullscreen', label: 'Full Screen', icon: Maximize2, width: '100%', height: '100%' },
 ];
 
 const DEFAULT_BRANDING = {
@@ -162,14 +163,14 @@ export const MockWorkbench = ({
             </div>
           </div>
 
-          <div className="relative min-h-0 flex-1 overflow-auto bg-[#202636]">
-            <div className="flex min-h-full items-center justify-center p-8">
+          <div className="relative min-h-0 flex-1 overflow-auto bg-[#202636] flex flex-col">
+            <div className={`relative flex flex-1 items-center justify-center ${viewport.id === 'fullscreen' ? 'p-0 overflow-hidden' : 'p-8'}`}>
               <div
-                className="relative overflow-hidden border-[10px] border-white shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
+                className={`overflow-hidden ${viewport.id === 'fullscreen' ? 'absolute inset-0' : 'relative border-[10px] border-white shadow-[0_30px_80px_rgba(0,0,0,0.55)]'}`}
                 style={{
-                  width: viewport.width,
-                  height: viewport.height,
-                  borderRadius: viewport.id === 'wide' ? 18 : 30,
+                  width: viewport.id === 'fullscreen' ? '100%' : viewport.width,
+                  height: viewport.id === 'fullscreen' ? '100%' : viewport.height,
+                  borderRadius: viewport.id === 'fullscreen' ? 0 : (viewport.id === 'wide' ? 18 : 30),
                   background: brand.deviceBg,
                 }}
               >
