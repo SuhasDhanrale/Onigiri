@@ -17,7 +17,8 @@ import { SumiResultScreen } from './ui/screens/SumiResultScreen.jsx';
 import { spawnUnit as _spawnUnit, addParticle as _addParticle } from './systems/SpawnSystem.js';
 import { triggerThunder as _triggerThunder, triggerFoxFire as _triggerFoxFire, triggerDragonWave as _triggerDragonWave, triggerWarDrums as _triggerWarDrums, triggerHarvest as _triggerHarvest, triggerResolve as _triggerResolve } from './systems/SpellSystem.js';
 import { generateMap, applyNodeCompletion } from './systems/MapGenerator.js';
-import { computeBlessingMultipliers, computeCurseMultipliers } from './systems/EventSystem.js';
+import { computeBlessingMultipliers, computeCurseMultipliers, tickCurses, getCurseHonorMult } from './systems/EventSystem.js';
+import { computeShopModifiers } from './systems/ShopSystem.js';
 
 // --- Phase 5: Hook & Input imports ---
 import { useMeta } from './hooks/useMeta.js';
@@ -171,10 +172,16 @@ export default function App() {
     
     // Determine safely if this is a boss battle
     const isBoss = explicitNode ? explicitNode.type === 'boss' : metaRef.current.activeNodeType === 'boss';
-    
+
+    // Q1=A: combat seeds from the run's baseCommand (unified economy); legacy 150 fallback if no run yet
+    const startCommand = runStateRef.current?.baseCommand ?? 150;
+
+    // Phase C: run-duration shop buffs, read at combat start and stored on game state
+    const shopMods = computeShopModifiers(runStateRef.current?.shopPurchases);
+
     state.current = {
       ...state.current, 
-      command: 150, totalCommand: 150, wave: 1, fever: 0, feverActive: 0, screenShake: 0, conscriptCooldown: 0,
+      command: startCommand, totalCommand: startCommand, wave: 1, fever: 0, feverActive: 0, screenShake: 0, conscriptCooldown: 0,
       units: [], projectiles: [], explosions: [], floatingTexts: [], particles: [], slashTrails: [], lightnings: [], dragonWaves: [], foxFires: [],
       focusedBuilding: null,
       barracks: { 
@@ -197,6 +204,8 @@ export default function App() {
       warDrumsActive: 0, harvestActive: 0,
       frontlineSlots: new Array(9).fill(null), 
       backlineSlots: new Array(9).fill(null),
+      shopUnitStatMult: shopMods.unitStatMult, shopArcherFireMult: shopMods.archerFireMult,
+      shopBarracksTimeMult: shopMods.barracksTimeMult, shopSpellCooldownMult: shopMods.spellCooldownMult,
       gameState: 'COMBAT', currentRegion: regionId,
       waveState: 'PRE_WAVE', waveTimer: 6.0, squadsToSpawn: [], enemiesInWave: 0, inkLineY: 0,
       isBossNode: isBoss,
@@ -231,6 +240,14 @@ export default function App() {
       }
     };
     
+    // FR-Q=A: apply run-scoped barracks unlocks (fresh_recruits) on top of meta unlocks
+    for (const key of (runStateRef.current?.shopBarracksUnlocks ?? [])) {
+      if (state.current.barracks[key] !== undefined) {
+        state.current.barracks[key] = 1;
+        state.current.autoUnlocked[key] = true;
+      }
+    }
+
     // Auto-spawn garrison units if a rest-node garrison was set this run
     // Read from runStateRef (holds pre-update value at this point — React hasn't re-rendered yet)
     const garrison = runStateRef.current?.pendingGarrison;
@@ -265,7 +282,14 @@ export default function App() {
   const handleRegionVictory = useCallback(() => {
     const regionId      = state.current.currentRegion;
     const currentRun    = runStateRef.current;
-    const combatHonor   = state.current.earnedHonor || 0;
+    let combatHonor     = state.current.earnedHonor || 0;
+    const combatCommandLeft = state.current.command ?? 0;  // Q1=A: leftover combat command banks back to the run
+
+    // D2: curses bite the combat honor reward (read from pre-combat curses)
+    combatHonor = Math.round(combatHonor * getCurseHonorMult(currentRun?.curses ?? []));  // OUTLAW -30%
+    if (currentRun?.currentNodeType === 'boss' && (currentRun?.curses ?? []).some(c => c.id === 'FOX_DEBT')) {
+      combatHonor = Math.round(combatHonor * 0.5);  // FOX_DEBT -50% boss rewards
+    }
 
     if (regionId && !meta.conqueredRegions.includes(regionId)) {
       setMeta(prev => ({ ...prev, conqueredRegions: [...prev.conqueredRegions, regionId] }));
@@ -298,7 +322,9 @@ export default function App() {
         if (!prev) return prev;
         return {
           ...prev,
+          baseCommand: combatCommandLeft,  // Q1=A: unified economy — carry combat command into the run pool
           honorEarned: (prev.honorEarned || 0) + combatHonor,
+          curses: tickCurses(prev.curses, { combat: true, node: true }),  // D1: a combat is also a node visit
           blessings: prev.blessings
             .map(b => typeof b.combatsRemaining === 'number' && b.combatsRemaining !== Infinity
               ? { ...b, combatsRemaining: b.combatsRemaining - 1 }

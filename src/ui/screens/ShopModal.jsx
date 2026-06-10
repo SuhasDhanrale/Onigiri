@@ -9,7 +9,7 @@ import { SHOP_ITEMS } from '../../config/nodes.js';
  *   onPurchase — (itemId, price) => void
  *   onLeave    — () => void
  */
-export function ShopModal({ inventory, runState, onPurchase, onLeave }) {
+export function ShopModal({ inventory, runState, lockableBarracks = [], onPurchase, onLeave }) {
   const baseCommand = runState?.baseCommand ?? 0;
 
   return (
@@ -44,6 +44,8 @@ export function ShopModal({ inventory, runState, onPurchase, onLeave }) {
             const displayPrice = Math.round((entry.price[0] + entry.price[1]) / 2);
             const canAfford    = baseCommand >= displayPrice;
             const alreadyOwned = runState?.shopPurchases?.[entry.id] ?? false;
+            const noCurses     = item.effect === 'remove_1_curse' && (runState?.curses?.length ?? 0) === 0;
+            const noUnits      = item.effect === 'plus_1_unit_choice' && lockableBarracks.length === 0;
 
             return (
               <div
@@ -79,7 +81,7 @@ export function ShopModal({ inventory, runState, onPurchase, onLeave }) {
                     <span className="text-[9px] text-[#8b8574] ml-1">CMD</span>
                   </span>
                   <button
-                    disabled={!canAfford || alreadyOwned}
+                    disabled={!canAfford || alreadyOwned || noCurses || noUnits}
                     onClick={() => onPurchase(entry.id, displayPrice)}
                     className={`px-4 py-1 text-[9px] font-black uppercase tracking-widest border transition-all
                       ${alreadyOwned
@@ -89,7 +91,7 @@ export function ShopModal({ inventory, runState, onPurchase, onLeave }) {
                           : 'border-[#b84235] text-[#dfd4ba] hover:bg-[#b84235]/20 cursor-pointer'
                       }`}
                   >
-                    {alreadyOwned ? 'Owned' : 'Buy'}
+                    {alreadyOwned ? 'Owned' : noCurses ? 'No Curses' : noUnits ? 'All Unlocked' : 'Buy'}
                   </button>
                 </div>
               </div>

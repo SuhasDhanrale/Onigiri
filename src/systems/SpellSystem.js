@@ -57,7 +57,7 @@ export function triggerThunder(s) {
   if (s.command >= 150 && s.gameState === 'COMBAT' && s.thunderCooldown <= 0) {
     s.command -= 150;
     bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
-    s.thunderCooldown = 2.0;
+    s.thunderCooldown = 2.0 * (s.shopSpellCooldownMult ?? 1.0);  // spell_mastery
     const enemies = s.units.filter(u => u.team === 'enemy' && u.hp > 0);
     const targets = enemies.sort((a, b) => b.hp - a.hp).slice(0, 3);
     targets.forEach(t => {
@@ -73,7 +73,7 @@ export function triggerFoxFire(s) {
   if (s.command >= 250 && s.gameState === 'COMBAT' && s.foxFireCooldown <= 0) {
     s.command -= 250;
     bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
-    s.foxFireCooldown = 10.0;
+    s.foxFireCooldown = 10.0 * (s.shopSpellCooldownMult ?? 1.0);  // spell_mastery
     s.foxFires.push({ yTop: 1000, yBottom: 1200, life: 8.0 });
   }
 }
@@ -82,7 +82,7 @@ export function triggerDragonWave(s) {
   if (s.command >= 600 && s.gameState === 'COMBAT' && s.dragonCooldown <= 0) {
     s.command -= 600;
     bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
-    s.dragonCooldown = 15.0;
+    s.dragonCooldown = 15.0 * (s.shopSpellCooldownMult ?? 1.0);  // spell_mastery
     s.dragonWaves.push({ y: WALL_Y - 50, life: 2.0 });
     s.screenShake = 1.0;
     bus.emit(EVENTS.SCREEN_SHAKE, { amount: s.screenShake });

@@ -68,6 +68,7 @@ export function createRunState(meta) {
     mapSeed: Date.now(),
     pendingGarrison: null,
     shopPurchases: {},
+    shopBarracksUnlocks: [],
     runNumber: (meta.totalRuns || 0) + 1,
     activeItem: meta.equippedItem,
     currentNodeType: null,

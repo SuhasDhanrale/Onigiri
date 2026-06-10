@@ -72,6 +72,10 @@ export function spawnUnit(s, typeKey, team, customX = null, customY = null, meta
     damage *= (metaRef.current.activeDamageMult      ?? 1.0);
     damage *= (metaRef.current.activeCurseDamageMult ?? 1.0);
     if (baseStats.type === 'ranged') range *= (metaRef.current.activeArcherRangeMult ?? 1.0);  // EAGLE_EYE blessing
+    // Shop run-buffs (stored on game state in startCombat)
+    hp     *= (s.shopUnitStatMult ?? 1.0);      // elite_training (+15% all stats)
+    damage *= (s.shopUnitStatMult ?? 1.0);      // elite_training (+15% all stats)
+    if (baseStats.type === 'ranged') damage *= (s.shopArcherFireMult ?? 1.0);  // flaming_arrows_shop (+25% archer dmg)
     // Note: activeAttackSpeedMult and activeMoveSpeedMult are applied per-frame in CombatSystem
   }
 

@@ -122,12 +122,47 @@ export function purchaseItem(runState, itemId, price) {
 
   if (runState.baseCommand < actualPrice) return runState; // can't afford
 
-  return {
+  let newState = {
     ...runState,
     baseCommand: runState.baseCommand - actualPrice,
     shopPurchases: {
       ...(runState.shopPurchases ?? {}),
       [itemId]: true,
     },
+  };
+
+  // Immediate run-state effects (run-duration combat buffs are read via computeShopModifiers instead).
+  switch (item.effect) {
+    case 'base_command_plus_30':
+      newState = { ...newState, baseCommand: newState.baseCommand + 30 };
+      break;
+    // 'remove_1_curse' (curse_removal) and 'plus_1_unit_choice' (fresh_recruits) are resolved by
+    // picker UIs in the shop layer; 'reveal_next_tier' (scout_report) acts on the map node list.
+    default:
+      break;
+  }
+
+  return newState;
+}
+
+/**
+ * Compute run-duration combat modifiers granted by shop purchases.
+ * Read once at combat start (stored on game state in startCombat), so the values
+ * persist for the whole run via runState.shopPurchases.
+ *   - unitStatMult      — elite_training      (+15% all player unit stats)
+ *   - archerFireMult     — flaming_arrows_shop (+25% archer damage)
+ *   - barracksTimeMult   — rapid_deployment    (spawn timer ×0.5 = 2× faster)
+ *   - spellCooldownMult  — spell_mastery       (spell cooldowns ×0.8 = -20%)
+ *
+ * @param {object} shopPurchases — runState.shopPurchases map ({ itemId: true })
+ * @returns {{ unitStatMult: number, archerFireMult: number, barracksTimeMult: number, spellCooldownMult: number }}
+ */
+export function computeShopModifiers(shopPurchases) {
+  const p = shopPurchases ?? {};
+  return {
+    unitStatMult:      p.elite_training      ? 1.15 : 1.0,
+    archerFireMult:    p.flaming_arrows_shop ? 1.25 : 1.0,
+    barracksTimeMult:  p.rapid_deployment    ? 0.5  : 1.0,
+    spellCooldownMult: p.spell_mastery       ? 0.8  : 1.0,
   };
 }

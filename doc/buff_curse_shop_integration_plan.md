@@ -2,7 +2,7 @@
 
 > **Goal:** Make shop purchases, event blessings, and curses actually affect gameplay — incrementally, without breaking anything that currently works.
 > **Audited against:** Actual source code, 2026-06-10
-> **Status:** Phase A shipped ✅. §4 answered (decisions locked in §4b). §6: wire first, refactor after. Pending: Tower sub-spec (T-Q1–T-Q3) for E2; Chapters (§7) deferred. Next up: Phase B.
+> **Status:** Phases A–D shipped ✅. §4 answered (§4b), FR-Q=A done. §6: wire first, refactor after. Remaining: Phase E (E1 Stone Stance→+HP trivial, E3 Dragon Wave lock; E2 Tower blocked on T-Q1–T-Q3), `scout_report` repurpose; Chapters (§7) deferred.
 > **Rule for this doc:** No code is written until the Open Questions are answered. Answers go **inline in this file** (look for `**Answer:**` placeholders).
 
 ---
@@ -176,6 +176,13 @@ The Tower (Q2) is a *new building*, not a tweak — it needs specifics before E2
 - **T-Q2 — Combat profile:** arrow damage / range / reload seconds ("huge reload" = how long?), and base HP? **Answer:** _(pending)_
 - **T-Q3 — Persistence:** rebuilt fresh each combat (like barracks), or persists across nodes in a run? **Answer:** _(pending)_
 
+### `fresh_recruits` semantics — needs a decision (FR-Q)
+
+`fresh_recruits` = "choose 1 unit type to add." What does *adding a unit type* do? **Answer:** A — implemented ✅
+- **Option A (Recommended):** Unlock the chosen barracks for the **rest of the run** (build + auto-spawn it). Needs a run-scoped `shopBarracksUnlocks` list merged into `startCombat`'s barracks setup.
+- **Option B:** One-time garrison — spawn a small squad of the chosen unit at the **start of the next combat only** (reuse the existing `pendingGarrison` path).
+- **Option C:** Permanent unlock — adds to `meta.unlockedBarracks` forever (carries across runs).
+
 ---
 
 ## 5. Stepwise implementation plan (low-risk first)
@@ -193,30 +200,37 @@ Pure additive reads/fixes; no new mechanics, no balance shift. Build verified (`
 | A2 | Fix command-delta display bug: read `baseCommand` not `command` | [HubTestScreen.jsx:113-115](../src/ui/screens/HubTestScreen.jsx#L113-L115) | Event result screen shows correct ±Command |
 | A3 | Add `LOOTING` to `computeBlessingMultipliers` + apply to reward | EventSystem.js, [RewardSystem.js:30-44](../src/systems/RewardSystem.js#L30-L44) | More command per kill with Looting active |
 
-### Phase B — Unify the command economy (Risk: **Medium** — depends on **Q1**)
-Only if Q1 = Option A.
+### Phase B — Unify the command economy (Risk: **Medium** — Q1=A) — ✅ DONE 2026-06-10
+Build verified. Combat command and the run wallet are now one pool.
 
 | Step | Change | Files | Verify |
 |---|---|---|---|
-| B1 | Seed combat `command` from `runState.baseCommand` instead of `150` | [App.jsx:177](../src/App.jsx#L177) | Combat starts with the run's actual command |
-| B2 | Bank leftover/earned command back to `baseCommand` at combat end | [App.jsx:296-309](../src/App.jsx#L296-L309) | Command carries between nodes |
+| B1 | Combat seeds `command`/`totalCommand` from `runStateRef.current.baseCommand` (fallback 150 if no run) | `startCombat` [App.jsx](../src/App.jsx) | Combat starts with the run's actual command |
+| B2 | Victory banks leftover `state.current.command` → `runState.baseCommand`; boss path ends run (no bank); loss path resets run | `handleRegionVictory` [App.jsx](../src/App.jsx) | Command carries between nodes; shop spend reduces next combat budget |
 
-> ⚠️ This is the highest-impact-on-balance change in the plan. Ship it alone so its effect is isolated.
+> ⚠️ **Balance watch (playtest):** fresh runs now start combat at `baseCommand` (default **100**, was a flat **150**) — leaner early game. Command now **compounds** across a run (good combats enrich you; shop spend costs army budget). Watch for a low-leftover **death spiral**. Easy knobs if it feels punishing (all deferred per Q8): per-combat stipend, a minimum seed floor, or banking only a fraction of leftover.
 
-### Phase C — Shop→combat bridge (Risk: **Medium** — unblocks blocker #1)
+### Phase C — Shop→combat bridge (Risk: **Medium** — unblocks blocker #1) — ✅ MOSTLY DONE 2026-06-10
+Implementation note: shop run-buffs are read once in `startCombat` and stored on `state.current` (not the meta channel) — cleaner here because spell cooldowns are set inside SpellSystem with no `metaRef`. Same "compute → inject → read" shape, build verified.
 
-| Step | Change | Files | Verify |
-|---|---|---|---|
-| C1 | Add `computeShopModifiers(shopPurchases)` (parallel to blessing fn) + publish to meta in `handlePlayNode` | ShopSystem.js, [App.jsx:330-348](../src/App.jsx#L330-L348) | Dev overlay shows shop flags during combat |
-| C2 | Wire run-duration items to their read sites: `flaming_arrows_shop`→SpawnSystem, `rapid_deployment`→[BarracksSystem.js:22](../src/systems/BarracksSystem.js#L22), `spell_mastery`→[SpellSystem.js:56-90](../src/systems/SpellSystem.js#L56-L90), `elite_training`→SpawnSystem | each system | each effect observable in combat |
-| C3 | Immediate items: `command_expansion`→`baseCommand` in `purchaseItem`; `scout_report` reveals next tier in map; `curse_removal` + `fresh_recruits` → **picker modals** (Q7=A: choose curse / choose unit) | ShopSystem.js, HubTestScreen.jsx, MapGenerator.js, new pick modals | purchase produces the stated effect |
+| Step | Change | Status |
+|---|---|---|
+| C1 | `computeShopModifiers(shopPurchases)` in ShopSystem; called in `startCombat`, stored on `state.current` (`shopUnitStatMult`, `shopArcherFireMult`, `shopBarracksTimeMult`, `shopSpellCooldownMult`) | ✅ |
+| C2 | `elite_training`→SpawnSystem (+15% hp/dmg), `flaming_arrows_shop`→SpawnSystem (+25% archer dmg), `rapid_deployment`→BarracksSystem (timer ×0.5 = 2× faster), `spell_mastery`→SpellSystem (cooldowns ×0.8) | ✅ |
+| C3a | `command_expansion` → +30 `baseCommand` in `purchaseItem` | ✅ |
+| C3b | `curse_removal` → picker modal (Q7=A); ShopModal disables it ("No Curses") when none present | ✅ |
+| C3c | `fresh_recruits` → unit picker (FR-Q=A): unlocks chosen barracks for the rest of the run via run-scoped `shopBarracksUnlocks`, merged in `startCombat`; ShopModal disables it ("All Unlocked") when none remain | ✅ |
+| C3d | `scout_report` (reveal_next_tier) | ⚠️ **no-op in current UI** — the node map already shows every node's name + type ([HubTestScreen.jsx:660-672](../src/ui/screens/HubTestScreen.jsx#L660-L672)); needs locked-node info hidden first, or repurpose the item |
 
-### Phase D — Activate the dead curses (Risk: **Medium** — depends on **Q5**)
+### Phase D — Activate the dead curses (Risk: **Medium** — Q5=A) — ✅ DONE 2026-06-10
+Build verified. Curses now carry time counters and the three free curses bite.
 
-| Step | Change | Files | Verify |
-|---|---|---|---|
-| D1 | Curse expiry tracking (mirror blessing countdown) | EventSystem.js (curse entry shape), App.jsx (decrement) | curses expire on schedule |
-| D2 | `OUTLAW` (−honor), `FOX_DEBT` (−boss reward), `VILLAGE_WRATH` (worse events) | RewardSystem.js, EventSystem.js (`applyEventChoice`) | penalties measurable |
+| Step | Change | Status |
+|---|---|---|
+| D1 | Curse entries get counters from their `removal` field (`time_3_combats`→`combatsRemaining`, `time_5_nodes`→`nodesRemaining`); `tickCurses` decrements + drops expired — combats tick in `handleRegionVictory`, nodes tick there + in `completeNode`. Removal-only curses (WEAKENED/DIVINE_WRATH/etc.) stay until a shop/rest/event clears them. | ✅ |
+| D2a | `OUTLAW` −30% honor — combat honor in `handleRegionVictory` (`getCurseHonorMult`) + positive event honor in `applyEventChoice` | ✅ |
+| D2b | `VILLAGE_WRATH` −50% to positive event command/honor in `applyEventChoice` (computed from pre-choice curses, so the granting event isn't penalised) | ✅ |
+| D2c | `FOX_DEBT` −50% boss combat honor in `handleRegionVictory` | ✅ |
 
 ### Phase E — New mechanics / design-dependent (Risk: **High**)
 Resolved from §4b:

@@ -3,6 +3,7 @@
 // No React, no canvas, no side effects.
 
 import { BLESSINGS } from '../config/blessings.js';
+import { CURSES } from '../config/curses.js';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -26,15 +27,38 @@ function makeBlessingEntry(blessingId) {
   return { id: blessingId, combatsRemaining };
 }
 
-/** Apply a single effect descriptor to runState — returns new runState */
-function applyEffect(state, effect) {
+/** Create a curse entry, attaching a time-based countdown if the curse auto-expires */
+function makeCurseEntry(curseId) {
+  const c = CURSES[curseId];
+  const entry = { id: curseId };
+  const m = /^time_(\d+)_(combats|nodes)$/.exec(c?.removal ?? '');
+  if (m) {
+    const n = parseInt(m[1], 10);
+    if (m[2] === 'combats') entry.combatsRemaining = n;
+    else entry.nodesRemaining = n;
+  }
+  return entry;
+}
+
+/** True if a curse with the given id is currently active on the run */
+function isCurseActive(curses, id) {
+  return (curses ?? []).some(c => c.id === id);
+}
+
+/** Apply a single effect descriptor to runState — returns new runState.
+ *  `mults` scales positive command/honor gains (curses worsen event outcomes). */
+function applyEffect(state, effect, mults = { commandMult: 1.0, honorMult: 1.0 }) {
   if (!effect) return state;
   switch (effect.type) {
-    case 'command':
-      return { ...state, baseCommand: state.baseCommand + effect.value };
+    case 'command': {
+      const v = effect.value > 0 ? Math.round(effect.value * mults.commandMult) : effect.value;
+      return { ...state, baseCommand: state.baseCommand + v };
+    }
 
-    case 'honor':
-      return { ...state, honorEarned: state.honorEarned + effect.value };
+    case 'honor': {
+      const v = effect.value > 0 ? Math.round(effect.value * mults.honorMult) : effect.value;
+      return { ...state, honorEarned: state.honorEarned + v };
+    }
 
     case 'blessing': {
       const entry = makeBlessingEntry(effect.blessingId);
@@ -44,7 +68,7 @@ function applyEffect(state, effect) {
     case 'curse': {
       const alreadyHas = state.curses.some(c => c.id === effect.curseId);
       if (alreadyHas) return state;
-      return { ...state, curses: [...state.curses, { id: effect.curseId }] };
+      return { ...state, curses: [...state.curses, makeCurseEntry(effect.curseId)] };
     }
 
     case 'remove_curse': {
@@ -64,8 +88,8 @@ function applyEffect(state, effect) {
 }
 
 /** Apply an array of effects in sequence */
-function applyEffects(state, effects) {
-  return effects.reduce((s, eff) => applyEffect(s, eff), state);
+function applyEffects(state, effects, mults) {
+  return effects.reduce((s, eff) => applyEffect(s, eff, mults), state);
 }
 
 /** Deterministic integer hash of a string — used for gambling outcomes */
@@ -565,7 +589,14 @@ export function applyEventChoice(runState, eventId, choiceId) {
 
   // --- Standard effect list ---
   if (!choice.effect || choice.effect.length === 0) return runState;
-  return applyEffects(runState, choice.effect);
+  // D2: active curses worsen event outcomes (computed from pre-choice curses, so the
+  // event that grants a curse is not retroactively penalised).
+  const villageMult = isCurseActive(runState.curses, 'VILLAGE_WRATH') ? 0.5 : 1.0;  // worse event outcomes
+  const outlawMult  = isCurseActive(runState.curses, 'OUTLAW') ? 0.7 : 1.0;          // -30% honor
+  return applyEffects(runState, choice.effect, {
+    commandMult: villageMult,
+    honorMult: villageMult * outlawMult,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -618,4 +649,27 @@ export function computeCurseMultipliers(curses) {
     }
     return m;
   }, { damage: 1.0, maxHp: 1.0 });
+}
+
+/**
+ * Decrement time-based curse counters and drop expired curses.
+ * A combat node should tick both (a combat is also a node visit).
+ * @param {Array} curses
+ * @param {{combat?: boolean, node?: boolean}} opts
+ * @returns {Array} new curses array
+ */
+export function tickCurses(curses, { combat = false, node = false } = {}) {
+  return (curses ?? [])
+    .map(c => {
+      let next = c;
+      if (combat && typeof c.combatsRemaining === 'number') next = { ...next, combatsRemaining: c.combatsRemaining - 1 };
+      if (node  && typeof c.nodesRemaining   === 'number') next = { ...next, nodesRemaining:   c.nodesRemaining   - 1 };
+      return next;
+    })
+    .filter(c => c.combatsRemaining !== 0 && c.nodesRemaining !== 0);
+}
+
+/** Honor multiplier from active curses (OUTLAW: -30% honor from all sources). */
+export function getCurseHonorMult(curses) {
+  return isCurseActive(curses, 'OUTLAW') ? 0.7 : 1.0;
 }

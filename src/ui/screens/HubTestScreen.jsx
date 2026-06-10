@@ -1,10 +1,13 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { applyNodeCompletion } from '../../systems/MapGenerator.js';
-import { getEvent, applyEventChoice } from '../../systems/EventSystem.js';
+import { getEvent, applyEventChoice, tickCurses } from '../../systems/EventSystem.js';
 import { generateShopInventory, purchaseItem } from '../../systems/ShopSystem.js';
 import { getRestOptions, getRestBlessingChoices, applyRestChoice } from '../../systems/RestSystem.js';
 import { PROVISIONS, PERMANENT_TECHS, HEIRLOOMS } from '../../config/provisions.js';
-import { COMBAT_VARIANTS, ELITE_VARIANTS } from '../../config/nodes.js';
+import { COMBAT_VARIANTS, ELITE_VARIANTS, SHOP_ITEMS } from '../../config/nodes.js';
+import { CURSES } from '../../config/curses.js';
+import { BARRACKS_DEFS } from '../../config/barracks.js';
+import { UNIT_TYPES } from '../../config/units.js';
 import { EventModal } from './EventModal.jsx';
 import { ShopModal } from './ShopModal.jsx';
 import { RestModal } from './RestModal.jsx';
@@ -33,6 +36,8 @@ export function HubTestScreen({
   // Session tracking for SumiResultScreen
   const [nodeSessionData, setNodeSessionData] = useState(null);
   const [shopPurchases, setShopPurchases] = useState([]);
+  const [cursePicker, setCursePicker] = useState(null); // null | { curses: [...] } — curse_removal picker
+  const [unitPicker, setUnitPicker] = useState(null);   // null | { keys: [...] } — fresh_recruits picker
 
   const scrollRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -63,6 +68,8 @@ export function HubTestScreen({
   // Mark a node completed in the map and clear selection
   const completeNode = (nodeId) => {
     setMapNodes(prevMapNodes => applyNodeCompletion(prevMapNodes, nodeId));
+    // D1: tick node-duration curses (VILLAGE_WRATH). Combat nodes tick via handleRegionVictory instead.
+    setRunState(prev => prev ? { ...prev, curses: tickCurses(prev.curses, { node: true }) } : prev);
     setSelectedNode(null);
     setActiveModal(null);
   };
@@ -148,11 +155,55 @@ export function HubTestScreen({
   };
 
   // ─── Shop modal callbacks ──────────────────────────────────────────────────
+  // Barracks not yet unlocked — permanently via meta, or this run via fresh_recruits
+  const getLockableBarracks = (run) => {
+    const unlocked = new Set([
+      ...(meta.unlockedBarracks ?? []),
+      ...((run ?? runState)?.shopBarracksUnlocks ?? []),
+    ]);
+    return Object.keys(BARRACKS_DEFS).filter(k => !unlocked.has(k));
+  };
+
   const handleShopPurchase = (itemId, price) => {
     const activeRun = runState ?? startRun(meta);
+
+    // curse_removal (Q7=A): only purchasable with curses present; opens a picker to choose which to remove
+    if (SHOP_ITEMS[itemId]?.effect === 'remove_1_curse') {
+      if (!activeRun.curses || activeRun.curses.length === 0) return;
+      const newRunState = purchaseItem(activeRun, itemId, price);
+      setRunState(newRunState);
+      setShopPurchases(prev => [...prev, { itemId, price }]);
+      setCursePicker({ curses: newRunState.curses });
+      return;
+    }
+
+    // fresh_recruits (FR-Q=A): pick a barracks to unlock for the rest of the run
+    if (SHOP_ITEMS[itemId]?.effect === 'plus_1_unit_choice') {
+      const lockable = getLockableBarracks(activeRun);
+      if (lockable.length === 0) return;
+      const newRunState = purchaseItem(activeRun, itemId, price);
+      setRunState(newRunState);
+      setShopPurchases(prev => [...prev, { itemId, price }]);
+      setUnitPicker({ keys: lockable });
+      return;
+    }
+
     const newRunState = purchaseItem(activeRun, itemId, price);
     setRunState(newRunState);
     setShopPurchases(prev => [...prev, { itemId, price }]);
+  };
+
+  const handleCursePick = (curseId) => {
+    setRunState(prev => prev ? { ...prev, curses: prev.curses.filter(c => c.id !== curseId) } : prev);
+    setCursePicker(null);
+  };
+
+  const handleUnitPick = (barracksKey) => {
+    setRunState(prev => prev ? {
+      ...prev,
+      shopBarracksUnlocks: [...(prev.shopBarracksUnlocks ?? []), barracksKey],
+    } : prev);
+    setUnitPicker(null);
   };
 
   const handleShopLeave = () => {
@@ -824,6 +875,7 @@ export function HubTestScreen({
         <ShopModal
           inventory={activeModal.inventory}
           runState={runState}
+          lockableBarracks={getLockableBarracks(runState)}
           onPurchase={handleShopPurchase}
           onLeave={handleShopLeave}
         />
@@ -836,6 +888,67 @@ export function HubTestScreen({
           onChoice={handleRestChoice}
           onLeave={handleRestLeave}
         />
+      )}
+
+      {/* curse_removal picker — layers above the shop modal */}
+      {cursePicker && (
+        <div
+          className="absolute inset-0 z-[350] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={(e) => { if (e.target === e.currentTarget) setCursePicker(null); }}
+        >
+          <div className="w-[460px] bg-[#0a0908] border border-[#b84235]/50 shadow-[0_0_80px_rgba(0,0,0,0.95)] flex flex-col">
+            <div className="border-b border-[#b84235]/30 px-8 py-5">
+              <p className="text-[9px] font-bold text-[#b84235] tracking-[0.4em] uppercase mb-1">Purification</p>
+              <h2 className="text-xl font-black tracking-[0.2em] uppercase text-[#dfd4ba]">Remove a Curse</h2>
+            </div>
+            <div className="px-8 py-6 flex flex-col gap-3">
+              {cursePicker.curses.map((c) => {
+                const def = CURSES[c.id];
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => handleCursePick(c.id)}
+                    className="p-4 border border-[#b84235]/30 bg-[#141211] text-left hover:border-[#b84235] hover:bg-[#b84235]/10 transition-all"
+                  >
+                    <p className="text-xs font-black uppercase tracking-[0.15em] text-[#dfd4ba] mb-1">{def?.name ?? c.id}</p>
+                    <p className="text-[9px] text-[#8b8574] uppercase tracking-wider">{def?.desc ?? ''}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* fresh_recruits picker — layers above the shop modal */}
+      {unitPicker && (
+        <div
+          className="absolute inset-0 z-[350] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={(e) => { if (e.target === e.currentTarget) setUnitPicker(null); }}
+        >
+          <div className="w-[460px] bg-[#0a0908] border border-[#4a5d23]/50 shadow-[0_0_80px_rgba(0,0,0,0.95)] flex flex-col">
+            <div className="border-b border-[#4a5d23]/30 px-8 py-5">
+              <p className="text-[9px] font-bold text-[#4a5d23] tracking-[0.4em] uppercase mb-1">Reinforcements</p>
+              <h2 className="text-xl font-black tracking-[0.2em] uppercase text-[#dfd4ba]">Add a Barracks</h2>
+            </div>
+            <div className="px-8 py-6 flex flex-col gap-3">
+              {unitPicker.keys.map((key) => {
+                const def  = BARRACKS_DEFS[key];
+                const unit = UNIT_TYPES[def?.unit];
+                return (
+                  <button
+                    key={key}
+                    onClick={() => handleUnitPick(key)}
+                    className="p-4 border border-[#4a5d23]/30 bg-[#141211] text-left hover:border-[#4a5d23] hover:bg-[#4a5d23]/10 transition-all"
+                  >
+                    <p className="text-xs font-black uppercase tracking-[0.15em] text-[#dfd4ba] mb-1">{def?.name ?? key}</p>
+                    <p className="text-[9px] text-[#8b8574] uppercase tracking-wider">Trains {unit?.name ?? def?.unit} for the rest of the run</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* SUMI RESULT SCREEN */}
