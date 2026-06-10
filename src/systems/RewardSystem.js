@@ -23,12 +23,14 @@ export function processDeaths(s, metaRef) {
       if (u.team === 'enemy') {
         const isBloodKatana = metaRef.current.equippedItem === 'BLOOD_KATANA';
         const hasRiverlands = metaRef.current.conqueredRegions.includes('RIVERLANDS');
+        const lootMult      = metaRef.current.activeCommandDropMult ?? 1.0;  // LOOTING blessing
 
         if (u.isElite) {
           s.earnedHonor += 2;
           const baseReward = isBloodKatana ? 0 : 30;
           let reward = (baseReward > 0 && hasRiverlands) ? baseReward + Math.max(1, Math.floor(baseReward * 0.2)) : baseReward;
           if (s.harvestActive > 0) reward *= 2;
+          if (lootMult !== 1.0) reward = Math.round(reward * lootMult);  // LOOTING blessing
           s.command += reward; s.totalCommand += reward;
           bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
           bus.emit(EVENTS.HONOR_EARNED, { amount: 2 });
@@ -41,6 +43,7 @@ export function processDeaths(s, metaRef) {
           if (isBloodKatana) baseReward = 0;
           let reward = (baseReward > 0 && hasRiverlands) ? baseReward + Math.max(1, Math.floor(baseReward * 0.2)) : baseReward;
           if (s.harvestActive > 0) reward *= 2;
+          if (lootMult !== 1.0) reward = Math.round(reward * lootMult);  // LOOTING blessing
           s.command += reward; s.totalCommand += reward;
           bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
           if (reward > 0) s.floatingTexts.push({ x: u.x, y: u.y, text: `+${reward}`, color: '#ffb703', life: 1.0, vy: -60 });

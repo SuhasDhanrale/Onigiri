@@ -50,6 +50,7 @@ export function spawnUnit(s, typeKey, team, customX = null, customY = null, meta
   const laneX = customX !== null ? customX : 100 + (Math.random() * (V_WIDTH - 200));
   let hp = baseStats.hp;
   let damage = baseStats.damage;
+  let range = baseStats.range;
 
   if (team === 'player' && typeKey !== 'BARRICADE' && typeKey !== 'CHAMPION') {
     const troopBuff = 1 + ((s.troopLevel[typeKey] || 1) - 1) * 0.25;
@@ -70,6 +71,7 @@ export function spawnUnit(s, typeKey, team, customX = null, customY = null, meta
     hp     *= (metaRef.current.activeCurseMaxHpMult  ?? 1.0);
     damage *= (metaRef.current.activeDamageMult      ?? 1.0);
     damage *= (metaRef.current.activeCurseDamageMult ?? 1.0);
+    if (baseStats.type === 'ranged') range *= (metaRef.current.activeArcherRangeMult ?? 1.0);  // EAGLE_EYE blessing
     // Note: activeAttackSpeedMult and activeMoveSpeedMult are applied per-frame in CombatSystem
   }
 
@@ -100,7 +102,7 @@ export function spawnUnit(s, typeKey, team, customX = null, customY = null, meta
   s.units.push({
     id: idStr, hashOffset: hash, team, ...baseStats,
     x: laneX + scatterX, y: spawnY + scatterY,
-    hp, maxHp: hp, damage,
+    hp, maxHp: hp, damage, range,
     speed: baseStats.speed * (0.9 + Math.random() * 0.2),
     attackCooldown: 0, swingPhase: 0,
     momentum: baseStats.momentum || 0,

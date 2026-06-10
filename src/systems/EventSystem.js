@@ -593,10 +593,11 @@ export function computeBlessingMultipliers(blessings) {
       case 'ANCESTOR_FURY': m.damage += 0.25; break;
       case 'IRON_WILL':     m.maxHp += 0.25; break;
       case 'FOX_SPEED':     m.moveSpeed += 0.20; break;
+      case 'LOOTING':       m.commandDrop += 0.25; break;
       default: break;
     }
     return m;
-  }, { damage: 1.0, attackSpeed: 1.0, maxHp: 1.0, archerRange: 1.0, moveSpeed: 1.0, defense: 1.0 });
+  }, { damage: 1.0, attackSpeed: 1.0, maxHp: 1.0, archerRange: 1.0, moveSpeed: 1.0, defense: 1.0, commandDrop: 1.0 });
 }
 
 /**

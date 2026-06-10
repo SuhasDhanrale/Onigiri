@@ -2,7 +2,7 @@
 
 > **Goal:** Make shop purchases, event blessings, and curses actually affect gameplay — incrementally, without breaking anything that currently works.
 > **Audited against:** Actual source code, 2026-06-10
-> **Status:** Planning — §4 answered (decisions locked in §4b). §6: wire first, refactor after. Still pending: the Tower sub-spec (T-Q1–T-Q3). Chapters (§7) deferred.
+> **Status:** Phase A shipped ✅. §4 answered (decisions locked in §4b). §6: wire first, refactor after. Pending: Tower sub-spec (T-Q1–T-Q3) for E2; Chapters (§7) deferred. Next up: Phase B.
 > **Rule for this doc:** No code is written until the Open Questions are answered. Answers go **inline in this file** (look for `**Answer:**` placeholders).
 
 ---
@@ -184,8 +184,8 @@ Each phase is **independently shippable and verifiable**. Stop after any phase a
 
 > Phases C–E depend on the Open Question answers; ranges/risks below assume the **Recommended** options.
 
-### Phase A — Complete the partial wiring (Risk: **Very Low**)
-Pure additive reads/fixes; no new mechanics, no balance shift.
+### Phase A — Complete the partial wiring (Risk: **Very Low**) — ✅ DONE 2026-06-10
+Pure additive reads/fixes; no new mechanics, no balance shift. Build verified (`vite build`, 85 modules, no errors).
 
 | Step | Change | Files | Verify |
 |---|---|---|---|

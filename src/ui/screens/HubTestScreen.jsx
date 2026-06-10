@@ -106,11 +106,11 @@ export function HubTestScreen({
     const { node, eventData } = activeModal;
     const activeRun = runState ?? startRun(meta);
     const prevHonor = activeRun.honorEarned ?? 0;
-    const prevCommand = activeRun.command ?? 0;
+    const prevCommand = activeRun.baseCommand ?? 0;
 
     const newRunState = applyEventChoice(activeRun, eventData.id, choiceId);
     const newHonor = newRunState.honorEarned ?? 0;
-    const newCommand = newRunState.command ?? 0;
+    const newCommand = newRunState.baseCommand ?? 0;
     const honorDelta = newHonor - prevHonor;
     const commandDelta = newCommand - prevCommand;
 

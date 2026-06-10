@@ -8,6 +8,7 @@ import { DemonsMock } from './screens/DemonsMock.jsx';
 import { BossAnimMock } from './screens/BossAnimMock.jsx';
 import { BaseMock, BaseControls } from './screens/BaseMock.jsx';
 import { MusicMock } from './screens/MusicMock.jsx';
+import { EffectsMock } from './screens/EffectsMock.jsx';
 
 export const mockScreens = [
   {
@@ -58,5 +59,11 @@ export const mockScreens = [
     title: 'Music Engine',
     description: 'Procedural Web Audio API synthesis for game tracks.',
     component: MusicMock,
+  },
+  {
+    id: 'effects_library',
+    title: 'VFX Library',
+    description: 'Pure SVG and CSS animations for combat special effects.',
+    component: EffectsMock,
   },
 ];

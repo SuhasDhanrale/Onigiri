@@ -313,7 +313,7 @@ export default function App() {
       ...prev,
       activeNodeType: null, activeNodeVariant: null, activeNodeThreat: 1, activeNodeWaves: 3,
       activeDamageMult: 1.0, activeAttackSpeedMult: 1.0, activeMaxHpMult: 1.0,
-      activeArcherRangeMult: 1.0, activeMoveSpeedMult: 1.0,
+      activeArcherRangeMult: 1.0, activeMoveSpeedMult: 1.0, activeCommandDropMult: 1.0,
       activeCurseDamageMult: 1.0, activeCurseMaxHpMult: 1.0,
     }));
 
@@ -335,6 +335,7 @@ export default function App() {
       activeMaxHpMult:       blessingMults.maxHp,
       activeArcherRangeMult: blessingMults.archerRange,
       activeMoveSpeedMult:   blessingMults.moveSpeed,
+      activeCommandDropMult: blessingMults.commandDrop,
       // Curse multipliers
       activeCurseDamageMult: curseMults.damage,
       activeCurseMaxHpMult:  curseMults.maxHp,
