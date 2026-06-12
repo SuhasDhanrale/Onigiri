@@ -72,6 +72,7 @@ export function createRunState(meta, chapterId = null) {
     completedNodeIds: [],
     mapSeed: Date.now(),
     pendingGarrison: null,
+    squadCapBonus: 0,
     shopPurchases: {},
     shopBarracksUnlocks: [],
     runNumber: (meta?.totalRuns || 0) + 1,

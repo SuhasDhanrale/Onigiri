@@ -22,6 +22,7 @@ import { triggerThunder as _triggerThunder, triggerFoxFire as _triggerFoxFire, t
 import { generateMap, applyNodeCompletion } from './systems/MapGenerator.js';
 import { computeBlessingMultipliers, computeCurseMultipliers, tickCurses, getCurseHonorMult } from './systems/EventSystem.js';
 import { computeShopModifiers } from './systems/ShopSystem.js';
+import { applyNodeRewardToRunState, makeNodeFromRun, resolveNodeVictoryReward, summarizeResolvedReward } from './systems/NodeRewardSystem.js';
 
 // --- Phase 5: Hook & Input imports ---
 import { useMeta } from './hooks/useMeta.js';
@@ -110,7 +111,19 @@ export default function App() {
         const enemiesSlainTypes = Object.entries(combatStats.enemiesSlain.types)
           .map(([name, count]) => ({ name, count }));
 
-        const combatHonor = s.earnedHonor || 0;
+        const currentRun = runStateRef.current;
+        const isBossClear = currentRun?.currentNodeType === 'boss';
+        const nodeReward = resolveNodeVictoryReward(makeNodeFromRun(currentRun), currentRun);
+        let combatHonor = s.earnedHonor || 0;
+        combatHonor = Math.round(combatHonor * getCurseHonorMult(currentRun?.curses ?? []));
+        if (isBossClear && (currentRun?.curses ?? []).some(c => c.id === 'FOX_DEBT')) {
+          combatHonor = Math.round(combatHonor * 0.5);
+        }
+        const nodeRewardSummary = summarizeResolvedReward(nodeReward);
+        const resources = [
+          ...(combatHonor > 0 ? [{ name: 'Combat Honor', change: `+${combatHonor}`, color: 'text-[#d4af37]' }] : []),
+          ...nodeRewardSummary.resources,
+        ];
         
         setResultContext({
           type: 'battle_win',
@@ -125,10 +138,8 @@ export default function App() {
               types: enemiesSlainTypes
             }
           },
-          resources: [
-            { name: 'Honor', change: `+${combatHonor}`, color: 'text-[#d4af37]' }
-          ],
-          impacts: []
+          resources,
+          impacts: nodeRewardSummary.impacts
         });
       }
     }
@@ -293,6 +304,7 @@ export default function App() {
     const chapterId     = currentRun?.chapterId ?? metaRef.current.activeChapterId ?? null;
     let combatHonor     = state.current.earnedHonor || 0;
     const combatCommandLeft = state.current.command ?? 0;  // Q1=A: leftover combat command banks back to the run
+    const nodeReward = resolveNodeVictoryReward(makeNodeFromRun(currentRun), currentRun);
 
     // D2: curses bite the combat honor reward (read from pre-combat curses)
     combatHonor = Math.round(combatHonor * getCurseHonorMult(currentRun?.curses ?? []));  // OUTLAW -30%
@@ -304,8 +316,9 @@ export default function App() {
       setMapNodes(prev => prev ? applyNodeCompletion(prev, regionId) : prev);
     }
 
-    if (combatHonor > 0) {
-      setMeta(prev => ({ ...prev, honor: prev.honor + combatHonor }));
+    const totalHonorReward = combatHonor + (nodeReward.honor ?? 0);
+    if (totalHonorReward > 0) {
+      setMeta(prev => ({ ...prev, honor: prev.honor + totalHonorReward }));
     }
 
     if (isBossClear) {
@@ -338,7 +351,7 @@ export default function App() {
     if (currentRun) {
       setRunState(prev => {
         if (!prev) return prev;
-        return {
+        const nextRun = {
           ...prev,
           baseCommand: combatCommandLeft,  // Q1=A: unified economy — carry combat command into the run pool
           honorEarned: (prev.honorEarned || 0) + combatHonor,
@@ -350,6 +363,7 @@ export default function App() {
             )
             .filter(b => b.combatsRemaining !== 0),
         };
+        return applyNodeRewardToRunState(nextRun, nodeReward);
       });
     }
 
@@ -358,7 +372,7 @@ export default function App() {
       activeNodeType: null, activeNodeVariant: null, activeNodeThreat: 1, activeNodeWaves: 3,
       activeDamageMult: 1.0, activeAttackSpeedMult: 1.0, activeMaxHpMult: 1.0,
       activeArcherRangeMult: 1.0, activeMoveSpeedMult: 1.0, activeCommandDropMult: 1.0,
-      activeCurseDamageMult: 1.0, activeCurseMaxHpMult: 1.0,
+      activeCurseDamageMult: 1.0, activeCurseMaxHpMult: 1.0, activeSquadCapBonus: 0,
     }));
 
     state.current.currentRegion = null;
@@ -395,6 +409,7 @@ export default function App() {
       activeChapterThreat:        chapter.threatLevel ?? 1,
       activeChapterEnemyStatMult: chapterEnemyStatMult,
       activeNodeWaves:   node.waves   ?? 3,   // ← fixes WaveSystem Gap #9
+      activeSquadCapBonus: activeRun?.squadCapBonus ?? 0,
       // Carry garrison forward from run state (cleared in setRunState below)
       pendingGarrison: activeRun?.pendingGarrison ?? null,
     }));
@@ -518,7 +533,7 @@ export default function App() {
   const changeQuota = useCallback((key, delta) => {
       const s = state.current;
       const level = s.barracks[key] || 0;
-      const cap = getSquadCap(key, level, metaRef.current.equippedItem, metaRef.current.conqueredRegions);
+      const cap = getSquadCap(key, level, metaRef.current.equippedItem, metaRef.current.conqueredRegions, metaRef.current.activeSquadCapBonus ?? 0);
       const newQuota = Math.max(0, Math.min(cap, (s.guardQuotas[key] || 0) + delta));
       
       s.guardQuotas[key] = newQuota;
@@ -557,7 +572,7 @@ export default function App() {
 
   const s = state.current;
   const activeUnits = s.units.filter(u => u.team === 'player' && u.hp > 0 && u.type !== 'friction' && u.type !== 'hero' && u.name !== 'Arrow Tower').length;
-  const maxTroops = Object.keys(BARRACKS_DEFS).reduce((sum, key) => sum + getSquadCap(key, s.barracks[key] || 0, meta.equippedItem, meta.conqueredRegions), 0);
+  const maxTroops = Object.keys(BARRACKS_DEFS).reduce((sum, key) => sum + getSquadCap(key, s.barracks[key] || 0, meta.equippedItem, meta.conqueredRegions, meta.activeSquadCapBonus ?? 0), 0);
 
   return (
     <div className="flex h-screen w-full bg-[#1b1918] text-[#1b1918] font-serif overflow-hidden select-none relative">

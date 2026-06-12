@@ -63,7 +63,7 @@ export const createInputHandlers = (state, fgCanvasRef, setUiTick, metaRef, spaw
            const level = s.barracks[clickedBuilding];
            if (level > 0) {
                const def = BARRACKS_DEFS[clickedBuilding];
-                const cap = getSquadCap(clickedBuilding, level, metaRef.current.equippedItem, metaRef.current.conqueredRegions);
+                const cap = getSquadCap(clickedBuilding, level, metaRef.current.equippedItem, metaRef.current.conqueredRegions, metaRef.current.activeSquadCapBonus ?? 0);
                const currentCount = s.units.filter(u => u.name === UNIT_TYPES[def.unit].name && u.team === 'player' && u.hp > 0).length;
                
                if (currentCount < cap) {

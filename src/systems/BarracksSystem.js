@@ -20,7 +20,7 @@ export function tickBarracks(s, dt, metaRef) {
     if (level > 0) {
       const def = BARRACKS_DEFS[key];
       const maxTime = def.spawnRate * bannerMult * (s.shopBarracksTimeMult ?? 1.0);  // rapid_deployment
-      const cap = getSquadCap(key, level, metaRef.current.equippedItem, metaRef.current.conqueredRegions);
+      const cap = getSquadCap(key, level, metaRef.current.equippedItem, metaRef.current.conqueredRegions, metaRef.current.activeSquadCapBonus ?? 0);
       const currentCount = s.units.filter(u => u.name === UNIT_TYPES[def.unit]?.name && u.team === 'player' && u.hp > 0).length;
 
       if (currentCount < cap) {

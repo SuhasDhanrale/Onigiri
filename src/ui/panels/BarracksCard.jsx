@@ -7,7 +7,7 @@ export function BarracksCard({ bKey, def, s, meta, setUiTick, changeQuota, build
 
   const level = s.barracks[bKey] || 0;
   const isAuto = s.autoUnlocked[bKey];
-  const cap = getSquadCap(bKey, level, meta.equippedItem, meta.conqueredRegions);
+  const cap = getSquadCap(bKey, level, meta.equippedItem, meta.conqueredRegions, meta.activeSquadCapBonus ?? 0);
   const currentCount = s.units.filter(u => u.name === UNIT_TYPES[def.unit].name && u.team === 'player' && u.hp > 0).length;
   
   const maxTime = def.spawnRate * bannerMult;

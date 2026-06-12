@@ -4,7 +4,8 @@ import { getEvent, applyEventChoice, tickCurses } from '../../systems/EventSyste
 import { generateShopInventory, purchaseItem } from '../../systems/ShopSystem.js';
 import { getRestOptions, getRestBlessingChoices, applyRestChoice } from '../../systems/RestSystem.js';
 import { PROVISIONS, PERMANENT_TECHS, HEIRLOOMS } from '../../config/provisions.js';
-import { COMBAT_VARIANTS, ELITE_VARIANTS, SHOP_ITEMS } from '../../config/nodes.js';
+import { SHOP_ITEMS } from '../../config/nodes.js';
+import { formatNodeRewardLines } from '../../systems/NodeRewardSystem.js';
 import { CURSES } from '../../config/curses.js';
 import { BARRACKS_DEFS } from '../../config/barracks.js';
 import { UNIT_TYPES } from '../../config/units.js';
@@ -789,8 +790,7 @@ export function HubTestScreen({
                   <span className="text-[#8b8574] flex items-center gap-2"><span>⚔️</span> Enemy Waves</span>
                   <span className="text-[#dfd4ba] font-black text-sm">
                     {(() => {
-                      if (selectedNode.type === 'elite') return ELITE_VARIANTS[selectedNode.variant]?.waves ?? selectedNode.waves ?? '?';
-                      if (selectedNode.type === 'combat') return COMBAT_VARIANTS[selectedNode.variant]?.waves ?? selectedNode.waves ?? '?';
+                      if (selectedNode.type === 'elite' || selectedNode.type === 'combat') return selectedNode.waves ?? '?';
                       return 'N/A';
                     })()}
                   </span>
@@ -798,16 +798,17 @@ export function HubTestScreen({
                 <div className="flex justify-between items-start text-xs font-bold uppercase tracking-[0.2em]">
                   <span className="text-[#8b8574] mt-1 flex items-center gap-2"><span>🎁</span> Reward</span>
                   <div className="flex flex-col items-end text-right">
-                    {selectedNode.type === 'combat' && COMBAT_VARIANTS[selectedNode.variant] ? (
-                      <>
-                        <span className="text-[#d4af37] text-xs font-black tracking-widest">{COMBAT_VARIANTS[selectedNode.variant].command[0]}-{COMBAT_VARIANTS[selectedNode.variant].command[1]} Command</span>
-                        <span className="text-[#dfd4ba]/60 text-[9px] mt-0.5">+{COMBAT_VARIANTS[selectedNode.variant].honor[0]}-{COMBAT_VARIANTS[selectedNode.variant].honor[1]} Honor</span>
-                      </>
-                    ) : selectedNode.type === 'elite' && ELITE_VARIANTS[selectedNode.variant] ? (
-                      <>
-                        <span className="text-[#d4af37] text-xs font-black tracking-widest">{ELITE_VARIANTS[selectedNode.variant].guarantee?.honor ?? '??'} Honor</span>
-                        <span className="text-[#dfd4ba]/60 text-[9px] mt-0.5">Elite Bounty</span>
-                      </>
+                    {formatNodeRewardLines(selectedNode).length > 0 ? (
+                      formatNodeRewardLines(selectedNode).map((line, idx) => (
+                        <span
+                          key={`${line.text}-${idx}`}
+                          className={line.tone === 'primary'
+                            ? 'text-[#d4af37] text-xs font-black tracking-widest'
+                            : 'text-[#dfd4ba]/60 text-[9px] mt-0.5'}
+                        >
+                          {line.text}
+                        </span>
+                      ))
                     ) : selectedNode.type === 'boss' ? (
                       <span className="text-[#d4af37] text-xs font-black tracking-widest">Domain Conquest</span>
                     ) : selectedNode.type === 'event' ? (
