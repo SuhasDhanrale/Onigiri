@@ -47,20 +47,15 @@ export class AdMobAdapter extends BaseAdapter {
             return { success: false, error: 'AdMob not initialized' };
         }
 
-        try {
-            // TODO: Implement
-            // const options = {
-            //     adId: placement,
-            //     isTesting: true
-            // };
-            // await this.admob.prepareInterstitial(options);
-            // await this.admob.showInterstitial();
+        // TODO: Implement
+        // const options = {
+        //     adId: placement,
+        //     isTesting: true
+        // };
+        // await this.admob.prepareInterstitial(options);
+        // await this.admob.showInterstitial();
 
-            return { success: true };
-        } catch (error) {
-            this.log('Interstitial failed', { error: error.message });
-            return { success: false, error: error.message };
-        }
+        return { success: true };
     }
 
     async showRewardedAd(placement) {
@@ -68,20 +63,15 @@ export class AdMobAdapter extends BaseAdapter {
             return { success: false, rewarded: false, error: 'AdMob not initialized' };
         }
 
-        try {
-            // TODO: Implement
-            // const options = {
-            //     adId: placement,
-            //     isTesting: true
-            // };
-            // await this.admob.prepareRewardVideoAd(options);
-            // const result = await this.admob.showRewardVideoAd();
+        // TODO: Implement
+        // const options = {
+        //     adId: placement,
+        //     isTesting: true
+        // };
+        // await this.admob.prepareRewardVideoAd(options);
+        // const result = await this.admob.showRewardVideoAd();
 
-            return { success: true, rewarded: true };
-        } catch (error) {
-            this.log('Rewarded ad failed', { error: error.message });
-            return { success: false, rewarded: false, error: error.message };
-        }
+        return { success: true, rewarded: true };
     }
 
     async showBanner(position = 'bottom') {
@@ -89,19 +79,15 @@ export class AdMobAdapter extends BaseAdapter {
             return { success: false, error: 'AdMob not initialized' };
         }
 
-        try {
-            // TODO: Implement
-            // const options = {
-            //     adId: 'YOUR_BANNER_ID',
-            //     position: position === 'top' ? BannerAdPosition.TOP_CENTER : BannerAdPosition.BOTTOM_CENTER,
-            //     isTesting: true
-            // };
-            // await this.admob.showBanner(options);
+        // TODO: Implement
+        // const options = {
+        //     adId: 'YOUR_BANNER_ID',
+        //     position: position === 'top' ? BannerAdPosition.TOP_CENTER : BannerAdPosition.BOTTOM_CENTER,
+        //     isTesting: true
+        // };
+        // await this.admob.showBanner(options);
 
-            return { success: true };
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
+        return { success: true };
     }
 
     async hideBanner() {

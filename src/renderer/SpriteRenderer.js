@@ -189,7 +189,7 @@ export class SpriteRenderer {
         }
         break;
 
-      case 'path':
+      case 'path': {
         const path = new Path2D(shape.d);
         if (shape.fill) {
           ctx.fillStyle = shape.fill;
@@ -201,8 +201,9 @@ export class SpriteRenderer {
           ctx.stroke(path);
         }
         break;
+      }
 
-      case 'polygon':
+      case 'polygon': {
         ctx.beginPath();
         const pts = shape.points.split(' ').map(p => {
           const [x, y] = p.split(',').map(Number);
@@ -223,6 +224,7 @@ export class SpriteRenderer {
           ctx.stroke();
         }
         break;
+      }
 
       case 'rect':
         ctx.beginPath();
