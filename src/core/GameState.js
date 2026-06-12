@@ -1,4 +1,5 @@
 import { CAVE_CONFIG } from '../config/cave.js';
+import { getCampaignChapterNumber, getCurrentCampaignChapterId } from '../config/campaign.js';
 
 /**
  * Returns the initial game state object.
@@ -52,11 +53,15 @@ export function createInitialState() {
  * Returns the initial run state object.
  * Called when starting a new conquest run.
  */
-export function createRunState(meta) {
+export function createRunState(meta, chapterId = null) {
+  const conqueredRegions = meta?.conqueredRegions ?? [];
+  const unlockedProvisions = meta?.unlockedProvisions ?? [];
+  const activeChapterId = chapterId ?? getCurrentCampaignChapterId(conqueredRegions);
+  const chapterNumber = getCampaignChapterNumber(activeChapterId);
   const startingCommandBonus =
-    (meta.unlockedProvisions.includes('COMMANDERS_SEAL') ? 15 : 0) +
-    (meta.unlockedProvisions.includes('WAR_CHEST')       ? 25 : 0) +
-    (meta.unlockedProvisions.includes('SHOGUNS_DECREE')  ? 40 : 0);
+    (unlockedProvisions.includes('COMMANDERS_SEAL') ? 15 : 0) +
+    (unlockedProvisions.includes('WAR_CHEST')       ? 25 : 0) +
+    (unlockedProvisions.includes('SHOGUNS_DECREE')  ? 40 : 0);
 
   return {
     baseCommand: 100 + startingCommandBonus,
@@ -69,8 +74,10 @@ export function createRunState(meta) {
     pendingGarrison: null,
     shopPurchases: {},
     shopBarracksUnlocks: [],
-    runNumber: (meta.totalRuns || 0) + 1,
-    activeItem: meta.equippedItem,
+    runNumber: (meta?.totalRuns || 0) + 1,
+    chapterId: activeChapterId,
+    chapterNumber,
+    activeItem: meta?.equippedItem ?? null,
     currentNodeType: null,
     currentNodeVariant: null,
     currentNodeThreat: 1,

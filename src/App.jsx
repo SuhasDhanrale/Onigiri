@@ -11,6 +11,7 @@ import { CAVE_CONFIG } from './config/cave.js';
 import { CommandPanel } from './ui/panels/CommandPanel.jsx';
 import { DevModifierOverlay } from './ui/panels/DevModifierOverlay.jsx';
 import { CombatScreen } from './ui/screens/CombatScreen.jsx';
+import { HomeScreen } from './ui/screens/HomeScreen.jsx';
 import { HubTestScreen } from './ui/screens/HubTestScreen.jsx';
 import { SumiResultScreen } from './ui/screens/SumiResultScreen.jsx';
 
@@ -42,6 +43,7 @@ export default function App() {
 
   // Result screen context for combat
   const [resultContext, setResultContext] = useState(null);
+  const [showHome, setShowHome] = useState(true);
 
   // mapNodes is lifted here so it survives HubTestScreen unmounting during combat.
   const [mapNodes, setMapNodes] = useState(() => generateMap(Date.now(), 0));
@@ -86,6 +88,7 @@ export default function App() {
     };
     // Reset conqueredRegions here so mount + resetDynasty both go through one path
     setMeta(prev => ({ ...prev, conqueredRegions: [] }));
+    setShowHome(true);
     setUiTick(t => t + 1);
   }, [setMeta]);
 
@@ -393,6 +396,22 @@ export default function App() {
     startCombat(node.id, node);
   }, [meta, runStateRef, startRun, startCombat, setRunState, setMeta]);
 
+  const handleStartChapter = useCallback((chapterId) => {
+    const existingRun = runStateRef.current;
+    const activeRun = existingRun?.chapterId === chapterId
+      ? existingRun
+      : startRun(metaRef.current, chapterId);
+
+    if (existingRun?.chapterId !== chapterId) {
+      setMapNodes(generateMap(activeRun.mapSeed, activeRun.chapterNumber));
+    }
+
+    setMeta(prev => ({ ...prev, activeChapterId: chapterId }));
+    state.current.gameState = 'MAP_SCREEN';
+    setShowHome(false);
+    setUiTick(t => t + 1);
+  }, [metaRef, runStateRef, setMapNodes, setMeta, startRun]);
+
   const spawnUnit = useCallback((typeKey, team, customX = null, customY = null) => {
     _spawnUnit(state.current, typeKey, team, customX, customY, metaRef);
   }, [metaRef]);
@@ -525,8 +544,15 @@ export default function App() {
   return (
     <div className="flex h-screen w-full bg-[#1b1918] text-[#1b1918] font-serif overflow-hidden select-none relative">
       <SumiResultScreen data={resultContext} onClose={handleResultClose} />
+      {showHome && (
+        <HomeScreen
+          meta={meta}
+          onStartChapter={handleStartChapter}
+        />
+      )}
+
       {/* MAP SCREEN HUB (MACRO UI) */}
-      {s.gameState === 'MAP_SCREEN' && (
+      {!showHome && s.gameState === 'MAP_SCREEN' && (
         <HubTestScreen 
           meta={meta}
           setMeta={setMeta}

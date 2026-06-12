@@ -9,8 +9,8 @@ export function useRunState() {
     runStateRef.current = runState;
   }, [runState]);
 
-  function startRun(meta) {
-    const fresh = createRunState(meta);
+  function startRun(meta, chapterId = null) {
+    const fresh = createRunState(meta, chapterId);
     setRunState(fresh);
     return fresh;
   }
