@@ -2,7 +2,7 @@
 
 > **Goal:** Make shop purchases, event blessings, and curses actually affect gameplay — incrementally, without breaking anything that currently works.
 > **Audited against:** Actual source code, 2026-06-10
-> **Status:** Phases A–D shipped ✅. §4 answered (§4b), FR-Q=A done. §6: wire first, refactor after. Remaining: Phase E (E1 Stone Stance→+HP trivial, E3 Dragon Wave lock; E2 Tower blocked on T-Q1–T-Q3), `scout_report` repurpose; Chapters (§7) deferred.
+> **Status:** Phases A–E shipped ✅ — **all 11 shop items, all 9 blessings, all curses live; command economy unified; Arrow Tower built.** §4/§4b/FR-Q/T-Q all answered. §6 resolved (dev overlay shipped ✅, heavy unification declined). Remaining: Chapters (§7) — deferred.
 > **Rule for this doc:** No code is written until the Open Questions are answered. Answers go **inline in this file** (look for `**Answer:**` placeholders).
 
 ---
@@ -170,11 +170,11 @@ When we connect an effect, do we keep config values as-authored (e.g. +25% fire,
 
 ### Tower sub-spec — still needs answers (T-Q1–T-Q3)
 
-The Tower (Q2) is a *new building*, not a tweak — it needs specifics before E2 / `quick_repairs` / `iron_fortifications` can be built:
+The Tower (Q2) is a *new building*, not a tweak — answered & built:
 
-- **T-Q1 — Build & placement:** built from the command economy like barracks and placed in fixed slots, or free-placed? Build cost? **Answer:** _(pending)_
-- **T-Q2 — Combat profile:** arrow damage / range / reload seconds ("huge reload" = how long?), and base HP? **Answer:** _(pending)_
-- **T-Q3 — Persistence:** rebuilt fresh each combat (like barracks), or persists across nodes in a run? **Answer:** _(pending)_
+- **T-Q1 — Build & placement:** **Two fixed flank slots above the wall line** (`TOWER_SLOTS` in constants.js); built by **clicking the empty slot** (not the barracks panel, not free-placement); cheap — **50 command** (`TOWER_COST`). ✅
+- **T-Q2 — Combat profile:** Recommended approved — **40 dmg / 600 range / 200 HP / ~5s reload**, stationary (speed 0), fires arrows like a Yumi (`ARROW_TOWER` in units.js). ✅
+- **T-Q3 — Persistence:** **Rebuilt fresh each combat** (like all units; nothing carries between nodes). ✅
 
 ### `fresh_recruits` semantics — needs a decision (FR-Q)
 
@@ -220,7 +220,7 @@ Implementation note: shop run-buffs are read once in `startCombat` and stored on
 | C3a | `command_expansion` → +30 `baseCommand` in `purchaseItem` | ✅ |
 | C3b | `curse_removal` → picker modal (Q7=A); ShopModal disables it ("No Curses") when none present | ✅ |
 | C3c | `fresh_recruits` → unit picker (FR-Q=A): unlocks chosen barracks for the rest of the run via run-scoped `shopBarracksUnlocks`, merged in `startCombat`; ShopModal disables it ("All Unlocked") when none remain | ✅ |
-| C3d | `scout_report` (reveal_next_tier) | ⚠️ **no-op in current UI** — the node map already shows every node's name + type ([HubTestScreen.jsx:660-672](../src/ui/screens/HubTestScreen.jsx#L660-L672)); needs locked-node info hidden first, or repurpose the item |
+| C3d | `scout_report` **repurposed** → `base_command_plus_25` ("Supply cache: +25 Command", immediate via `purchaseItem`); the original reveal was a no-op since the node map already shows all node info | ✅ |
 
 ### Phase D — Activate the dead curses (Risk: **Medium** — Q5=A) — ✅ DONE 2026-06-10
 Build verified. Curses now carry time counters and the three free curses bite.
@@ -235,11 +235,12 @@ Build verified. Curses now carry time counters and the three free curses bite.
 ### Phase E — New mechanics / design-dependent (Risk: **High**)
 Resolved from §4b:
 
-| Step | Decision | Change | Risk |
+| Step | Decision | Change | Status |
 |---|---|---|---|
-| E1 | Q4=B | Stone Stance → +max HP buff (reuse existing HP bridge — trivial) | Low |
-| E2 | Q2 | **Build the Defensive Arrow Tower** (new building: HP + auto-fire arrows + long reload), then wire `quick_repairs` (heal towers) and `iron_fortifications` (+tower HP) to it. **Blocked on Tower sub-spec T-Q1–T-Q3.** | High |
-| E3 | Q3=A | Lock Dragon Wave by default; `dragon_scroll` (run flag) unlocks it | Low-Med |
+| E1 | Q4=B | Stone Stance → `m.maxHp += 0.25` in `computeBlessingMultipliers` (rides the existing maxHp bridge); dead `defense` key removed | ✅ DONE |
+| E2 | Q2 | **Built the Defensive Arrow Tower** — `ARROW_TOWER` unit (stationary ranged, 200 HP, fires arrows); two flank build-slots above the wall, click-to-build for 50 command (`InputHandler`), procedural tower visual + empty-slot markers (`drawUnits`/`drawBackground`). `iron_fortifications` → +100% tower HP (`computeShopModifiers.towerHpMult` → `SpawnSystem`). | ✅ DONE |
+| E2-note | — | `quick_repairs` **repurposed** → `tower_hp_plus_50` ("Arrow Towers +50% HP", run-duration, stacks with `iron_fortifications` via `computeShopModifiers.towerHpMult`); the original "repair" was incompatible with the per-combat model | ✅ |
+| E3 | Q3=A | `computeShopModifiers` exposes `dragonUnlocked` (from `dragon_scroll`); stored on `state.current`; `triggerDragonWave` gated on it; SpellShrine shows a 🔒 until unlocked | ✅ DONE |
 | E4 | Q6=A | **Deferred** — necromancer effects out of scope this pass | — |
 
 ---
@@ -256,6 +257,24 @@ These reduce the chance this class of bug ("computed but never read") ever recur
 > These are improvements, not prerequisites. We can ship Phases A–D on the current structure and refactor toward #1/#2 afterward, or do #1 first as the foundation for Phase C. **Preference?**
 >
 > **Answer:** Wire first, refactor after. Ship Phases A–D on the current structure; the unified `computeRunModifiers` / data-driven refactor (#1, #2) happens as a follow-up pass once effects are proven working.
+
+### §6 refactor — breakage / gameplay assessment (2026-06-11)
+
+**Finding: the heavy unification (#1, one `computeRunModifiers`) is NOT recommended — low value, real regression risk.** Reason: there are **two legitimate injection points at two different times**, so a single function would still be consumed in two places writing to two targets:
+
+| Source | Computed in | Written to | Read by |
+|---|---|---|---|
+| Blessings + curses | `handlePlayNode` (node start) | `meta.active*Mult` | SpawnSystem, CombatSystem (`metaRef`) |
+| Shop buffs | `startCombat` (combat start) | `state.current.shop*` | SpawnSystem, BarracksSystem, SpellSystem (`s`) |
+| Curse honor + expiry | `handleRegionVictory` / `completeNode` | `runState` / `meta` | — |
+
+Collapsing these gains only cosmetic tidiness while touching the **spine every shipped feature depends on** (App.jsx ×3 sites, EventSystem ×3 fns, ShopSystem, + every read site) — behavior-preserving but easy to get subtly wrong, for ~0 gameplay benefit. **Recommend: skip.**
+
+**Safe, high-value alternative (zero gameplay risk):** add a **dev modifier overlay** (#4) — a read-only combat readout of active blessings/curses/shop flags + resolved multipliers. This is the actual safety net that would have caught the original "computed but never read" bugs (Eagle Eye, Stone Stance). Additive, no logic change.
+
+**Verdict:** keep the current structure; optionally add the dev overlay. Defer/skip the unification unless the modifier set grows much larger.
+
+**Decision (2026-06-11): dev overlay shipped ✅, heavy unification declined.** Added `DevModifierOverlay` (`src/ui/panels/DevModifierOverlay.jsx`) — a DEV-only (`import.meta.env.DEV`), read-only combat panel (top-left, collapsible) showing active blessings/curses/shop purchases + the resolved multipliers combat is using (`meta.active*Mult`, `state.current.shop*`). No-op in production builds, zero gameplay effect. The unification (#1/#2) is deliberately not done — two-injection-point architecture makes it cosmetic-only.
 
 ---
 

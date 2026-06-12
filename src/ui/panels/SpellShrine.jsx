@@ -58,7 +58,7 @@ export function SpellShrine({ s, setUiTick, meta, setMeta, triggerThunder, trigg
         {/* Dragon Wave */}
         <button 
           onClick={triggerDragonWave} 
-          disabled={s.command < 600 || s.gameState !== 'COMBAT' || s.dragonCooldown > 0} 
+          disabled={s.command < 600 || s.gameState !== 'COMBAT' || s.dragonCooldown > 0 || !s.dragonUnlocked}
           className="relative group aspect-square flex flex-col items-center justify-center transition-all border-2 bg-[var(--color-ink)] text-[#d4af37] border-[#d4af37] hover:bg-[#d4af37] hover:text-[var(--color-ink-dark)] disabled:opacity-50 disabled:border-[var(--color-ink-dark)] disabled:text-[#8b8574]"
         >
           <span className="text-xl">🌊</span>
@@ -67,6 +67,9 @@ export function SpellShrine({ s, setUiTick, meta, setMeta, triggerThunder, trigg
             <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[7px] font-bold text-white text-center py-0.5">
               {Math.ceil(s.dragonCooldown)}s
             </div>
+          )}
+          {!s.dragonUnlocked && (
+            <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-base pointer-events-none">🔒</div>
           )}
           <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-40 p-2 bg-[var(--color-ink-dark)] text-[var(--color-parchment)] text-[8px] font-bold text-center border-2 border-[#d4af37] z-50 pointer-events-none shadow-xl">
              <div className="uppercase text-[#d4af37] mb-1">Dragon Wave</div>

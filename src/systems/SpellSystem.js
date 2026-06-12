@@ -79,7 +79,7 @@ export function triggerFoxFire(s) {
 }
 
 export function triggerDragonWave(s) {
-  if (s.command >= 600 && s.gameState === 'COMBAT' && s.dragonCooldown <= 0) {
+  if (s.dragonUnlocked && s.command >= 600 && s.gameState === 'COMBAT' && s.dragonCooldown <= 0) {
     s.command -= 600;
     bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
     s.dragonCooldown = 15.0 * (s.shopSpellCooldownMult ?? 1.0);  // spell_mastery

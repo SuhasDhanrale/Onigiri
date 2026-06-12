@@ -132,15 +132,13 @@ export function purchaseItem(runState, itemId, price) {
   };
 
   // Immediate run-state effects (run-duration combat buffs are read via computeShopModifiers instead).
-  switch (item.effect) {
-    case 'base_command_plus_30':
-      newState = { ...newState, baseCommand: newState.baseCommand + 30 };
-      break;
-    // 'remove_1_curse' (curse_removal) and 'plus_1_unit_choice' (fresh_recruits) are resolved by
-    // picker UIs in the shop layer; 'reveal_next_tier' (scout_report) acts on the map node list.
-    default:
-      break;
+  // command_expansion (+30) and scout_report (+25) both grant a one-time command bump.
+  const cmdBonus = /^base_command_plus_(\d+)$/.exec(item.effect);
+  if (cmdBonus) {
+    newState = { ...newState, baseCommand: newState.baseCommand + parseInt(cmdBonus[1], 10) };
   }
+  // 'remove_1_curse' (curse_removal) and 'plus_1_unit_choice' (fresh_recruits) are resolved by
+  // picker UIs in the shop layer; 'tower_hp_plus_50' (quick_repairs) is read via computeShopModifiers.
 
   return newState;
 }
@@ -164,5 +162,7 @@ export function computeShopModifiers(shopPurchases) {
     archerFireMult:    p.flaming_arrows_shop ? 1.25 : 1.0,
     barracksTimeMult:  p.rapid_deployment    ? 0.5  : 1.0,
     spellCooldownMult: p.spell_mastery       ? 0.8  : 1.0,
+    towerHpMult:       (p.iron_fortifications ? 2.0 : 1.0) * (p.quick_repairs ? 1.5 : 1.0),  // iron_fortifications +100%, quick_repairs +50% (stack)
+    dragonUnlocked:    !!p.dragon_scroll,                    // Q3=A: Dragon Wave locked until purchased
   };
 }

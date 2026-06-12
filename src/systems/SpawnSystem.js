@@ -52,7 +52,7 @@ export function spawnUnit(s, typeKey, team, customX = null, customY = null, meta
   let damage = baseStats.damage;
   let range = baseStats.range;
 
-  if (team === 'player' && typeKey !== 'BARRICADE' && typeKey !== 'CHAMPION') {
+  if (team === 'player' && typeKey !== 'BARRICADE' && typeKey !== 'CHAMPION' && typeKey !== 'ARROW_TOWER') {
     const troopBuff = 1 + ((s.troopLevel[typeKey] || 1) - 1) * 0.25;
     hp *= troopBuff;
     damage *= troopBuff;
@@ -77,6 +77,10 @@ export function spawnUnit(s, typeKey, team, customX = null, customY = null, meta
     damage *= (s.shopUnitStatMult ?? 1.0);      // elite_training (+15% all stats)
     if (baseStats.type === 'ranged') damage *= (s.shopArcherFireMult ?? 1.0);  // flaming_arrows_shop (+25% archer dmg)
     // Note: activeAttackSpeedMult and activeMoveSpeedMult are applied per-frame in CombatSystem
+  }
+
+  if (typeKey === 'ARROW_TOWER') {
+    hp *= (s.shopTowerHpMult ?? 1.0);  // iron_fortifications (+100% tower HP)
   }
 
   if (team === 'enemy') {

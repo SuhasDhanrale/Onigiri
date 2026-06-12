@@ -605,12 +605,12 @@ export function applyEventChoice(runState, eventId, choiceId) {
 
 /**
  * Compute flat combat multipliers from active blessings.
- * Returns an object with keys: damage, attackSpeed, maxHp, archerRange, moveSpeed, defense.
+ * Returns an object with keys: damage, attackSpeed, maxHp, archerRange, moveSpeed, commandDrop.
  * Each value starts at 1.0 and is additively modified by blessing values.
  * Blessings with combatsRemaining === 0 are skipped (already expired).
  *
  * @param {Array<{id: string, combatsRemaining: number|typeof Infinity}>} blessings
- * @returns {{ damage: number, attackSpeed: number, maxHp: number, archerRange: number, moveSpeed: number, defense: number }}
+ * @returns {{ damage: number, attackSpeed: number, maxHp: number, archerRange: number, moveSpeed: number, commandDrop: number }}
  */
 export function computeBlessingMultipliers(blessings) {
   return blessings.reduce((m, b) => {
@@ -618,7 +618,7 @@ export function computeBlessingMultipliers(blessings) {
     switch (b.id) {
       case 'WAR_DRUMS':     m.attackSpeed += 0.20; break;
       case 'BLOODLUST':     m.damage += 0.30; m.maxHp -= 0.10; break;
-      case 'STONE_STANCE':  m.defense += 0.25; break;
+      case 'STONE_STANCE':  m.maxHp += 0.25; break;  // Q4=B: converted from defense → +max HP
       case 'EAGLE_EYE':     m.archerRange += 0.30; break;
       case 'SWIFT_FEET':    m.moveSpeed += 0.20; break;
       case 'ANCESTOR_FURY': m.damage += 0.25; break;
@@ -628,7 +628,7 @@ export function computeBlessingMultipliers(blessings) {
       default: break;
     }
     return m;
-  }, { damage: 1.0, attackSpeed: 1.0, maxHp: 1.0, archerRange: 1.0, moveSpeed: 1.0, defense: 1.0, commandDrop: 1.0 });
+  }, { damage: 1.0, attackSpeed: 1.0, maxHp: 1.0, archerRange: 1.0, moveSpeed: 1.0, commandDrop: 1.0 });
 }
 
 /**

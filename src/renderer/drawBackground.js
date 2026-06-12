@@ -1,4 +1,4 @@
-import { V_WIDTH, V_HEIGHT, WALL_Y, BATTLE_LINE_Y } from '../config/constants.js';
+import { V_WIDTH, V_HEIGHT, WALL_Y, BATTLE_LINE_Y, TOWER_SLOTS, TOWER_COST } from '../config/constants.js';
 import { COLORS } from '../config/colors.js';
 import { BARRACKS_DEFS, BARRACKS_LAYOUT } from '../config/barracks.js';
 import { UNIT_TYPES } from '../config/units.js';
@@ -159,6 +159,26 @@ export function drawBackground(ctx, s, now, metaRef) {
             ctx.fillStyle = COLORS.parchment; ctx.font = 'bold 10px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillText('LOCKED', 0, 12);
         }
+        ctx.restore();
+    });
+
+    // Empty Arrow Tower build slots (occupied slots are drawn as units)
+    TOWER_SLOTS.forEach((slot) => {
+        const occupied = s.units.some(u => u.name === 'Arrow Tower' && u.team === 'player' && u.hp > 0 && Math.hypot(u.x - slot.x, u.y - slot.y) < 50);
+        if (occupied) return;
+        ctx.save();
+        ctx.translate(slot.x, slot.y);
+        ctx.setLineDash([6, 6]);
+        ctx.strokeStyle = 'rgba(212, 175, 55, 0.6)';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(-26, -40, 52, 60);
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(212, 175, 55, 0.85)';
+        ctx.font = 'bold 20px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('🏹', 0, -10);
+        ctx.fillStyle = COLORS.inkDark;
+        ctx.font = 'bold 11px serif';
+        ctx.fillText(`BUILD ${TOWER_COST}K`, 0, 35);
         ctx.restore();
     });
 }

@@ -1,9 +1,11 @@
 import { BARRACKS_LAYOUT, BARRACKS_DEFS } from '../config/barracks.js';
 import { UNIT_TYPES } from '../config/units.js';
 import { getSquadCap, lineCircleCollide } from '../core/utils.js';
-import { WALL_Y, V_WIDTH, V_HEIGHT } from '../config/constants.js';
+import { WALL_Y, V_WIDTH, V_HEIGHT, TOWER_SLOTS, TOWER_COST } from '../config/constants.js';
 import { addParticle } from '../systems/SpawnSystem.js';
 import { COLORS } from '../config/colors.js';
+import { bus } from '../core/EventBus.js';
+import { EVENTS } from '../core/events.js';
 
 export const getCanvasPos = (e, canvas, s) => {
     if (!canvas) return { x: 0, y: 0 };
@@ -26,7 +28,29 @@ export const createInputHandlers = (state, fgCanvasRef, setUiTick, metaRef, spaw
         if (s.gameState !== 'COMBAT') return;
         const { x, y } = getCanvasPos(e, fgCanvasRef.current, s);
         if (s.feverActive > 0) { s.isSlashing = true; s.lastSlashPos = { x, y }; return; }
-        
+
+        // Defensive Arrow Tower — build into one of two fixed flank slots above the wall
+        let towerSlotIdx = -1;
+        TOWER_SLOTS.forEach((slot, i) => {
+            if (Math.hypot(x - slot.x, y - slot.y) < 70) towerSlotIdx = i;
+        });
+        if (towerSlotIdx >= 0) {
+            const slot = TOWER_SLOTS[towerSlotIdx];
+            const occupied = s.units.some(u => u.name === 'Arrow Tower' && u.team === 'player' && u.hp > 0 && Math.hypot(u.x - slot.x, u.y - slot.y) < 50);
+            if (occupied) {
+                s.floatingTexts.push({ x: slot.x, y: slot.y - 60, text: 'BUILT', color: COLORS.khaki, life: 0.8, vy: -30 });
+            } else if (s.command >= TOWER_COST) {
+                s.command -= TOWER_COST;
+                spawnUnit('ARROW_TOWER', 'player', slot.x, slot.y);
+                addParticle(state.current, slot.x, slot.y, COLORS.khaki, 12);
+                s.floatingTexts.push({ x: slot.x, y: slot.y - 60, text: `-${TOWER_COST}`, color: '#ffb703', life: 1.0, vy: -50 });
+                bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
+            } else {
+                s.floatingTexts.push({ x: slot.x, y: slot.y - 60, text: `NEED ${TOWER_COST}`, color: '#b84235', life: 1.0, vy: -30 });
+            }
+            return;
+        }
+
         let clickedBuilding = null;
         Object.entries(BARRACKS_LAYOUT).forEach(([key, layout]) => {
           if (Math.abs(x - layout.x) < layout.w / 1.8 && y > layout.y - layout.h && y < layout.y + 100) clickedBuilding = key;

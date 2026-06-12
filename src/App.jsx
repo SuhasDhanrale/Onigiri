@@ -9,6 +9,7 @@ import { getCost, getSquadCap } from './core/utils.js';
 import { CAVE_CONFIG } from './config/cave.js';
 
 import { CommandPanel } from './ui/panels/CommandPanel.jsx';
+import { DevModifierOverlay } from './ui/panels/DevModifierOverlay.jsx';
 import { CombatScreen } from './ui/screens/CombatScreen.jsx';
 import { HubTestScreen } from './ui/screens/HubTestScreen.jsx';
 import { SumiResultScreen } from './ui/screens/SumiResultScreen.jsx';
@@ -206,6 +207,8 @@ export default function App() {
       backlineSlots: new Array(9).fill(null),
       shopUnitStatMult: shopMods.unitStatMult, shopArcherFireMult: shopMods.archerFireMult,
       shopBarracksTimeMult: shopMods.barracksTimeMult, shopSpellCooldownMult: shopMods.spellCooldownMult,
+      shopTowerHpMult: shopMods.towerHpMult,  // iron_fortifications: +100% Arrow Tower HP
+      dragonUnlocked: shopMods.dragonUnlocked,  // dragon_scroll (Q3=A): Dragon Wave locked until purchased
       gameState: 'COMBAT', currentRegion: regionId,
       waveState: 'PRE_WAVE', waveTimer: 6.0, squadsToSpawn: [], enemiesInWave: 0, inkLineY: 0,
       isBossNode: isBoss,
@@ -516,7 +519,7 @@ export default function App() {
   );
 
   const s = state.current;
-  const activeUnits = s.units.filter(u => u.team === 'player' && u.hp > 0 && u.type !== 'friction' && u.type !== 'hero').length;
+  const activeUnits = s.units.filter(u => u.team === 'player' && u.hp > 0 && u.type !== 'friction' && u.type !== 'hero' && u.name !== 'Arrow Tower').length;
   const maxTroops = Object.keys(BARRACKS_DEFS).reduce((sum, key) => sum + getSquadCap(key, s.barracks[key] || 0, meta.equippedItem, meta.conqueredRegions), 0);
 
   return (
@@ -552,6 +555,11 @@ export default function App() {
         initRun={initRun} 
         handleRegionVictory={handleRegionVictory} 
       />
+
+      {/* DEV-only read-only modifier overlay (no-op in production builds) */}
+      {s.gameState !== 'MAP_SCREEN' && (
+        <DevModifierOverlay runState={runState} meta={meta} s={s} />
+      )}
 
       {/* RIGHT: COMMAND DASHBOARD - Only in combat */}
       {s.gameState !== 'MAP_SCREEN' && (

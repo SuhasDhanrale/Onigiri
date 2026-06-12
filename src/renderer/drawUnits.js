@@ -3,6 +3,7 @@ import { spriteRenderer } from './SpriteRenderer.js';
 
 function getSpriteId(unit) {
   if (unit.name === 'Bamboo Barricade') return null;
+  if (unit.name === 'Arrow Tower') return null;
   
   if (unit.team === 'player') {
     switch (unit.type) {
@@ -41,8 +42,19 @@ function drawProceduralUnit(ctx, u) {
       ctx.stroke();
       ctx.fillStyle = '#8b8574';
       ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI*2); ctx.fill();
-  } 
-  else if (u.name === 'Ikki Rebel') { 
+  }
+  else if (u.name === 'Arrow Tower') {
+      const r = u.radius;
+      ctx.fillStyle = '#6b5d3f';
+      ctx.fillRect(-r * 0.7, -r * 1.6, r * 1.4, r * 2.4);
+      ctx.strokeStyle = COLORS.inkDark; ctx.lineWidth = 3;
+      ctx.strokeRect(-r * 0.7, -r * 1.6, r * 1.4, r * 2.4);
+      ctx.fillStyle = COLORS.inkDark;
+      ctx.beginPath(); ctx.moveTo(-r * 0.9, -r * 1.6); ctx.lineTo(r * 0.9, -r * 1.6); ctx.lineTo(0, -r * 2.4); ctx.fill();
+      ctx.fillStyle = COLORS.parchment;
+      ctx.fillRect(-r * 0.18, -r * 1.1, r * 0.36, r * 0.7);
+  }
+  else if (u.name === 'Ikki Rebel') {
       ctx.strokeStyle = `rgba(27, 25, 24, 0.5)`; 
       ctx.lineWidth = 2; 
       ctx.beginPath(); 

@@ -37,8 +37,8 @@ export const EVENT_IDS = [
 
 export const SHOP_ITEMS = {
   fresh_recruits:      { id: 'fresh_recruits',      tier: 1, price: [30,  60],  effect: 'plus_1_unit_choice',      desc: 'Choose 1 unit type to add',        duration: 'immediate' },
-  scout_report:        { id: 'scout_report',        tier: 1, price: [20,  40],  effect: 'reveal_next_tier',        desc: 'Reveal all nodes in next tier',    duration: 'immediate' },
-  quick_repairs:       { id: 'quick_repairs',       tier: 1, price: [40,  60],  effect: 'repair_towers_50',        desc: 'Restore 50% HP to all towers',     duration: 'immediate' },
+  scout_report:        { id: 'scout_report',        tier: 1, price: [20,  40],  effect: 'base_command_plus_25',    desc: 'Supply cache: +25 Command',        duration: 'immediate' },
+  quick_repairs:       { id: 'quick_repairs',       tier: 1, price: [40,  60],  effect: 'tower_hp_plus_50',        desc: 'Arrow Towers +50% HP',             duration: 'run' },
   flaming_arrows_shop: { id: 'flaming_arrows_shop', tier: 2, price: [80,  120], effect: 'archers_fire_damage',     desc: 'Archers deal +25% fire damage',    duration: 'run' },
   rapid_deployment:    { id: 'rapid_deployment',    tier: 2, price: [100, 140], effect: 'barracks_2x_speed',       desc: 'Barracks spawn units 2x faster',   duration: 'run' },
   spell_mastery:       { id: 'spell_mastery',       tier: 2, price: [110, 150], effect: 'spell_cooldown_minus_20', desc: 'All spell cooldowns -20%',          duration: 'run' },
