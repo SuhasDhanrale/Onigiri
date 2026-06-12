@@ -32,6 +32,7 @@ export function HubTestScreen({
 
   // activeModal: null | { type: 'event'|'shop'|'rest', node, eventData?, inventory?, restOptions?, blessingChoices? }
   const [activeModal, setActiveModal] = useState(null);
+  const [isLoadoutOpen, setIsLoadoutOpen] = useState(false);
 
   // Session tracking for SumiResultScreen
   const [nodeSessionData, setNodeSessionData] = useState(null);
@@ -379,35 +380,57 @@ export function HubTestScreen({
       </div>
 
       {/* TOP HEADER */}
-      <div className="relative z-10 w-full flex justify-between items-center px-12 py-3 bg-[#0a0908]/60 backdrop-blur-md border-b border-[#d4af37]/20 shadow-[0_10px_30px_rgba(0,0,0,0.8)] pointer-events-none">
-        <div className="flex flex-col">
-          <span className="text-[8px] font-bold tracking-[0.4em] text-[#b84235] uppercase mb-0.5 flex items-center gap-2">
-            <span className="w-3 h-[1px] bg-[#b84235]" /> Stronghold Hub
+      <div className="relative z-40 w-full flex justify-between items-center px-4 md:px-8 py-2 md:py-3 bg-[#0a0908]/60 backdrop-blur-md border-b border-[#d4af37]/20 shadow-[0_10px_30px_rgba(0,0,0,0.8)] pointer-events-none">
+        
+        <div className="flex-1 flex items-center justify-start pointer-events-auto">
+          <button 
+            onClick={() => setIsLoadoutOpen(true)}
+            className="flex items-center justify-center gap-2 px-3 py-1.5 md:px-4 md:py-2 border border-[#d4af37]/30 bg-[#1a1816]/90 text-[#d4af37] font-black uppercase tracking-[0.1em] text-[10px] md:tracking-[0.2em] md:text-xs hover:bg-[#d4af37]/10 hover:border-[#d4af37] transition-all shadow-[0_0_15px_rgba(212,175,55,0.15)] rounded-sm whitespace-nowrap"
+          >
+            <span className="text-sm md:text-base">⛩️</span> 
+            <span>Upgrades</span>
+          </button>
+        </div>
+
+        <div className="flex-1 flex flex-col items-center justify-center pointer-events-auto px-2">
+          <span className="text-[7px] md:text-[8px] font-bold tracking-[0.2em] md:tracking-[0.4em] text-[#b84235] uppercase mb-0.5 flex items-center gap-2 whitespace-nowrap">
+            <span className="w-2 md:w-3 h-[1px] bg-[#b84235]" /> Stronghold Hub <span className="w-2 md:w-3 h-[1px] bg-[#b84235]" />
           </span>
-          <h1 className="text-3xl text-[#dfd4ba] font-black tracking-[0.2em] uppercase text-shadow-sm" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}>
+          <h1 className="text-xl md:text-2xl lg:text-3xl text-[#dfd4ba] font-black tracking-[0.1em] md:tracking-[0.2em] uppercase text-shadow-sm whitespace-nowrap text-center" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}>
             Imperial Capital
           </h1>
         </div>
 
-        <div className="flex items-center gap-6 pointer-events-auto">
-          <div className="flex flex-col text-right">
-            <span className="font-bold text-[8px] tracking-[0.3em] uppercase text-[#8b8574]">Ancestral Honor</span>
+        <div className="flex-1 flex items-center justify-end pointer-events-auto">
+          <div className="flex flex-col text-right whitespace-nowrap">
+            <span className="font-bold text-[7px] md:text-[8px] tracking-[0.2em] md:tracking-[0.3em] uppercase text-[#8b8574]">Ancestral Honor</span>
             <div className="flex items-baseline gap-1 justify-end">
-              <span className="text-3xl font-black text-[#d4af37] drop-shadow-[0_0_15px_rgba(212,175,55,0.4)]">{(meta?.honor ?? 0).toLocaleString()}</span>
-              <span className="text-xs text-[#d4af37]/60">H</span>
+              <span className="text-xl md:text-3xl font-black text-[#d4af37] drop-shadow-[0_0_15px_rgba(212,175,55,0.4)]">{(meta?.honor ?? 0).toLocaleString()}</span>
+              <span className="text-[10px] md:text-xs text-[#d4af37]/60">H</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* MAIN LAYOUT */}
-      <div className="relative z-10 flex-1 flex px-10 py-4 gap-8 items-stretch h-0">
+      <div className="relative z-10 flex-1 flex items-stretch h-0 overflow-hidden w-full">
 
-        {/* LEFT PILLAR: TABBED META SIDEBAR */}
-        <div className="w-[380px] shrink-0 bg-[#0a0908]/90 backdrop-blur-md border border-[#d4af37]/20 flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.8)] rounded-sm relative overflow-hidden z-20">
+        {/* DRAWER BACKDROP */}
+        {isLoadoutOpen && (
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm z-40 animate-[fade-in_0.3s_ease-out]" 
+            onClick={() => setIsLoadoutOpen(false)} 
+          />
+        )}
+
+        {/* LEFT PILLAR OVERLAY (DRAWER) */}
+        <div className={`absolute top-0 bottom-0 left-0 w-[420px] bg-[#0a0908]/95 backdrop-blur-xl border-r border-[#d4af37]/30 flex flex-col shadow-[20px_0_50px_rgba(0,0,0,0.9)] z-50 transition-transform duration-300 ${isLoadoutOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          <div className="absolute top-2 right-4 z-50">
+            <button onClick={() => setIsLoadoutOpen(false)} className="text-[#8b8574] hover:text-[#dfd4ba] text-3xl font-black transition-colors">&times;</button>
+          </div>
 
           {/* Tabs Header */}
-          <div className="flex w-full border-b border-[#d4af37]/20 bg-[#141211]">
+          <div className="flex w-full border-b border-[#d4af37]/20 bg-[#141211] shrink-0">
             <button
               className={`flex-1 py-4 text-xs font-black uppercase tracking-[0.3em] transition-all duration-300 ${activeSidebarTab === 'DOJO' ? 'text-[#d4af37] bg-gradient-to-t from-[#d4af37]/10 to-transparent border-b-2 border-[#d4af37]' : 'text-[#8b8574] hover:text-[#dfd4ba] border-b-2 border-transparent'}`}
               onClick={() => setActiveSidebarTab('DOJO')}
@@ -452,8 +475,7 @@ export function HubTestScreen({
                                     ? 'border border-[#8b8574]/30 bg-[#1a1816]/50 hover:border-[#d4af37]/50 cursor-pointer'
                                     : 'border border-[#8b8574]/10 bg-[#0a0908]/30 opacity-50'
                                 }`}
-                              onMouseEnter={() => setHoveredTech(key)}
-                              onMouseLeave={() => setHoveredTech(null)}
+                              onClick={() => setHoveredTech(key)}
                             >
                               {isEquipped && <div className="absolute inset-0 bg-[#d4af37]/5 blur-md pointer-events-none" />}
                               <span className={`text-xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-40'}`}>{prov.icon}</span>
@@ -480,8 +502,7 @@ export function HubTestScreen({
                                   ? 'border border-[#4a5d23]/50 bg-[#1a2816]/50 hover:border-[#4a5d23]'
                                   : 'border border-[#8b8574]/10 bg-[#0a0908]/30 opacity-50 cursor-pointer'
                                 }`}
-                              onMouseEnter={() => setHoveredTech(key)}
-                              onMouseLeave={() => setHoveredTech(null)}
+                              onClick={() => setHoveredTech(key)}
                             >
                               <span className={`text-xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-40'}`}>{prov.icon}</span>
                               <span className="text-[7px] font-bold uppercase text-center tracking-[0.05em] text-[#dfd4ba]/70 leading-tight">{prov.name}</span>
@@ -507,8 +528,7 @@ export function HubTestScreen({
                                   ? 'border border-[#2b3d60]/50 bg-[#1a2233]/50 hover:border-[#2b3d60]'
                                   : 'border border-[#8b8574]/10 bg-[#0a0908]/30 opacity-50 cursor-pointer'
                                 }`}
-                              onMouseEnter={() => setHoveredTech(key)}
-                              onMouseLeave={() => setHoveredTech(null)}
+                              onClick={() => setHoveredTech(key)}
                             >
                               <span className={`text-xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-40'}`}>{prov.icon}</span>
                               <span className="text-[7px] font-bold uppercase text-center tracking-[0.05em] text-[#dfd4ba]/70 leading-tight">{prov.name}</span>
@@ -534,8 +554,7 @@ export function HubTestScreen({
                                   ? 'border border-[#8b1420]/50 bg-[#281616]/50 hover:border-[#8b1420]'
                                   : 'border border-[#8b8574]/10 bg-[#0a0908]/30 opacity-50 cursor-pointer'
                                 }`}
-                              onMouseEnter={() => setHoveredTech(key)}
-                              onMouseLeave={() => setHoveredTech(null)}
+                              onClick={() => setHoveredTech(key)}
                             >
                               <span className={`text-xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-40'}`}>{prov.icon}</span>
                               <span className="text-[7px] font-bold uppercase text-center tracking-[0.05em] text-[#dfd4ba]/70 leading-tight">{prov.name}</span>
@@ -640,7 +659,7 @@ export function HubTestScreen({
         </div>
 
         {/* RIGHT PILLAR: CONQUEST MAP */}
-        <div className="flex-[2.5] bg-[radial-gradient(ellipse_at_center,_#110b0a_0%,_#0a0808_100%)] border border-[#b84235]/30 flex flex-col relative shadow-[0_0_50px_rgba(0,0,0,1)] rounded-sm overflow-hidden z-10">
+        <div className="flex-1 w-full bg-[radial-gradient(ellipse_at_center,_#110b0a_0%,_#0a0808_100%)] flex flex-col relative overflow-hidden z-10">
 
           {/* Draggable scrolling map */}
           <div
@@ -728,138 +747,94 @@ export function HubTestScreen({
             </div>
           </div>
 
-          {/* Tooltip Panel */}
-          <div className="h-[150px] shrink-0 border-t border-[#b84235]/30 bg-gradient-to-t from-[#0a0908] to-[#141211] z-30 flex items-center shadow-[0_-10px_30px_rgba(0,0,0,0.8)] px-10 relative">
-            {hoveredMapNode ? (
-              <div className="flex w-full items-center justify-between animate-[fade-in_0.2s_ease-out]">
-                <div className="flex flex-col">
+          {/* SELECTED NODE INFO CARD */}
+          {selectedNode && (
+            <div className="absolute bottom-8 right-8 w-[400px] bg-[#0a0908]/95 backdrop-blur-xl border border-[#d4af37]/30 shadow-[0_30px_60px_rgba(0,0,0,0.95)] z-30 flex flex-col pointer-events-auto animate-[fade-in_0.2s_ease-out] rounded-sm">
+              <div className="flex justify-between items-start p-6 border-b border-[#8b8574]/20 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#b84235]/10 rounded-full blur-[40px] pointer-events-none" />
+                <div className="flex flex-col z-10">
                   <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#d4af37] block mb-2">
-                    {hoveredMapNode.type === 'boss' ? 'Domain Boss' :
-                      hoveredMapNode.type === 'elite' ? 'Elite Threat' :
-                        hoveredMapNode.type === 'event' ? 'Mystery Event' :
-                          hoveredMapNode.type === 'shop' ? 'Traveling Merchant' :
-                            hoveredMapNode.type === 'rest' ? 'War Camp' : 'Combat Encounter'}
+                    {selectedNode.type === 'boss' ? 'Domain Boss' :
+                      selectedNode.type === 'elite' ? 'Elite Threat' :
+                        selectedNode.type === 'event' ? 'Mystery Event' :
+                          selectedNode.type === 'shop' ? 'Traveling Merchant' :
+                            selectedNode.type === 'rest' ? 'War Camp' : 'Combat Encounter'}
                   </span>
-                  <h3 className="text-3xl font-black text-white tracking-widest uppercase mb-1">{hoveredMapNode.name}</h3>
-                  <span className={`self-start border px-2 py-0.5 uppercase tracking-widest font-bold text-[9px]
-                    ${hoveredMapNode.status === 'completed' ? 'bg-[#d4af37]/10 border-[#d4af37]/30 text-[#d4af37]' :
-                      hoveredMapNode.status === 'available' ? 'bg-[#2b5e2b]/20 border-[#4a5d23]/50 text-[#6a9e4a]' :
-                        'bg-[#8b8574]/10 border-[#8b8574]/30 text-[#8b8574]'
-                    }`}
-                  >
-                    {hoveredMapNode.status.replace('_', ' ')}
-                  </span>
-                </div>
-
-                <div className="flex gap-12 items-center border-l border-[#8b8574]/20 pl-12">
-                  <div className="flex flex-col gap-3">
-                    {hoveredMapNode.threat > 0 && (
-                      <div className="flex items-center gap-3 text-xs font-bold text-[#8b8574] uppercase tracking-[0.2em]">
-                        <span>Threat Level</span>
-                        <span className={`text-sm ${hoveredMapNode.threat <= 2 ? 'text-[#dfd4ba]/60' :
-                          hoveredMapNode.threat >= 6 ? 'text-[#d4af37]' :
-                            'text-[#b84235]'
-                          }`}>
-                          {'💀'.repeat(Math.min(hoveredMapNode.threat, 6))}
-                        </span>
-                      </div>
-                    )}
-                    {(hoveredMapNode.type === 'combat' || hoveredMapNode.type === 'elite' || hoveredMapNode.type === 'boss') && (
-                      <div className="flex items-center gap-3 text-xs font-bold text-[#8b8574] uppercase tracking-[0.2em]">
-                        <span>Enemy Waves</span>
-                        <span className="text-white text-[10px]">
-                          {(() => {
-                            if (hoveredMapNode.type === 'elite') {
-                              return ELITE_VARIANTS[hoveredMapNode.variant]?.waves ?? hoveredMapNode.waves ?? '?';
-                            }
-                            return COMBAT_VARIANTS[hoveredMapNode.variant]?.waves ?? hoveredMapNode.waves ?? '?';
-                          })()}
-                        </span>
-                      </div>
+                  <h3 className="text-2xl font-black text-white tracking-widest uppercase mb-3 text-shadow-sm">{selectedNode.name}</h3>
+                  <div className="flex gap-2 flex-wrap">
+                    <span className={`px-2 py-0.5 uppercase tracking-widest font-bold text-[9px] border
+                      ${selectedNode.status === 'completed' ? 'bg-[#d4af37]/10 border-[#d4af37]/30 text-[#d4af37]' :
+                        selectedNode.status === 'available' ? 'bg-[#2b5e2b]/20 border-[#4a5d23]/50 text-[#6a9e4a]' :
+                          'bg-[#8b8574]/10 border-[#8b8574]/30 text-[#8b8574]'
+                      }`}
+                    >
+                      {selectedNode.status.replace('_', ' ')}
+                    </span>
+                    {selectedNode.threat > 0 && (
+                      <span className={`px-2 py-0.5 uppercase font-bold text-[9px] border border-[#b84235]/30 bg-[#b84235]/10 ${selectedNode.threat >= 6 ? 'text-[#d4af37]' : 'text-[#b84235]'}`}>
+                        Threat {'💀'.repeat(Math.min(selectedNode.threat, 6))}
+                      </span>
                     )}
                   </div>
+                </div>
+                <button onClick={() => setSelectedNode(null)} className="text-[#8b8574] hover:text-white z-10 p-1 text-2xl font-black transition-colors">&times;</button>
+              </div>
 
-                  <div className="flex flex-col items-center justify-center p-4 bg-[#0a0908] border border-[#d4af37]/20 min-w-[180px]">
-                    <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-[#8b8574] mb-2">Potential Reward</span>
-                    {hoveredMapNode.type === 'combat' && COMBAT_VARIANTS[hoveredMapNode.variant] && (
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="text-[#d4af37] text-[10px] font-black tracking-widest uppercase">
-                          {COMBAT_VARIANTS[hoveredMapNode.variant].command[0]}-{COMBAT_VARIANTS[hoveredMapNode.variant].command[1]} Command
-                        </span>
-                        <span className="text-[#dfd4ba]/60 text-[9px] uppercase tracking-wider">
-                          +{COMBAT_VARIANTS[hoveredMapNode.variant].honor[0]}-{COMBAT_VARIANTS[hoveredMapNode.variant].honor[1]} Honor
-                        </span>
-                      </div>
-                    )}
-                    {hoveredMapNode.type === 'elite' && ELITE_VARIANTS[hoveredMapNode.variant] && (
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="text-[#d4af37] text-[10px] font-black tracking-widest uppercase">
-                          {ELITE_VARIANTS[hoveredMapNode.variant].guarantee?.honor ?? '??'} Honor
-                        </span>
-                        <span className="text-[#dfd4ba]/60 text-[9px] uppercase tracking-wider">Elite Bounty</span>
-                      </div>
-                    )}
-                    {hoveredMapNode.type === 'boss' && (
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="text-[#d4af37] text-[10px] font-black tracking-widest uppercase">Major Honor</span>
-                        <span className="text-[#dfd4ba]/60 text-[9px] uppercase tracking-wider">Domain Conquest</span>
-                      </div>
-                    )}
-                    {hoveredMapNode.type === 'event' && (
-                      <span className="text-[#dfd4ba] text-[10px] font-black tracking-widest uppercase">Variable</span>
-                    )}
-                    {hoveredMapNode.type === 'shop' && (
-                      <span className="text-[#dfd4ba] text-[10px] font-black tracking-widest uppercase">Goods & Services</span>
-                    )}
-                    {hoveredMapNode.type === 'rest' && (
-                      <span className="text-[#dfd4ba] text-[10px] font-black tracking-widest uppercase">Restore & Prepare</span>
+              <div className="p-6 flex flex-col gap-5 bg-[#141211]/50">
+                <div className="flex justify-between items-center text-xs font-bold uppercase tracking-[0.2em] border-b border-[#8b8574]/10 pb-3">
+                  <span className="text-[#8b8574] flex items-center gap-2"><span>⚔️</span> Enemy Waves</span>
+                  <span className="text-[#dfd4ba] font-black text-sm">
+                    {(() => {
+                      if (selectedNode.type === 'elite') return ELITE_VARIANTS[selectedNode.variant]?.waves ?? selectedNode.waves ?? '?';
+                      if (selectedNode.type === 'combat') return COMBAT_VARIANTS[selectedNode.variant]?.waves ?? selectedNode.waves ?? '?';
+                      return 'N/A';
+                    })()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-start text-xs font-bold uppercase tracking-[0.2em]">
+                  <span className="text-[#8b8574] mt-1 flex items-center gap-2"><span>🎁</span> Reward</span>
+                  <div className="flex flex-col items-end text-right">
+                    {selectedNode.type === 'combat' && COMBAT_VARIANTS[selectedNode.variant] ? (
+                      <>
+                        <span className="text-[#d4af37] text-xs font-black tracking-widest">{COMBAT_VARIANTS[selectedNode.variant].command[0]}-{COMBAT_VARIANTS[selectedNode.variant].command[1]} Command</span>
+                        <span className="text-[#dfd4ba]/60 text-[9px] mt-0.5">+{COMBAT_VARIANTS[selectedNode.variant].honor[0]}-{COMBAT_VARIANTS[selectedNode.variant].honor[1]} Honor</span>
+                      </>
+                    ) : selectedNode.type === 'elite' && ELITE_VARIANTS[selectedNode.variant] ? (
+                      <>
+                        <span className="text-[#d4af37] text-xs font-black tracking-widest">{ELITE_VARIANTS[selectedNode.variant].guarantee?.honor ?? '??'} Honor</span>
+                        <span className="text-[#dfd4ba]/60 text-[9px] mt-0.5">Elite Bounty</span>
+                      </>
+                    ) : selectedNode.type === 'boss' ? (
+                      <span className="text-[#d4af37] text-xs font-black tracking-widest">Domain Conquest</span>
+                    ) : selectedNode.type === 'event' ? (
+                      <span className="text-[#dfd4ba] text-xs font-black tracking-widest">Variable Outcomes</span>
+                    ) : selectedNode.type === 'shop' ? (
+                      <span className="text-[#dfd4ba] text-xs font-black tracking-widest">Goods & Services</span>
+                    ) : selectedNode.type === 'rest' ? (
+                      <span className="text-[#dfd4ba] text-xs font-black tracking-widest">Restore & Prepare</span>
+                    ) : (
+                      <span className="text-[#8b8574] text-[9px]">-</span>
                     )}
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center opacity-40">
-                <span className="text-xs font-bold uppercase tracking-[0.4em] text-[#dfd4ba]">Hover over a region to survey the vanguard</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
 
-      {/* BOTTOM FOOTER */}
-      <div className="relative z-10 py-2 px-12 flex justify-between items-center bg-[#0a0908]/80 backdrop-blur-md border-t border-[#b84235]/30">
-        <div className="flex items-center gap-4">
-          {selectedNode ? (
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{getNodeIcon(selectedNode.type)}</span>
-              <div className="flex flex-col">
-                <span className="text-[#d4af37] font-black tracking-widest uppercase text-sm">{selectedNode.name}</span>
-                <span className="text-[#8b8574] text-[10px] uppercase tracking-wider">
-                  {selectedNode.type.toUpperCase()} • Threat: {'💀'.repeat(selectedNode.threat || 0) || 'None'}
-                </span>
-              </div>
+              <button
+                onClick={handlePlayClick}
+                disabled={selectedNode.status !== 'available'}
+                className={`relative group overflow-hidden shadow-[0_-10px_30px_rgba(0,0,0,0.5)] pointer-events-auto cursor-pointer transition-opacity w-full ${selectedNode.status === 'available' ? '' : 'opacity-40 cursor-not-allowed'}`}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-[#b84235] to-[#802a20] translate-x-[-100%] group-hover:translate-x-[0%] transition-transform duration-500" />
+                <div className="relative z-10 px-8 py-5 border-t border-[#b84235] bg-[#1a0f0e] text-[#dfd4ba] text-sm uppercase tracking-[0.3em] font-black group-hover:text-white transition-colors group-hover:border-[#d4af37] text-center">
+                  {selectedNode.type === 'event' ? `Investigate Event`
+                    : selectedNode.type === 'shop' ? `Visit Merchant`
+                      : selectedNode.type === 'rest' ? `Rest at Camp`
+                        : `Begin Encounter`}
+                </div>
+              </button>
             </div>
-          ) : (
-            <p className="text-[#8b8574]/60 text-[8px] font-bold uppercase tracking-[0.3em]">Select an available node to begin</p>
           )}
         </div>
-
-        <button
-          onClick={handlePlayClick}
-          disabled={!selectedNode || selectedNode.status !== 'available'}
-          className={`relative group overflow-hidden shadow-[0_0_20px_rgba(184,66,53,0.3)] pointer-events-auto cursor-pointer scale-90 origin-right transition-opacity ${selectedNode?.status === 'available' ? '' : 'opacity-40 cursor-not-allowed'}`}
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-[#b84235] to-[#802a20] translate-x-[-100%] group-hover:translate-x-[0%] transition-transform duration-500" />
-          <div className="relative z-10 px-12 py-3 border border-[#b84235] bg-[#1a0f0e] text-[#dfd4ba] text-lg uppercase tracking-[0.3em] font-black group-hover:text-white transition-colors group-hover:border-[#d4af37]">
-            {selectedNode
-              ? (selectedNode.type === 'event' ? `Investigate: ${selectedNode.name}`
-                : selectedNode.type === 'shop' ? `Visit: ${selectedNode.name}`
-                  : selectedNode.type === 'rest' ? `Rest: ${selectedNode.name}`
-                    : `Begin ${selectedNode.name}`)
-              : 'Select a Node'
-            }
-          </div>
-        </button>
       </div>
 
       {/* MODAL OVERLAYS */}
