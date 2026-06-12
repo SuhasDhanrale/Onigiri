@@ -680,9 +680,10 @@ export function HubTestScreen({
               {/* Nodes */}
               {mapNodes.map(node => {
                 const isAvailable = node.status === 'available';
-                const isBoss = node.status === 'boss';
                 const isCompleted = node.status === 'completed';
+                const isBoss = node.type === 'boss';
                 const isSelected = selectedNode?.id === node.id;
+                const isLocked = !isAvailable && !isCompleted;
 
                 const nodeTypeSizes = {
                   combat: 'w-16 h-16',
@@ -692,16 +693,19 @@ export function HubTestScreen({
                   rest: 'w-14 h-14',
                   boss: 'w-24 h-24',
                 };
-                const nodeTypeBorderColors = {
-                  combat: '#b84235',
-                  elite: '#8b1420',
-                  event: '#d4af37',
-                  shop: '#4a5d23',
-                  rest: '#2b3d60',
-                  boss: '#dfd4ba',
+                
+                // Use full tailwind class names to avoid purge issues
+                const nodeTypeBorderClasses = {
+                  combat: 'border-[#b84235]',
+                  elite: 'border-[#8b1420]',
+                  event: 'border-[#d4af37]',
+                  shop: 'border-[#4a5d23]',
+                  rest: 'border-[#2b3d60]',
+                  boss: 'border-[#dfd4ba]',
                 };
+                
                 const size = nodeTypeSizes[node.type] || 'w-16 h-16';
-                const borderColor = nodeTypeBorderColors[node.type] || '#8b8574';
+                const borderClass = nodeTypeBorderClasses[node.type] || 'border-[#8b8574]';
 
                 const availableScale = isAvailable ? 'scale-110' : '';
                 const selectedScale = isSelected ? 'scale-120' : '';
@@ -718,16 +722,16 @@ export function HubTestScreen({
                   >
                     <div className={`${size} rounded-full border-2 flex items-center justify-center transition-all duration-300 relative
                       ${isSelected ? `bg-[#1a0f0e] border-[#d4af37] shadow-[0_0_45px_rgba(212,175,55,0.9)] ${selectedScale}` :
-                        isAvailable ? `bg-[#1a0f0e] border-[${borderColor}] shadow-[0_0_20px_rgba(255,255,255,0.15)] ${availableScale}` :
-                          isBoss ? `bg-[#0a0908] border-[#dfd4ba] shadow-[0_0_60px_rgba(184,66,53,0.6)] ${bossScale}` :
+                        isAvailable ? `bg-[#1a0f0e] ${borderClass} shadow-[0_0_20px_rgba(255,255,255,0.15)] ${availableScale}` :
+                          isBoss && !isLocked ? `bg-[#0a0908] border-[#dfd4ba] shadow-[0_0_60px_rgba(184,66,53,0.6)] ${bossScale}` :
                             isCompleted ? 'bg-[#1a0f0e]/80 border-[#d4af37]/80' :
-                              `bg-[#0a0908] border-[${borderColor}]/40 hover:border-[${borderColor}]`
+                              `bg-[#0a0908] border-[#8b8574]/20 hover:border-[#8b8574]/40`
                       }`}
                     >
                       {(isAvailable || isSelected) && (
                         <div className="absolute inset-[-8px] rounded-full border border-white/20 animate-ping opacity-50 pointer-events-none" />
                       )}
-                      <span className="text-4xl drop-shadow-md pointer-events-none">
+                      <span className={`text-4xl drop-shadow-md pointer-events-none transition-all duration-300 ${isLocked ? 'grayscale opacity-30' : ''}`}>
                         {isCompleted ? '✅' : getNodeIcon(node.type)}
                       </span>
                     </div>
