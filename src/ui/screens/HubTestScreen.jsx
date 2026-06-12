@@ -695,7 +695,6 @@ export function HubTestScreen({
                   boss: 'w-24 h-24',
                 };
                 
-                // Use full tailwind class names to avoid purge issues
                 const nodeTypeBorderClasses = {
                   combat: 'border-[#b84235]',
                   elite: 'border-[#8b1420]',
@@ -706,7 +705,7 @@ export function HubTestScreen({
                 };
                 
                 const size = nodeTypeSizes[node.type] || 'w-16 h-16';
-                const borderClass = nodeTypeBorderClasses[node.type] || 'border-[#8b8574]';
+                const borderClass = isLocked ? 'border-[#8b8574]' : (nodeTypeBorderClasses[node.type] || 'border-[#8b8574]');
 
                 const availableScale = isAvailable ? 'scale-110' : '';
                 const selectedScale = isSelected ? 'scale-120' : '';
@@ -721,6 +720,13 @@ export function HubTestScreen({
                     onMouseLeave={() => setHoveredMapNode(null)}
                     onClick={() => handleNodeClick(node)}
                   >
+                    {node.threat > 0 && (
+                      <div className="absolute bottom-full mb-1 flex items-center justify-center gap-0.5 pointer-events-none opacity-80 transition-all duration-300 group-hover/node:opacity-100 group-hover/node:-translate-y-1 z-20">
+                        {Array.from({ length: Math.min(node.threat, 6) }).map((_, i) => (
+                          <span key={i} className={`text-[10px] drop-shadow-md transition-all duration-300 ${isLocked ? 'grayscale opacity-30' : ''}`}>💀</span>
+                        ))}
+                      </div>
+                    )}
                     <div className={`${size} rounded-full border-2 flex items-center justify-center transition-all duration-300 relative
                       ${isSelected ? `bg-[#1a0f0e] border-[#d4af37] shadow-[0_0_45px_rgba(212,175,55,0.9)] ${selectedScale}` :
                         isAvailable ? `bg-[#1a0f0e] ${borderClass} shadow-[0_0_20px_rgba(255,255,255,0.15)] ${availableScale}` :

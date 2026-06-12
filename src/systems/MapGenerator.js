@@ -4,6 +4,8 @@
 
 import { COMBAT_VARIANTS, ELITE_VARIANTS, EVENT_IDS, NODE_POOL } from '../config/nodes.js';
 
+const MIN_BOSS_FIGHTS = 2;
+
 // --- Seeded LCG RNG (Numerical Recipes constants) ---
 function createRNG(seed) {
   let s = seed >>> 0; // ensure 32-bit unsigned integer
@@ -233,8 +235,17 @@ export function applyNodeCompletion(mapNodes, completedNodeId) {
     if (node?.status === 'available' || node?.status === 'completed') return 'completed';
     return 'locked';
   };
+  const isCompleted = (id) => {
+    if (id === completedNodeId) return true;
+    return mapNodes.find(n => n.id === id)?.status === 'completed';
+  };
 
   const completedNode = mapNodes.find(n => n.id === completedNodeId);
+  const completedFightCount = mapNodes.reduce((count, node) => {
+    if (node.id === completedNodeId && (node.type === 'combat' || node.type === 'elite')) return count + 1;
+    if (node.status === 'completed' && (node.type === 'combat' || node.type === 'elite')) return count + 1;
+    return count;
+  }, 0);
 
   return mapNodes.map(node => {
     // Mark the completed node
@@ -249,6 +260,14 @@ export function applyNodeCompletion(mapNodes, completedNodeId) {
     ) {
       const preds = predecessorMap[node.id] ?? [];
       const anyDone = preds.some(predId => statusOf(predId) === 'completed');
+      if (anyDone && (node.type !== 'boss' || completedFightCount >= MIN_BOSS_FIGHTS)) {
+        return { ...node, status: 'available' };
+      }
+    }
+
+    if (node.status === 'locked' && node.type === 'boss' && completedFightCount >= MIN_BOSS_FIGHTS) {
+      const preds = predecessorMap[node.id] ?? [];
+      const anyDone = preds.some(predId => isCompleted(predId));
       if (anyDone) {
         return { ...node, status: 'available' };
       }

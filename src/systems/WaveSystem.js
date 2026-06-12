@@ -1,4 +1,4 @@
-import { ENEMY_COSTS, CAMPAIGN_MAP } from '../config/campaign.js';
+import { ENEMY_COSTS, CAMPAIGN_MAP, isVisibleBossId } from '../config/campaign.js';
 import { spawnUnit } from './SpawnSystem.js';
 import { bus } from '../core/EventBus.js';
 import { EVENTS } from '../core/events.js';
@@ -7,7 +7,7 @@ import { EVENTS } from '../core/events.js';
  * Generates a list of enemy squads for a given wave number.
  * nodeContext lets generated map nodes affect wave count, threat, and broad enemy identity.
  * @param {number} waveNum
- * @param {{ nodeType?: string, nodeVariant?: string, nodeThreat?: number, nodeWaves?: number } | null} nodeContext
+ * @param {{ nodeType?: string, nodeVariant?: string, nodeThreat?: number, nodeWaves?: number, chapterId?: string } | null} nodeContext
  * @returns {Array<{type: string, count: number, spread: number}>}
  */
 export function generateWave(waveNum, nodeContext = null) {
@@ -17,16 +17,16 @@ export function generateWave(waveNum, nodeContext = null) {
 
   if (waveNum === 1) {
     squads.push({ type: 'REBEL', count: scaleCount(4, budgetMult), spread: 80 });
-    return applyNodeVariantSquads(squads, waveNum, nodeContext);
+    return finalizeSquads(squads, waveNum, nodeContext);
   }
   if (waveNum === 2) {
     squads.push({ type: 'REBEL', count: scaleCount(12, budgetMult), spread: 150 });
-    return applyNodeVariantSquads(squads, waveNum, nodeContext);
+    return finalizeSquads(squads, waveNum, nodeContext);
   }
   if (waveNum === 3) {
     squads.push({ type: 'REBEL', count: scaleCount(12, budgetMult), spread: 120 });
     squads.push({ type: 'SHINOBI', count: scaleCount(2, budgetMult), spread: 60 });
-    return applyNodeVariantSquads(squads, waveNum, nodeContext);
+    return finalizeSquads(squads, waveNum, nodeContext);
   }
 
   if (waveNum % 5 === 0) {
@@ -59,7 +59,7 @@ export function generateWave(waveNum, nodeContext = null) {
     }
   }
 
-  return applyNodeVariantSquads(squads, waveNum, nodeContext);
+  return finalizeSquads(squads, waveNum, nodeContext);
 }
 
 function getNodeBudgetMultiplier(nodeContext) {
@@ -116,6 +116,21 @@ function applyNodeVariantSquads(squads, waveNum, nodeContext) {
   return next;
 }
 
+function applyChapterSquads(squads, waveNum, nodeContext) {
+  const next = squads.map(squad => ({ ...squad }));
+  if (nodeContext?.chapterId === 'RIVERLANDS' && waveNum >= 4) {
+    next.push({ type: 'REBEL', count: 6 + waveNum, spread: 120 });
+  }
+  if (nodeContext?.chapterId === 'OUTSKIRTS' && waveNum >= 2) {
+    next.push({ type: 'SHINOBI', count: Math.max(1, Math.floor(waveNum / 2)), spread: 80 });
+  }
+  return next;
+}
+
+function finalizeSquads(squads, waveNum, nodeContext) {
+  return applyNodeVariantSquads(applyChapterSquads(squads, waveNum, nodeContext), waveNum, nodeContext);
+}
+
 /**
  * Ticks the wave state machine (PRE_WAVE -> SPAWNING -> CLEANUP).
  * @param {object} s           - game state
@@ -134,6 +149,7 @@ export function tickWaveState(s, dt, metaRef) {
         nodeVariant: metaRef.current.activeNodeVariant ?? null,
         nodeThreat:  metaRef.current.activeNodeThreat  ?? 1,
         nodeWaves:   metaRef.current.activeNodeWaves   ?? 3,
+        chapterId:   metaRef.current.activeChapterId    ?? null,
       });
       s.enemiesInWave = s.squadsToSpawn.reduce((sum, sq) => sum + sq.count, 0);
       s.waveTimer = 1.0;
@@ -177,7 +193,9 @@ export function tickWaveState(s, dt, metaRef) {
       if (s.wave >= maxWaves) {
         if (s.isBossNode) {
           s.waveState = 'BOSS_PHASE';
-          if (s.orb) s.orb.active = true;
+          if (s.orb) {
+            s.orb.active = !isVisibleBossId(s.bossId ?? metaRef.current.activeBossId);
+          }
           bus.emit(EVENTS.WAVE_CHANGED, {
             wave: s.wave,
             waveState: s.waveState,

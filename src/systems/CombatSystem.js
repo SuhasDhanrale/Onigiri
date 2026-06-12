@@ -5,7 +5,11 @@ import { calculateVelocity, applySeparation } from './MovementSystem.js';
 import { bus } from '../core/EventBus.js';
 import { EVENTS } from '../core/events.js';
 import { claimSlot, releaseSlot, calculateSlotPosition, shouldBypassSlotClaiming } from './SlotManager.js';
-import { canAttackOrb, damageOrb } from './CaveSystem.js';
+import { canAttackOrb } from './CaveSystem.js';
+
+const YUMI_EXPOSED_RANGE = 150;
+const YUMI_EXPOSED_DAMAGE_MULT = 0.6;
+const YUMI_EXPOSED_ATTACK_TIME_MULT = 1.75;
 
 /**
  * Full unit movement + combat loop. Processes all units each frame.
@@ -34,11 +38,13 @@ export function tickUnits(s, dt, now, metaRef) {
     }
     if (unit.lifeSpan !== undefined) { unit.lifeSpan -= dt; if (unit.lifeSpan <= 0) { unit.hp = 0; unit.noReward = true; } }
     if (unit.burn > 0) { unit.burn -= dt; unit.hp -= 10 * dt; }
+    if (unit.slowTimer > 0) unit.slowTimer -= dt;
 
     let uSpeed = unit.speed;
     if (unit.team === 'player') {
       if (s.warDrumsActive > 0) uSpeed *= 1.5;
       uSpeed *= (metaRef.current.activeMoveSpeedMult ?? 1.0);  // SWIFT_FEET / FOX_SPEED blessing
+      if (unit.slowTimer > 0) uSpeed *= (unit.slowMult ?? 0.6);
     }
     if (unit.chargeTimer > 0) uSpeed *= 2.0;
     const atkSpeedMult = unit.team === 'player'
@@ -116,6 +122,12 @@ export function tickUnits(s, dt, now, metaRef) {
         orbTarget = s.orb;
       }
     }
+
+    const isExposedYumi = unit.team === 'player' && unit.name === 'Yumi Archer' && enemies.some(enemy =>
+      enemy.hp > 0 &&
+      (enemy.x - unit.x) ** 2 + (enemy.y - unit.y) ** 2 <= YUMI_EXPOSED_RANGE * YUMI_EXPOSED_RANGE
+    );
+    const attackRecoveryMult = isExposedYumi ? YUMI_EXPOSED_ATTACK_TIME_MULT : 1;
 
     // Handle slot claiming for melee combat
     const bypassSlotClaim = shouldBypassSlotClaiming(unit);
@@ -198,9 +210,10 @@ export function tickUnits(s, dt, now, metaRef) {
           unit.telegraphTimer = 0.8; unit.attackCooldown = unit.attackSpeed;
         } else if (unit.type === 'ranged') {
           const angle = Math.atan2(target.y - unit.y, target.x - unit.x);
-          const isFlaming = unit.team === 'player' && unit.name === 'Yumi Archer' && metaRef.current.unlockedProvisions.includes('FLAMING_ARROWS') && Math.random() < 0.25;
-          s.projectiles.push({ x: unit.x, y: unit.y, vx: Math.cos(angle) * 1200, vy: Math.sin(angle) * 1200, damage: unit.damage, team: unit.team, pierce: unit.pierce, isFlaming });
-          expectedHpMap.set(target.id, (expectedHpMap.get(target.id) ?? target.hp) - unit.damage);
+          const damage = isExposedYumi ? unit.damage * YUMI_EXPOSED_DAMAGE_MULT : unit.damage;
+          const isFlaming = !isExposedYumi && unit.team === 'player' && unit.name === 'Yumi Archer' && metaRef.current.unlockedProvisions.includes('FLAMING_ARROWS') && Math.random() < 0.25;
+          s.projectiles.push({ x: unit.x, y: unit.y, vx: Math.cos(angle) * 1200, vy: Math.sin(angle) * 1200, damage, team: unit.team, pierce: unit.pierce && !isExposedYumi, isFlaming });
+          expectedHpMap.set(target.id, (expectedHpMap.get(target.id) ?? target.hp) - damage);
         } else if (unit.type === 'siege') {
           s.projectiles.push({ type: 'lob', startX: unit.x, startY: unit.y, targetX: target.x, targetY: target.y, progress: 0, travelTime: 1.2, damage: unit.damage, team: unit.team, z: 0 });
           } else {
@@ -226,7 +239,7 @@ export function tickUnits(s, dt, now, metaRef) {
             }
           }
         }
-        unit.attackCooldown = unit.attackSpeed / atkSpeedMult;
+        unit.attackCooldown = (unit.attackSpeed * attackRecoveryMult) / atkSpeedMult;
       }
 
       vx *= 0.15; vy *= 0.15;
@@ -246,7 +259,7 @@ export function tickUnits(s, dt, now, metaRef) {
             x: unit.x, y: unit.y, 
             vx: Math.cos(angle) * 1200, 
             vy: Math.sin(angle) * 1200, 
-            damage: unit.damage, team: unit.team, 
+            damage: isExposedYumi ? unit.damage * YUMI_EXPOSED_DAMAGE_MULT : unit.damage, team: unit.team, 
             isOrbAttack: true 
           });
         } else if (unit.type === 'siege') {
@@ -259,7 +272,7 @@ export function tickUnits(s, dt, now, metaRef) {
             z: 0, isOrbAttack: true 
           });
         }
-        unit.attackCooldown = unit.attackSpeed / atkSpeedMult;
+        unit.attackCooldown = (unit.attackSpeed * attackRecoveryMult) / atkSpeedMult;
       }
     }
 

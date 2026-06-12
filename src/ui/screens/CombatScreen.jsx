@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { CAMPAIGN_MAP } from '../../config/campaign.js';
+import { CAMPAIGN_MAP, isVisibleBossId } from '../../config/campaign.js';
 import { V_WIDTH, V_HEIGHT } from '../../config/constants.js';
 import { ResultScreens } from './ResultScreens.jsx';
 import { DemonCave } from '../components/DemonCave.jsx';
@@ -19,6 +19,11 @@ export function CombatScreen({
 }) {
   const containerRef = useRef(null);
   const [size, setSize] = useState({ w: V_WIDTH, h: V_HEIGHT });
+  const activeBossId = s.bossId ?? meta?.activeBossId ?? null;
+  const activeBossChapter = Object.values(CAMPAIGN_MAP).find(chapter => chapter.bossId === activeBossId);
+  const activeBossName = activeBossChapter?.bossName ?? 'Boss';
+  const isVisibleBossFight = isVisibleBossId(activeBossId);
+  const showCaveObjective = s.cave && !isVisibleBossFight;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -67,7 +72,7 @@ export function CombatScreen({
     waveStatusColor = "text-[#8b8574]";
   }
   else if (s.waveState === 'BOSS_PHASE') {
-    waveStatusText = "DESTROY THE CAVE";
+    waveStatusText = isVisibleBossFight ? `DEFEAT ${activeBossName.toUpperCase()}` : "DESTROY THE CAVE";
     waveStatusColor = "text-[#ff3b1f]";
   }
 
@@ -84,7 +89,7 @@ export function CombatScreen({
         <canvas ref={bgCanvasRef} width={size.w} height={size.h} className="absolute top-0 left-0 w-full h-full block touch-none" />
         <canvas ref={fgCanvasRef} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} width={size.w} height={size.h} className={`absolute top-0 left-0 w-full h-full block touch-none z-10 ${armedSpell ? 'cursor-crosshair' : 'cursor-default'}`} />
 
-        {s.cave && <DemonCave />}
+        {showCaveObjective && <DemonCave />}
 
         <div className="absolute top-[140px] left-8 flex flex-col gap-2 pointer-events-none z-30">
           {/* March Bar */}
@@ -143,7 +148,7 @@ export function CombatScreen({
           </div>
 
           {/* Cave HP indicator */}
-          {s.cave && (
+          {showCaveObjective && (
             (() => {
               const hpPct = s.cave.hp / s.cave.maxHp;
               const isRaging = hpPct < 0.5;

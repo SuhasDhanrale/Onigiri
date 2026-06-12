@@ -1,5 +1,8 @@
 import { WALL_Y, V_WIDTH } from '../config/constants.js';
 
+const YUMI_EXPOSED_RANGE = 150;
+const YUMI_BACKLINE_LEASH = 20;
+
 export function calculateVelocity(unit, target, closestSq, s, now, uSpeed, enemies, players) {
     let vx = 0; let vy = 0;
 
@@ -46,6 +49,30 @@ export function calculateVelocity(unit, target, closestSq, s, now, uSpeed, enemi
       } else {
         if (unit.y > WALL_Y - 50 && unit.type !== 'flying') {
           if (Math.abs(dxGate) > 80) { vx = Math.sign(dxGate) * uSpeed * 0.8; vy = -uSpeed * 0.6; } else { vy = -uSpeed; }
+        } else if (unit.name === 'Yumi Archer') {
+          const anchorY = unit.advanceZone;
+          const closestEnemy = enemies.reduce((closest, enemy) => {
+            if (enemy.hp <= 0) return closest;
+            const distSq = (enemy.x - unit.x) ** 2 + (enemy.y - unit.y) ** 2;
+            return distSq < closest.distSq ? { enemy, distSq } : closest;
+          }, { enemy: null, distSq: Infinity });
+          const exposed = closestEnemy.distSq <= YUMI_EXPOSED_RANGE * YUMI_EXPOSED_RANGE;
+
+          if (exposed && closestEnemy.enemy) {
+            const dx = unit.x - closestEnemy.enemy.x;
+            const dist = Math.max(1, Math.abs(dx));
+            vx = (dx / dist) * uSpeed * 0.7;
+            vy = unit.y < WALL_Y - 80 ? uSpeed * 0.8 : 0;
+          } else if (unit.y > anchorY + YUMI_BACKLINE_LEASH) {
+            vy = -uSpeed;
+            vx = Math.sin((now / 400) + unit.hashOffset) * 6;
+          } else if (unit.y < anchorY - YUMI_BACKLINE_LEASH) {
+            vy = uSpeed * 0.8;
+            vx = Math.sin((now / 400) + unit.hashOffset) * 6;
+          } else {
+            vy = 0;
+            vx = Math.sin((now / 400) + unit.hashOffset) * 6;
+          }
         } else if (target && closestSq < unit.aggroRadius * unit.aggroRadius) {
           // If we have a claimed slot, navigate to the slot coordinate (not target center)
           const navX = (unit.slotTargetX !== null) ? unit.slotTargetX : target.x;

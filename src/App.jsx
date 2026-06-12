@@ -7,7 +7,7 @@ import { UNIT_TYPES } from './config/units.js';
 import { BARRACKS_DEFS, BARRACKS_LAYOUT } from './config/barracks.js';
 import { getCost, getSquadCap } from './core/utils.js';
 import { CAVE_CONFIG } from './config/cave.js';
-import { CAMPAIGN_CHAPTER_IDS, getCampaignChapter, getChapterEnemyStatMultiplier } from './config/campaign.js';
+import { CAMPAIGN_CHAPTER_IDS, getCampaignChapter, getChapterBossId, getChapterEnemyStatMultiplier } from './config/campaign.js';
 
 import { CommandPanel } from './ui/panels/CommandPanel.jsx';
 import { DevModifierOverlay } from './ui/panels/DevModifierOverlay.jsx';
@@ -52,7 +52,7 @@ export default function App() {
 
   const state = useRef({
     command: 0, totalCommand: 0, wave: 1, fever: 0, feverActive: 0, screenShake: 0, conscriptCooldown: 0,
-    units: [], projectiles: [], explosions: [], floatingTexts: [], particles: [], slashTrails: [], lightnings: [], dragonWaves: [], foxFires: [],
+    units: [], projectiles: [], explosions: [], floatingTexts: [], particles: [], slashTrails: [], lightnings: [], dragonWaves: [], foxFires: [], bossHazards: [],
     isSlashing: false, lastSlashPos: null,
     focusedBuilding: null,
     barracks: { HATAMOTO: 0, YUMI: 0, CAVALRY: 0, HOROKU: 0 },
@@ -76,6 +76,8 @@ export default function App() {
     
     cave: null,
     orb: null,
+    bossId: null,
+    chapterBossSpawned: false,
     
     combatStats: null,
   });
@@ -191,6 +193,9 @@ export default function App() {
     
     // Determine safely if this is a boss battle
     const isBoss = explicitNode ? explicitNode.type === 'boss' : metaRef.current.activeNodeType === 'boss';
+    const bossId = isBoss
+      ? (explicitNode?.bossId ?? getChapterBossId(runStateRef.current?.chapterId ?? metaRef.current.activeChapterId))
+      : null;
 
     // Q1=A: combat seeds from the run's baseCommand (unified economy); legacy 150 fallback if no run yet
     const startCommand = runStateRef.current?.baseCommand ?? 150;
@@ -201,7 +206,7 @@ export default function App() {
     state.current = {
       ...state.current, 
       command: startCommand, totalCommand: startCommand, wave: 1, fever: 0, feverActive: 0, screenShake: 0, conscriptCooldown: 0,
-      units: [], projectiles: [], explosions: [], floatingTexts: [], particles: [], slashTrails: [], lightnings: [], dragonWaves: [], foxFires: [],
+      units: [], projectiles: [], explosions: [], floatingTexts: [], particles: [], slashTrails: [], lightnings: [], dragonWaves: [], foxFires: [], bossHazards: [],
       focusedBuilding: null,
       barracks: { 
         HATAMOTO: metaRef.current.unlockedBarracks?.includes('HATAMOTO') ? 1 : 0, 
@@ -230,6 +235,8 @@ export default function App() {
       gameState: 'COMBAT', currentRegion: regionId,
       waveState: 'PRE_WAVE', waveTimer: 6.0, squadsToSpawn: [], enemiesInWave: 0, inkLineY: 0,
       isBossNode: isBoss,
+      bossId,
+      chapterBossSpawned: false,
       
       guardQuotas: { HATAMOTO: 0, YUMI: 0, CAVALRY: 0, HOROKU: 0 },
       recalcGuardsFlag: true,
@@ -375,7 +382,7 @@ export default function App() {
       activeNodeType: null, activeNodeVariant: null, activeNodeThreat: 1, activeNodeWaves: 3,
       activeDamageMult: 1.0, activeAttackSpeedMult: 1.0, activeMaxHpMult: 1.0,
       activeArcherRangeMult: 1.0, activeMoveSpeedMult: 1.0, activeCommandDropMult: 1.0,
-      activeCurseDamageMult: 1.0, activeCurseMaxHpMult: 1.0, activeSquadCapBonus: 0,
+      activeCurseDamageMult: 1.0, activeCurseMaxHpMult: 1.0, activeSquadCapBonus: 0, activeBossId: null,
     }));
 
     state.current.currentRegion = null;
@@ -390,6 +397,8 @@ export default function App() {
     const curseMults    = computeCurseMultipliers(activeRun?.curses ?? []);
     const chapter       = getCampaignChapter(activeRun?.chapterId);
     const chapterEnemyStatMult = getChapterEnemyStatMultiplier(chapter.id);
+    const bossId        = node.type === 'boss' ? getChapterBossId(chapter.id) : null;
+    const combatNode    = bossId ? { ...node, bossId } : node;
 
     // 2. Inject multipliers + node context into metaRef so combat systems see them immediately
     setMeta(prev => ({
@@ -413,6 +422,7 @@ export default function App() {
       activeChapterEnemyStatMult: chapterEnemyStatMult,
       activeNodeWaves:   node.waves   ?? 3,   // ← fixes WaveSystem Gap #9
       activeSquadCapBonus: activeRun?.squadCapBonus ?? 0,
+      activeBossId: bossId,
       // Carry garrison forward from run state (cleared in setRunState below)
       pendingGarrison: activeRun?.pendingGarrison ?? null,
     }));
@@ -425,11 +435,12 @@ export default function App() {
       currentNodeVariant: node.variant ?? null,
       currentNodeThreat:  node.threat  ?? 1,
       currentNodeWaves:   node.waves   ?? 3,
+      currentBossId:      bossId,
       pendingGarrison:    null,   // consumed — garrison spawns in startCombat
     }));
 
     // 4. Reset combat state and enter COMBAT screen
-    startCombat(node.id, node);
+    startCombat(node.id, combatNode);
   }, [meta, runStateRef, startRun, startCombat, setRunState, setMeta]);
 
   const handleStartChapter = useCallback((chapterId) => {

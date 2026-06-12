@@ -1,5 +1,13 @@
 import { CAVE_CONFIG } from '../config/cave.js';
-import { COLORS } from '../config/colors.js';
+import { isVisibleBossId } from '../config/campaign.js';
+
+const BOSS_LABELS = {
+  goki: { name: 'GOKI', power: 'MUD MINES', glow: '139, 115, 85' },
+  kasha: { name: 'KASHA', power: 'FIRE TRAILS', glow: '234, 88, 12' },
+  daitengu: { name: 'DAITENGU', power: 'STORM', glow: '74, 144, 226' },
+  yukionna: { name: 'YUKI-ONNA', power: 'FREEZE', glow: '160, 196, 255' },
+  otakemaru: { name: 'OTAKEMARU', power: 'VOID', glow: '155, 89, 182' },
+};
 
 export function drawCave(ctx, s, now) {
   if (!s.cave || !s.orb) {
@@ -10,6 +18,8 @@ export function drawCave(ctx, s, now) {
   const cave = s.cave;
   const hpPct = cave.hp / cave.maxHp;
   const isRaging = hpPct < CAVE_CONFIG.rage.threshold;
+  const bossLabel = BOSS_LABELS[s.bossId] ?? { name: 'DEMON CAVE', power: 'DESTROY', glow: '122, 92, 97' };
+  const isVisibleBoss = isVisibleBossId(s.bossId);
 
   ctx.save();
 
@@ -33,7 +43,7 @@ export function drawCave(ctx, s, now) {
   }
 
   // --- Cave glow ---
-  const glowColor = isRaging ? '184, 66, 53' : '122, 92, 97';
+  const glowColor = isRaging ? '184, 66, 53' : bossLabel.glow;
   const caveGrad = ctx.createRadialGradient(cave.x, cave.y, 0, cave.x, cave.y, cave.radius * 2);
   caveGrad.addColorStop(0, `rgba(${glowColor}, 0.8)`);
   caveGrad.addColorStop(0.5, `rgba(${glowColor}, 0.4)`);
@@ -72,8 +82,9 @@ export function drawCave(ctx, s, now) {
     ctx.globalAlpha = 1;
   }
 
-  // Only draw game-mechanic UI and orb if we are in BOSS_PHASE
-  if (s.waveState === 'BOSS_PHASE') {
+  // Only draw game-mechanic UI if we are in BOSS_PHASE.
+  // Campaign bosses use visible units, so the cave is a portal label, not the health target.
+  if (s.waveState === 'BOSS_PHASE' && !isVisibleBoss) {
     // --- Cave HP bar ---
     const barW = 140;
   const barH = 14;
@@ -105,7 +116,7 @@ export function drawCave(ctx, s, now) {
   ctx.font = 'bold 11px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(`CAVE  ${Math.ceil(cave.hp)} / ${cave.maxHp}`, cave.x, barY + barH / 2);
+  ctx.fillText(`${bossLabel.name}  ${Math.ceil(cave.hp)} / ${cave.maxHp}`, cave.x, barY + barH / 2);
 
   // "DESTROY THE CAVE" hint — shown once when cave is untouched
   if (cave.hp >= cave.maxHp) {
@@ -113,15 +124,24 @@ export function drawCave(ctx, s, now) {
     ctx.fillStyle = '#dfd4ba';
     ctx.font = '10px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('▲ TARGET: DESTROY THE CAVE', cave.x, barY - 14);
+    ctx.fillText(`TARGET: ${bossLabel.power}`, cave.x, barY - 14);
     ctx.globalAlpha = 1;
   }
 
   }
 
+  if (s.waveState === 'BOSS_PHASE' && isVisibleBoss) {
+    ctx.fillStyle = '#dfd4ba';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${bossLabel.name}: ${bossLabel.power}`, cave.x, cave.y - cave.radius - 18);
+  }
+
   ctx.restore();
 
   // --- Draw orb ---
+  if (isVisibleBoss) return;
   const orb = s.orb;
   if (orb.active && orb.hp > 0) {
     ctx.save();

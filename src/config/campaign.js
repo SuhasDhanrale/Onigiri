@@ -1,9 +1,9 @@
 export const CAMPAIGN_MAP = {
-  RIVERLANDS:  { id: 'RIVERLANDS',  name: 'Sakura Riverlands', threatLevel: 1, waves: 5,  reward: 'Command Drops +20%' },
-  OUTSKIRTS:   { id: 'OUTSKIRTS',   name: 'Kyoto Outskirts',   threatLevel: 2, waves: 6,  reward: '+1 Max Squad Cap' },
-  TENGU_PEAKS: { id: 'TENGU_PEAKS', name: 'Tengu Peaks',       threatLevel: 3, waves: 7,  reward: 'Archers +50% DMG' },
-  IRON_MINES:  { id: 'IRON_MINES',  name: 'Kurogane Mines',    threatLevel: 3, waves: 7,  reward: 'Hatamoto +50% HP' },
-  THE_ABYSS:   { id: 'THE_ABYSS',   name: 'Yomi Abyss',        threatLevel: 5, waves: 10, reward: 'Campaign Victory' }
+  RIVERLANDS:  { id: 'RIVERLANDS',  name: 'Sakura Riverlands', threatLevel: 1, waves: 5,  reward: 'Command Drops +20%', bossId: 'goki',       bossName: 'Goki',       bossPower: 'Mud Mines' },
+  OUTSKIRTS:   { id: 'OUTSKIRTS',   name: 'Kyoto Outskirts',   threatLevel: 2, waves: 6,  reward: '+1 Max Squad Cap',   bossId: 'kasha',      bossName: 'Kasha',      bossPower: 'Fire Trails' },
+  TENGU_PEAKS: { id: 'TENGU_PEAKS', name: 'Tengu Peaks',       threatLevel: 3, waves: 7,  reward: 'Archers +50% DMG',   bossId: 'daitengu',   bossName: 'Daitengu',   bossPower: 'Lightning Strikes' },
+  IRON_MINES:  { id: 'IRON_MINES',  name: 'Kurogane Mines',    threatLevel: 3, waves: 7,  reward: 'Hatamoto +50% HP',   bossId: 'yukionna',   bossName: 'Yuki-Onna',  bossPower: 'Deep Freeze' },
+  THE_ABYSS:   { id: 'THE_ABYSS',   name: 'Yomi Abyss',        threatLevel: 5, waves: 10, reward: 'Campaign Victory',   bossId: 'otakemaru',  bossName: 'Otakemaru',  bossPower: 'Elemental Chaos' }
 };
 
 export const CAMPAIGN_CHAPTER_IDS = Object.freeze([
@@ -14,10 +14,22 @@ export const CAMPAIGN_CHAPTER_IDS = Object.freeze([
   'THE_ABYSS',
 ]);
 
+export const VISIBLE_BOSS_IDS = Object.freeze(
+  Object.values(CAMPAIGN_MAP).map(chapter => chapter.bossId)
+);
+
 export const CHAPTER_ENEMY_STAT_THREAT_STEP = 0.25;
 
 export function getCampaignChapter(chapterId) {
   return CAMPAIGN_MAP[chapterId] ?? CAMPAIGN_MAP[CAMPAIGN_CHAPTER_IDS[0]];
+}
+
+export function getChapterBossId(chapterId) {
+  return getCampaignChapter(chapterId).bossId ?? 'goki';
+}
+
+export function isVisibleBossId(bossId) {
+  return VISIBLE_BOSS_IDS.includes(bossId);
 }
 
 export function getCampaignChapterIndex(chapterId) {
