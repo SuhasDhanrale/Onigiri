@@ -112,6 +112,7 @@ export default function App() {
           .map(([name, count]) => ({ name, count }));
 
         const currentRun = runStateRef.current;
+        const totalWaves = currentRun?.currentNodeWaves ?? metaRef.current.activeNodeWaves ?? s.wave;
         const isBossClear = currentRun?.currentNodeType === 'boss';
         const nodeReward = resolveNodeVictoryReward(makeNodeFromRun(currentRun), currentRun);
         let combatHonor = s.earnedHonor || 0;
@@ -131,7 +132,7 @@ export default function App() {
           title: 'VICTORY',
           stats: {
             wavesConquered: combatStats.conqueredWaves,
-            totalWaves: s.wave - 1,
+            totalWaves,
             damageDealt: combatStats.damageDealt,
             enemiesSlain: {
               total: combatStats.enemiesSlain.total,
@@ -155,6 +156,8 @@ export default function App() {
         const enemiesSlainTypes = Object.entries(combatStats.enemiesSlain.types)
           .map(([name, count]) => ({ name, count }));
 
+        const currentRun = runStateRef.current;
+        const totalWaves = currentRun?.currentNodeWaves ?? metaRef.current.activeNodeWaves ?? s.wave;
         const combatHonor = s.earnedHonor || 0;
         
         setResultContext({
@@ -163,7 +166,7 @@ export default function App() {
           title: 'DEFEAT',
           stats: {
             wavesConquered: combatStats.conqueredWaves,
-            totalWaves: s.wave - 1,
+            totalWaves,
             damageDealt: combatStats.damageDealt,
             enemiesSlain: {
               total: combatStats.enemiesSlain.total,

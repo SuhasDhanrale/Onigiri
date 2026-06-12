@@ -5,33 +5,28 @@ import { EVENTS } from '../core/events.js';
 
 /**
  * Generates a list of enemy squads for a given wave number.
- * nodeContext allows elite/boss nodes to scale the budget.
+ * nodeContext lets generated map nodes affect wave count, threat, and broad enemy identity.
  * @param {number} waveNum
- * @param {{ nodeType?: string, nodeVariant?: string, nodeThreat?: number } | null} nodeContext
+ * @param {{ nodeType?: string, nodeVariant?: string, nodeThreat?: number, nodeWaves?: number } | null} nodeContext
  * @returns {Array<{type: string, count: number, spread: number}>}
  */
 export function generateWave(waveNum, nodeContext = null) {
-  let budget = 40 + (waveNum * 45) + Math.floor(Math.pow(waveNum, 1.3) * 5);
-
-  if (nodeContext?.nodeType === 'elite') {
-    const threatBonus = 1 + ((nodeContext.nodeThreat - 3) * 0.25);
-    budget = Math.floor(budget * Math.max(1.0, threatBonus));
-  }
-  if (nodeContext?.nodeType === 'boss') {
-    budget = Math.floor(budget * 2.0);
-  }
-
-  // TODO: Step 10 — Elite wave special abilities
-  // if (nodeContext?.nodeVariant === 'onmyoji_ritual') applyPoisonPonds(s);
-  // if (nodeContext?.nodeVariant === 'tengu_master')    applyRedThunder(s);
-  // if (nodeContext?.nodeVariant === 'shinobi_squad')   applyExplodingBombers(s);
+  const budgetMult = getNodeBudgetMultiplier(nodeContext);
+  let budget = Math.floor((40 + (waveNum * 45) + Math.floor(Math.pow(waveNum, 1.3) * 5)) * budgetMult);
   const squads = [];
-  if (waveNum === 1) { squads.push({ type: 'REBEL', count: 4, spread: 80 }); return squads; }
-  if (waveNum === 2) { squads.push({ type: 'REBEL', count: 12, spread: 150 }); return squads; }
+
+  if (waveNum === 1) {
+    squads.push({ type: 'REBEL', count: scaleCount(4, budgetMult), spread: 80 });
+    return applyNodeVariantSquads(squads, waveNum, nodeContext);
+  }
+  if (waveNum === 2) {
+    squads.push({ type: 'REBEL', count: scaleCount(12, budgetMult), spread: 150 });
+    return applyNodeVariantSquads(squads, waveNum, nodeContext);
+  }
   if (waveNum === 3) {
-    squads.push({ type: 'REBEL', count: 12, spread: 120 });
-    squads.push({ type: 'SHINOBI', count: 2, spread: 60 });
-    return squads;
+    squads.push({ type: 'REBEL', count: scaleCount(12, budgetMult), spread: 120 });
+    squads.push({ type: 'SHINOBI', count: scaleCount(2, budgetMult), spread: 60 });
+    return applyNodeVariantSquads(squads, waveNum, nodeContext);
   }
 
   if (waveNum % 5 === 0) {
@@ -41,23 +36,88 @@ export function generateWave(waveNum, nodeContext = null) {
   }
 
   while (budget >= ENEMY_COSTS.REBEL) {
-    let type = 'REBEL'; let count = 0; let cost = 0;
     const r = Math.random();
-    if (waveNum >= 3 && r > 0.7 && budget >= ENEMY_COSTS.TENGU * 4)            { type = 'TENGU';   count = 4 + Math.floor(Math.random() * 3); }
-    else if (waveNum >= 4 && r > 0.85 && budget >= ENEMY_COSTS.ONMYOJI)        { type = 'ONMYOJI'; count = 1 + Math.floor(Math.random() * 2); }
-    else if (waveNum >= 2 && r > 0.45 && r <= 0.7 && budget >= ENEMY_COSTS.SHINOBI * 2) { type = 'SHINOBI'; count = 2 + Math.floor(Math.random() * 2); }
-    else if (budget >= ENEMY_COSTS.REBEL * 5)                                   { type = 'REBEL';   count = 5 + Math.floor(Math.random() * 10); }
-    else                                                                         { type = 'REBEL';   count = Math.max(1, Math.floor(budget / ENEMY_COSTS.REBEL)); }
+    let squad;
+    if (waveNum >= 3 && r > 0.7 && budget >= ENEMY_COSTS.TENGU * 4) {
+      squad = { type: 'TENGU', count: 4 + Math.floor(Math.random() * 3) };
+    } else if (waveNum >= 4 && r > 0.85 && budget >= ENEMY_COSTS.ONMYOJI) {
+      squad = { type: 'ONMYOJI', count: 1 + Math.floor(Math.random() * 2) };
+    } else if (waveNum >= 2 && r > 0.45 && r <= 0.7 && budget >= ENEMY_COSTS.SHINOBI * 2) {
+      squad = { type: 'SHINOBI', count: 2 + Math.floor(Math.random() * 2) };
+    } else if (budget >= ENEMY_COSTS.REBEL * 5) {
+      squad = { type: 'REBEL', count: 5 + Math.floor(Math.random() * 10) };
+    } else {
+      squad = { type: 'REBEL', count: Math.max(1, Math.floor(budget / ENEMY_COSTS.REBEL)) };
+    }
 
-    cost = ENEMY_COSTS[type] * count;
-    if (cost <= budget) { squads.push({ type, count, spread: count * 15 }); budget -= cost; }
-    else { budget = 0; }
+    const cost = ENEMY_COSTS[squad.type] * squad.count;
+    if (cost <= budget) {
+      squads.push({ ...squad, spread: squad.count * 15 });
+      budget -= cost;
+    } else {
+      budget = 0;
+    }
   }
-  return squads;
+
+  return applyNodeVariantSquads(squads, waveNum, nodeContext);
+}
+
+function getNodeBudgetMultiplier(nodeContext) {
+  if (!nodeContext) return 1.0;
+  if (nodeContext.nodeType === 'boss') return 2.0;
+  if (nodeContext.nodeType === 'elite') {
+    return Math.max(1.0, 1 + (((nodeContext.nodeThreat ?? 4) - 3) * 0.25));
+  }
+  if (nodeContext.nodeType === 'combat') {
+    return Math.max(1.0, 1 + (((nodeContext.nodeThreat ?? 1) - 1) * 0.15));
+  }
+  return 1.0;
+}
+
+function scaleCount(count, multiplier) {
+  return Math.max(1, Math.round(count * multiplier));
+}
+
+function applyNodeVariantSquads(squads, waveNum, nodeContext) {
+  const variant = nodeContext?.nodeVariant;
+  const maxWaves = nodeContext?.nodeWaves ?? null;
+  const isFinalWave = maxWaves !== null && waveNum >= maxWaves;
+  const next = squads.map(squad => ({ ...squad }));
+
+  switch (variant) {
+    case 'swarm':
+      next.forEach(squad => {
+        if (squad.type === 'REBEL') squad.count = scaleCount(squad.count, 1.5);
+      });
+      break;
+    case 'tengu_master':
+      next.push({ type: 'TENGU', count: 2 + Math.floor(waveNum / 2), spread: 90 });
+      break;
+    case 'shinobi_squad':
+      next.push({ type: 'SHINOBI', count: 2 + waveNum, spread: 90 });
+      break;
+    case 'onmyoji_ritual':
+      next.push({ type: 'ONMYOJI', count: isFinalWave ? 2 : 1, spread: 70 });
+      break;
+    case 'oni_warlord':
+      if (isFinalWave) next.push({ type: 'ONI', count: 1, spread: 100 });
+      else next.push({ type: 'REBEL', count: 6 + waveNum, spread: 120 });
+      break;
+    case 'yamabushi':
+      next.push({ type: 'ONMYOJI', count: isFinalWave ? 2 : 1, spread: 70 });
+      break;
+    case 'ronin_duel':
+      if (isFinalWave) next.push({ type: 'SHINOBI', count: 1, spread: 30 });
+      break;
+    default:
+      break;
+  }
+
+  return next;
 }
 
 /**
- * Ticks the wave state machine (PRE_WAVE → SPAWNING → CLEANUP).
+ * Ticks the wave state machine (PRE_WAVE -> SPAWNING -> CLEANUP).
  * @param {object} s           - game state
  * @param {number} dt
  * @param {object} metaRef     - React ref to meta state
@@ -73,13 +133,14 @@ export function tickWaveState(s, dt, metaRef) {
         nodeType:    metaRef.current.activeNodeType    ?? 'combat',
         nodeVariant: metaRef.current.activeNodeVariant ?? null,
         nodeThreat:  metaRef.current.activeNodeThreat  ?? 1,
+        nodeWaves:   metaRef.current.activeNodeWaves   ?? 3,
       });
       s.enemiesInWave = s.squadsToSpawn.reduce((sum, sq) => sum + sq.count, 0);
       s.waveTimer = 1.0;
-      bus.emit(EVENTS.WAVE_CHANGED, { 
-        wave: s.wave, 
-        waveState: s.waveState, 
-        waveTimer: s.waveTimer 
+      bus.emit(EVENTS.WAVE_CHANGED, {
+        wave: s.wave,
+        waveState: s.waveState,
+        waveTimer: s.waveTimer
       });
     }
   } else if (s.waveState === 'SPAWNING') {
@@ -95,28 +156,32 @@ export function tickWaveState(s, dt, metaRef) {
         s.waveTimer = 3.0 + (s.wave * 0.15) + (Math.random() * 2.0);
       } else {
         s.waveState = 'CLEANUP';
-        bus.emit(EVENTS.WAVE_CHANGED, { 
-          wave: s.wave, 
-          waveState: s.waveState, 
-          waveTimer: s.waveTimer 
+        bus.emit(EVENTS.WAVE_CHANGED, {
+          wave: s.wave,
+          waveState: s.waveState,
+          waveTimer: s.waveTimer
         });
       }
     }
   } else if (s.waveState === 'CLEANUP') {
-    const threshold = Math.max(2, Math.floor(s.enemiesInWave * 0.20));
+    const regionDef = CAMPAIGN_MAP[s.currentRegion];
+    const maxWaves = regionDef?.waves ?? (metaRef.current.activeNodeWaves ?? 3);
+    const isFinalWave = s.wave >= maxWaves;
+    const threshold = isFinalWave ? 0 : Math.max(2, Math.floor(s.enemiesInWave * 0.20));
+
     if (enemies.length <= threshold) {
-      const regionDef = CAMPAIGN_MAP[s.currentRegion];
-      // In conquest mode s.currentRegion is a node ID — CAMPAIGN_MAP returns undefined.
-      // Fall back to activeNodeWaves injected by handlePlayNode (Gap #9 fix).
-      const maxWaves = regionDef?.waves ?? (metaRef.current.activeNodeWaves ?? 3);
+      if (s.combatStats) {
+        s.combatStats.conqueredWaves = Math.max(s.combatStats.conqueredWaves ?? 0, s.wave);
+      }
+
       if (s.wave >= maxWaves) {
         if (s.isBossNode) {
           s.waveState = 'BOSS_PHASE';
           if (s.orb) s.orb.active = true;
-          bus.emit(EVENTS.WAVE_CHANGED, { 
-            wave: s.wave, 
-            waveState: s.waveState, 
-            waveTimer: 0 
+          bus.emit(EVENTS.WAVE_CHANGED, {
+            wave: s.wave,
+            waveState: s.waveState,
+            waveTimer: 0
           });
         } else {
           s.gameState = 'REGION_VICTORY';
@@ -127,10 +192,10 @@ export function tickWaveState(s, dt, metaRef) {
         s.wave++;
         s.waveState = 'PRE_WAVE';
         s.waveTimer = isReformation ? 15.0 : 6.0;
-        bus.emit(EVENTS.WAVE_CHANGED, { 
-          wave: s.wave, 
-          waveState: s.waveState, 
-          waveTimer: s.waveTimer 
+        bus.emit(EVENTS.WAVE_CHANGED, {
+          wave: s.wave,
+          waveState: s.waveState,
+          waveTimer: s.waveTimer
         });
       }
     }
