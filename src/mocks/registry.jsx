@@ -9,6 +9,7 @@ import { BossAnimMock } from './screens/BossAnimMock.jsx';
 import { BaseMock, BaseControls } from './screens/BaseMock.jsx';
 import { MusicMock } from './screens/MusicMock.jsx';
 import { EffectsMock } from './screens/EffectsMock.jsx';
+import { MapUXMock } from './screens/MapUXMock.jsx';
 
 export const mockScreens = [
   {
@@ -65,5 +66,11 @@ export const mockScreens = [
     title: 'VFX Library',
     description: 'Pure SVG and CSS animations for combat special effects.',
     component: EffectsMock,
+  },
+  {
+    id: 'map_ux',
+    title: 'Map UX Redesign',
+    description: 'Experimenting with a cleaner map UI constraint to 900x500.',
+    component: MapUXMock,
   },
 ];

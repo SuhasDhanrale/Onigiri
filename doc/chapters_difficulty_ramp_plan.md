@@ -2,7 +2,7 @@
 
 > Goal: make Onigiri's run loop read as a 5-chapter campaign, with each run bound to one chapter/region and a clear chapter-over-chapter difficulty ramp.
 >
-> Status: Phases A-C implemented. Campaign chapter helpers exist, run state binds each run to a chapter, and the real chapter home screen now sits in front of the generated map hub.
+> Status: Phases A-F implemented. Campaign chapter helpers exist, run state binds each run to a chapter, the real chapter home screen now sits in front of the generated map hub, boss clears now award chapter regions instead of generated node IDs, enemy stats now scale by active chapter threat, and the dev overlay shows the resolved chapter ramp.
 >
 > Source context: `doc/buff_curse_shop_integration_plan.md` section 7, plus the current `CAMPAIGN_MAP`, generated map flow, run state, and combat modifier bridge.
 
@@ -142,6 +142,8 @@ Important integration note:
 
 Fix the distinction between generated node ids and campaign chapter ids.
 
+Status: implemented in `src/App.jsx`; the fallback victory overlay in `src/ui/screens/ResultScreens.jsx` now uses active chapter context instead of generated node ids.
+
 Required behavior:
 - Keep `state.current.currentRegion` as the current map node id for compatibility.
 - Store active chapter id separately in meta/run state.
@@ -162,6 +164,8 @@ Required behavior:
 ### Phase E - Enemy Stat Difficulty Ramp
 
 Use the existing meta bridge pattern.
+
+Status: implemented in `src/App.jsx` and `src/systems/SpawnSystem.js`.
 
 Required behavior:
 - In `handlePlayNode`, inject:
@@ -191,6 +195,8 @@ Node threat remains separate and continues to affect wave generation/composition
 ### Phase F - Dev Verification Overlay
 
 Extend the existing dev-only modifier overlay.
+
+Status: implemented in `src/ui/panels/DevModifierOverlay.jsx`.
 
 Required behavior:
 - Show active chapter id/name.

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getCampaignChapter } from '../../config/campaign.js';
 import { getCurseHonorMult } from '../../systems/EventSystem.js';
 
 /**
@@ -18,6 +19,10 @@ export function DevModifierOverlay({ runState, meta, s }) {
   const blessings = runState.blessings ?? [];
   const curses = runState.curses ?? [];
   const purchases = Object.keys(runState.shopPurchases ?? {}).filter(k => runState.shopPurchases[k]);
+  const chapterId = meta.activeChapterId ?? runState.chapterId;
+  const chapter = getCampaignChapter(chapterId);
+  const chapterThreat = meta.activeChapterThreat ?? chapter.threatLevel;
+  const chapterEnemyStatMult = meta.activeChapterEnemyStatMult ?? 1;
 
   const curseTag = (c) => {
     if (typeof c.combatsRemaining === 'number') return `${c.id}(${c.combatsRemaining}c)`;
@@ -35,6 +40,11 @@ export function DevModifierOverlay({ runState, meta, s }) {
       </button>
       {open && (
         <div className="px-2 py-1.5 flex flex-col gap-1.5">
+          <div>
+            <div className="text-[#2b8bb8] font-bold">CHAPTER</div>
+            <div className="text-[#8b8574]">{chapter.name} ({chapter.id})</div>
+            <div>threat {chapterThreat ?? '—'} enemyStat×{fmt(chapterEnemyStatMult)}</div>
+          </div>
           <div>
             <div className="text-[#4a5d23] font-bold">BLESSINGS</div>
             <div className="text-[#8b8574]">{blessings.length ? blessings.map(b => `${b.id}(${b.combatsRemaining === Infinity ? '∞' : b.combatsRemaining})`).join(', ') : '—'}</div>

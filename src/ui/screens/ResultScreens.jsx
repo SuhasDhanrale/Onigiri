@@ -1,6 +1,6 @@
-import { CAMPAIGN_MAP } from '../../config/campaign.js';
+import { getCampaignChapter } from '../../config/campaign.js';
 
-export function ResultScreens({ s, setMeta, initRun, handleRegionVictory }) {
+export function ResultScreens({ s, meta, setMeta, initRun, handleRegionVictory }) {
   if (s.gameState === 'CAMPAIGN_OVER') {
     return (
       <div className="fixed inset-0 bg-[var(--color-parchment)]/95 flex flex-col items-center justify-center z-50 pointer-events-auto p-8">
@@ -17,12 +17,20 @@ export function ResultScreens({ s, setMeta, initRun, handleRegionVictory }) {
   }
 
   if (s.gameState === 'REGION_VICTORY') {
+    const isBossClear = meta.activeNodeType === 'boss';
+    const chapter = getCampaignChapter(meta.activeChapterId);
+    const rewardText = isBossClear ? chapter.reward : 'Path Opened';
+
     return (
       <div className="absolute inset-0 bg-[var(--color-parchment)]/95 flex flex-col items-center justify-center z-50 pointer-events-auto p-8 overflow-y-auto custom-scrollbar">
-        <h2 className="text-6xl font-black text-[#d4af37] tracking-[0.4em] uppercase mb-2 text-center">Region Secured</h2>
+        <h2 className="text-6xl font-black text-[#d4af37] tracking-[0.4em] uppercase mb-2 text-center">
+          {isBossClear ? 'Chapter Secured' : 'Node Secured'}
+        </h2>
         <div className="bg-[var(--color-ink-dark)] text-[var(--color-parchment)] px-12 py-6 mb-8 text-center border-4 border-[#d4af37]">
-          <span className="block text-sm uppercase tracking-[0.4em] mb-2 text-[#8b8574]">Reward Claimed</span>
-          <span className="text-2xl font-black">{CAMPAIGN_MAP[s.currentRegion]?.reward}</span>
+          <span className="block text-sm uppercase tracking-[0.4em] mb-2 text-[#8b8574]">
+            {isBossClear ? 'Chapter Reward' : 'Map Progress'}
+          </span>
+          <span className="text-2xl font-black">{rewardText}</span>
         </div>
         <button 
           onClick={handleRegionVictory} 

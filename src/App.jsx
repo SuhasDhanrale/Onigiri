@@ -7,6 +7,7 @@ import { UNIT_TYPES } from './config/units.js';
 import { BARRACKS_DEFS, BARRACKS_LAYOUT } from './config/barracks.js';
 import { getCost, getSquadCap } from './core/utils.js';
 import { CAVE_CONFIG } from './config/cave.js';
+import { CAMPAIGN_CHAPTER_IDS, getCampaignChapter, getChapterEnemyStatMultiplier } from './config/campaign.js';
 
 import { CommandPanel } from './ui/panels/CommandPanel.jsx';
 import { DevModifierOverlay } from './ui/panels/DevModifierOverlay.jsx';
@@ -288,17 +289,15 @@ export default function App() {
   const handleRegionVictory = useCallback(() => {
     const regionId      = state.current.currentRegion;
     const currentRun    = runStateRef.current;
+    const isBossClear   = currentRun?.currentNodeType === 'boss';
+    const chapterId     = currentRun?.chapterId ?? metaRef.current.activeChapterId ?? null;
     let combatHonor     = state.current.earnedHonor || 0;
     const combatCommandLeft = state.current.command ?? 0;  // Q1=A: leftover combat command banks back to the run
 
     // D2: curses bite the combat honor reward (read from pre-combat curses)
     combatHonor = Math.round(combatHonor * getCurseHonorMult(currentRun?.curses ?? []));  // OUTLAW -30%
-    if (currentRun?.currentNodeType === 'boss' && (currentRun?.curses ?? []).some(c => c.id === 'FOX_DEBT')) {
+    if (isBossClear && (currentRun?.curses ?? []).some(c => c.id === 'FOX_DEBT')) {
       combatHonor = Math.round(combatHonor * 0.5);  // FOX_DEBT -50% boss rewards
-    }
-
-    if (regionId && !meta.conqueredRegions.includes(regionId)) {
-      setMeta(prev => ({ ...prev, conqueredRegions: [...prev.conqueredRegions, regionId] }));
     }
 
     if (regionId) {
@@ -309,16 +308,29 @@ export default function App() {
       setMeta(prev => ({ ...prev, honor: prev.honor + combatHonor }));
     }
 
-    if (currentRun?.currentNodeType === 'boss') {
+    if (isBossClear) {
+      const completedChapterIndex = CAMPAIGN_CHAPTER_IDS.indexOf(chapterId);
+      const nextChapterId = completedChapterIndex >= 0
+        ? (CAMPAIGN_CHAPTER_IDS[completedChapterIndex + 1] ?? null)
+        : null;
+      const isCampaignComplete = !nextChapterId;
+
       setMeta(prev => ({
         ...prev,
+        conqueredRegions: chapterId && !prev.conqueredRegions.includes(chapterId)
+          ? [...prev.conqueredRegions, chapterId]
+          : prev.conqueredRegions,
         totalRuns: (prev.totalRuns ?? 0) + 1,
+        activeChapterId: nextChapterId,
       }));
       endRun();
-      setMapNodes(generateMap(Date.now(), (metaRef.current.totalRuns ?? 0) + 1));
-      state.current.gameState = 'MAP_SCREEN';
-    } else if (regionId === 'THE_ABYSS') {
-      state.current.gameState = 'CAMPAIGN_OVER';
+      if (isCampaignComplete) {
+        state.current.gameState = 'CAMPAIGN_OVER';
+        setShowHome(false);
+      } else {
+        state.current.gameState = 'MAP_SCREEN';
+        setShowHome(true);
+      }
     } else {
       state.current.gameState = 'MAP_SCREEN';
     }
@@ -351,12 +363,16 @@ export default function App() {
 
     state.current.currentRegion = null;
     setUiTick(t => t + 1);
-  }, [meta.conqueredRegions, meta.totalRuns, runStateRef, setMeta, setRunState, endRun, setMapNodes, metaRef]);
+  }, [runStateRef, setMeta, setRunState, endRun, setMapNodes, metaRef]);
 
   const handlePlayNode = useCallback((node) => {
-    // 1. Compute blessing/curse multipliers from current run
-    const blessingMults = computeBlessingMultipliers(runStateRef.current?.blessings ?? []);
-    const curseMults    = computeCurseMultipliers(runStateRef.current?.curses ?? []);
+    const activeRun = runStateRef.current ?? startRun(meta);
+
+    // 1. Compute run and chapter multipliers
+    const blessingMults = computeBlessingMultipliers(activeRun?.blessings ?? []);
+    const curseMults    = computeCurseMultipliers(activeRun?.curses ?? []);
+    const chapter       = getCampaignChapter(activeRun?.chapterId);
+    const chapterEnemyStatMult = getChapterEnemyStatMultiplier(chapter.id);
 
     // 2. Inject multipliers + node context into metaRef so combat systems see them immediately
     setMeta(prev => ({
@@ -375,13 +391,15 @@ export default function App() {
       activeNodeType:    node.type,
       activeNodeVariant: node.variant ?? null,
       activeNodeThreat:  node.threat  ?? 1,
+      activeChapterId:            chapter.id,
+      activeChapterThreat:        chapter.threatLevel ?? 1,
+      activeChapterEnemyStatMult: chapterEnemyStatMult,
       activeNodeWaves:   node.waves   ?? 3,   // ← fixes WaveSystem Gap #9
       // Carry garrison forward from run state (cleared in setRunState below)
-      pendingGarrison: runStateRef.current?.pendingGarrison ?? null,
+      pendingGarrison: activeRun?.pendingGarrison ?? null,
     }));
 
     // 3. Update runState with current node (and clear pendingGarrison so it is only consumed once)
-    const activeRun = runStateRef.current ?? startRun(meta);
     setRunState(() => ({
       ...activeRun,
       currentNodeId:      node.id,
