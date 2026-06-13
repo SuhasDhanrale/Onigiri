@@ -1,4 +1,5 @@
 import { UNIT_TYPES } from '../../config/units.js';
+import { getBarracksUnlockChapter } from '../../config/campaign.js';
 import { getCost, getSquadCap } from '../../core/utils.js';
 
 export function BarracksCard({ bKey, def, s, meta, setUiTick, changeQuota, buildBarracks, upgradeTroopLevel, upgradeBarracksCap, hireDrill }) {
@@ -6,20 +7,21 @@ export function BarracksCard({ bKey, def, s, meta, setUiTick, changeQuota, build
   const bannerMult = isImperial ? 1.5 : 1.0;
 
   const level = s.barracks[bKey] || 0;
-  const isAuto = s.autoUnlocked[bKey];
   const cap = getSquadCap(bKey, level, meta.equippedItem, meta.conqueredRegions, meta.activeSquadCapBonus ?? 0);
   const currentCount = s.units.filter(u => u.name === UNIT_TYPES[def.unit].name && u.team === 'player' && u.hp > 0).length;
   
   const maxTime = def.spawnRate * bannerMult;
   const pct = level > 0 ? Math.max(0, Math.min(1, 1 - (s.timers[bKey] / maxTime))) : 0;
   
-  const baseCost = Math.floor(def.baseCost * bannerMult);
-  const autoCost = Math.floor(def.autoCost * bannerMult);
   const costCap = Math.floor(getCost(def.baseCost, def.costMult, level) * bannerMult);
   const costLvl = Math.floor(getCost(def.baseCost * 1.5, 1.7, s.troopLevel[bKey] - 1) * bannerMult);
   const isFocused = s.focusedBuilding === bKey;
 
-  const isUnlocked = meta.unlockedBarracks?.includes(bKey);
+  const isPermanentlyUnlocked = meta.unlockedBarracks?.includes(bKey);
+  const isRunUnlocked = !isPermanentlyUnlocked && !!s.autoUnlocked[bKey];
+  const isUnlocked = isPermanentlyUnlocked || isRunUnlocked;
+  const unlockChapter = getBarracksUnlockChapter(bKey);
+  const lockedText = unlockChapter ? `Clear ${unlockChapter.name}` : 'Progress campaign';
 
   return (
     <div 
@@ -36,11 +38,11 @@ export function BarracksCard({ bKey, def, s, meta, setUiTick, changeQuota, build
 
         <div className="flex-1 flex flex-col justify-center relative z-10 pr-1">
           {!isUnlocked ? (
-            <div className="text-[10px] font-bold text-[#8b8574] text-center tracking-widest leading-tight">LOCKED<br/><span className="text-[6px] opacity-70">Progress campaign</span></div>
+            <div className="text-[10px] font-bold text-[#8b8574] text-center tracking-widest leading-tight">LOCKED<br/><span className="text-[6px] opacity-70">{lockedText}</span></div>
           ) : (
             <>
               <div className="flex justify-between text-[8px] font-bold tracking-widest text-[var(--color-khaki)] mb-1">
-                <span className={isFocused ? 'text-[#d4af37]' : ''}>{isFocused ? `> FOCUS ${meta.focusMult || 1.2}x <` : 'AUTO RUN'}</span>
+                <span className={isFocused ? 'text-[#d4af37]' : ''}>{isFocused ? `> FOCUS ${meta.focusMult || 1.2}x <` : (isRunUnlocked ? 'THIS RUN' : 'AUTO RUN')}</span>
                 <span className={currentCount >= cap ? 'text-[#b84235]' : (isFocused ? 'text-[#d4af37]' : '')}>{currentCount}/{cap}</span>
               </div>
               <div className="w-full h-2 bg-[var(--color-parchment)]/20 relative border border-[var(--color-ink)]">

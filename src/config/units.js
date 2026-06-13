@@ -7,9 +7,9 @@ export const UNIT_TYPES = {
   CHAMPION: { name: 'Samurai Champion', hp: 1500, maxHp: 1500, damage: 120, range: 70, speed: 90, color: '#d4af37', armor: '#1b1918', attackSpeed: 0.8, type: 'hero', radius: 24, weapon: 'nodachi', taunt: true, advanceZone: 400, aggroRadius: 200, maxMeleeSlots: 5 },
   ARROW_TOWER: { name: 'Arrow Tower', hp: 200, maxHp: 200, damage: 40, range: 600, speed: 0, color: '#6b5d3f', armor: '#3a3326', attackSpeed: 5.0, type: 'ranged', radius: 22, weapon: 'bow', pierce: true, advanceZone: 0, aggroRadius: 600, maxMeleeSlots: 0 },
 
-  REBEL: { name: 'Ikki Rebel', hp: 1, maxHp: 1, damage: 4, range: 25, speed: 90, color: '#8b8574', armor: null, attackSpeed: 1.0, type: 'melee', radius: 10, weapon: 'none', aggroRadius: 400, maxMeleeSlots: 3 },
-  TENGU: { name: 'Tengu Flier', hp: 30, maxHp: 30, damage: 12, range: 40, speed: 60, color: '#1b1918', armor: '#b84235', attackSpeed: 1.2, type: 'flying', radius: 16, weapon: 'claws', aggroRadius: 400, maxMeleeSlots: 2 },
+  REBEL: { name: 'Ikki Rebel', hp: 1, maxHp: 1, damage: 10, range: 25, speed: 90, color: '#8b8574', armor: null, attackSpeed: 1.0, type: 'melee', radius: 10, weapon: 'none', aggroRadius: 400, maxMeleeSlots: 3 },
+  TENGU: { name: 'Tengu Flier', hp: 30, maxHp: 30, damage: 20, range: 40, speed: 60, color: '#1b1918', armor: '#b84235', attackSpeed: 1.2, type: 'flying', radius: 16, weapon: 'claws', aggroRadius: 400, maxMeleeSlots: 2 },
   ONMYOJI: { name: 'Onmyoji', hp: 40, maxHp: 40, damage: 0, range: 300, speed: 30, color: '#4a5d23', armor: '#dfd4ba', attackSpeed: 2.0, type: 'support', radius: 14, weapon: 'staff', aggroRadius: 0, maxMeleeSlots: 2 },
-  SHINOBI: { name: 'Shinobi', hp: 20, maxHp: 20, damage: 24, range: 30, speed: 125, color: '#1b1918', armor: null, attackSpeed: 0.6, type: 'assassin', radius: 12, weapon: 'kunai', aggroRadius: 180, maxMeleeSlots: 2 },
-  ONI: { name: 'Great Oni', hp: 1200, maxHp: 1200, damage: 40, range: 90, speed: 18, color: '#b84235', armor: '#1b1918', attackSpeed: 3.5, type: 'boss', radius: 55, weapon: 'kanabo', telegraphTimer: 0, aggroRadius: 500, isElite: true, maxMeleeSlots: 8 },
+  SHINOBI: { name: 'Shinobi', hp: 20, maxHp: 20, damage: 30, range: 30, speed: 125, color: '#1b1918', armor: null, attackSpeed: 0.6, type: 'assassin', radius: 12, weapon: 'kunai', aggroRadius: 180, maxMeleeSlots: 2 },
+  ONI: { name: 'Great Oni', hp: 1200, maxHp: 1200, damage: 50, range: 90, speed: 18, color: '#b84235', armor: '#1b1918', attackSpeed: 3.5, type: 'boss', radius: 55, weapon: 'kanabo', telegraphTimer: 0, aggroRadius: 500, isElite: true, maxMeleeSlots: 8 },
 };

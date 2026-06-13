@@ -72,7 +72,7 @@ export function tickUnits(s, dt, now, metaRef) {
     }
 
     // Target finding
-    let target = null; let closestSq = Infinity;
+    let target = null; let closestSq = Infinity; let bestTargetScore = Infinity;
     const targetList = unit.team === 'player' ? enemies : players;
     for (let j = 0; j < targetList.length; j++) {
       const e = targetList[j];
@@ -101,15 +101,23 @@ export function tickUnits(s, dt, now, metaRef) {
         else if (unit.team === 'enemy' && dy >= -60) canSee = true;
 
         if (canSee) {
-          let distSq = rawDistSq;
-          if (unit.type === 'cavalry' && e.type === 'ranged') distSq -= 250000;
-          if (unit.type === 'assassin' && (e.type === 'ranged' || e.type === 'support' || e.type === 'friction')) distSq -= 500000;
-          if (e.taunt && distSq < 40000) { target = e; closestSq = rawDistSq; break; }
+          let targetScore = rawDistSq;
+          if (unit.type === 'cavalry' && e.type === 'ranged') targetScore -= 250000;
+          if (unit.type === 'assassin') {
+            if (e.name === 'Yumi Archer') targetScore -= 2000000;
+            else if (e.type === 'ranged' || e.type === 'siege' || e.type === 'support') targetScore -= 650000;
+            else if (e.type === 'friction') targetScore -= 250000;
+          }
+          if (unit.type !== 'assassin' && e.taunt && targetScore < 40000) { target = e; closestSq = rawDistSq; break; }
           if (unit.type === 'ranged') {
             const effectiveHp = expectedHpMap.get(e.id);
             if (effectiveHp !== undefined && effectiveHp <= 0) continue;
           }
-          if (distSq < closestSq) { closestSq = rawDistSq; target = e; }
+          if (targetScore < bestTargetScore) {
+            bestTargetScore = targetScore;
+            closestSq = rawDistSq;
+            target = e;
+          }
         }
       }
     }

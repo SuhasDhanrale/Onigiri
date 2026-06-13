@@ -7,7 +7,7 @@ import { UNIT_TYPES } from './config/units.js';
 import { BARRACKS_DEFS, BARRACKS_LAYOUT } from './config/barracks.js';
 import { getCost, getSquadCap } from './core/utils.js';
 import { CAVE_CONFIG } from './config/cave.js';
-import { CAMPAIGN_CHAPTER_IDS, getCampaignChapter, getChapterBossId, getChapterEnemyStatMultiplier } from './config/campaign.js';
+import { CAMPAIGN_CHAPTER_IDS, getBarracksUnlocksForChapterClear, getCampaignChapter, getChapterBossId, getChapterEnemyStatMultiplier } from './config/campaign.js';
 
 import { CommandPanel } from './ui/panels/CommandPanel.jsx';
 import { DevModifierOverlay } from './ui/panels/DevModifierOverlay.jsx';
@@ -337,12 +337,17 @@ export default function App() {
         ? (CAMPAIGN_CHAPTER_IDS[completedChapterIndex + 1] ?? null)
         : null;
       const isCampaignComplete = !nextChapterId;
+      const barracksUnlocks = getBarracksUnlocksForChapterClear(chapterId);
 
       setMeta(prev => ({
         ...prev,
         conqueredRegions: chapterId && !prev.conqueredRegions.includes(chapterId)
           ? [...prev.conqueredRegions, chapterId]
           : prev.conqueredRegions,
+        unlockedBarracks: [...new Set([
+          ...(prev.unlockedBarracks ?? []),
+          ...barracksUnlocks,
+        ])],
         totalRuns: (prev.totalRuns ?? 0) + 1,
         activeChapterId: nextChapterId,
       }));

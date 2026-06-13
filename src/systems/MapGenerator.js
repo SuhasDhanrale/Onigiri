@@ -4,8 +4,6 @@
 
 import { COMBAT_VARIANTS, ELITE_VARIANTS, EVENT_IDS, NODE_POOL } from '../config/nodes.js';
 
-const MIN_BOSS_FIGHTS = 2;
-
 // --- Seeded LCG RNG (Numerical Recipes constants) ---
 function createRNG(seed) {
   let s = seed >>> 0; // ensure 32-bit unsigned integer
@@ -28,6 +26,11 @@ function shuffle(arr, rng) {
 // Pick one element at random using seeded RNG
 function pickRandom(arr, rng) {
   return arr[Math.floor(rng() * arr.length)];
+}
+
+function canConnectNodes(source, target) {
+  if (source.tierId === 0) return true;
+  return !(source.type === 'event' && target.type === 'event');
 }
 
 // --- Node count per tier ---
@@ -170,11 +173,13 @@ export function generateMap(seed, runNumber) {
     const reached = new Set();
 
     for (const node of current) {
-      const shuffledNext  = shuffle(next, rng);
+      const eligibleNext  = next.filter(nextNode => canConnectNodes(node, nextNode));
+      const targetPool    = eligibleNext.length > 0 ? eligibleNext : next;
+      const shuffledNext  = shuffle(targetPool, rng);
       // Bias toward 1 connection; ~40% chance of 2 when next tier has multiple nodes
-      const wantTwo       = next.length > 1 && rng() < 0.4;
+      const wantTwo       = targetPool.length > 1 && rng() < 0.4;
       const count         = wantTwo ? 2 : 1;
-      const targets       = shuffledNext.slice(0, Math.min(count, next.length));
+      const targets       = shuffledNext.slice(0, Math.min(count, targetPool.length));
       node.next           = targets.map(n => n.id);
       targets.forEach(n => reached.add(n.id));
     }
@@ -182,7 +187,9 @@ export function generateMap(seed, runNumber) {
     // Guarantee every next-tier node has ≥1 incoming connection
     for (const nextNode of next) {
       if (!reached.has(nextNode.id)) {
-        const source = pickRandom(current, rng);
+        const eligibleSources = current.filter(source => canConnectNodes(source, nextNode));
+        const sourcePool = eligibleSources.length > 0 ? eligibleSources : current;
+        const source = pickRandom(sourcePool, rng);
         if (!source.next.includes(nextNode.id)) {
           source.next.push(nextNode.id);
         }
@@ -241,11 +248,6 @@ export function applyNodeCompletion(mapNodes, completedNodeId) {
   };
 
   const completedNode = mapNodes.find(n => n.id === completedNodeId);
-  const completedFightCount = mapNodes.reduce((count, node) => {
-    if (node.id === completedNodeId && (node.type === 'combat' || node.type === 'elite')) return count + 1;
-    if (node.status === 'completed' && (node.type === 'combat' || node.type === 'elite')) return count + 1;
-    return count;
-  }, 0);
 
   return mapNodes.map(node => {
     // Mark the completed node
@@ -260,12 +262,12 @@ export function applyNodeCompletion(mapNodes, completedNodeId) {
     ) {
       const preds = predecessorMap[node.id] ?? [];
       const anyDone = preds.some(predId => statusOf(predId) === 'completed');
-      if (anyDone && (node.type !== 'boss' || completedFightCount >= MIN_BOSS_FIGHTS)) {
+      if (anyDone) {
         return { ...node, status: 'available' };
       }
     }
 
-    if (node.status === 'locked' && node.type === 'boss' && completedFightCount >= MIN_BOSS_FIGHTS) {
+    if (node.status === 'locked' && node.type === 'boss') {
       const preds = predecessorMap[node.id] ?? [];
       const anyDone = preds.some(predId => isCompleted(predId));
       if (anyDone) {

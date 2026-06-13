@@ -1,7 +1,80 @@
-import { WALL_Y, V_WIDTH } from '../config/constants.js';
+import { BATTLE_LINE_Y, SLOT_OFFSETS, WALL_Y, V_WIDTH } from '../config/constants.js';
 
 const YUMI_EXPOSED_RANGE = 150;
 const YUMI_BACKLINE_LEASH = 20;
+const FRONTLINE_FORMATION_SPACING = 105;
+const BACKLINE_FORMATION_SPACING = 115;
+const FORMATION_EDGE_PADDING = 70;
+const MELEE_FRONTLINE_Y = BATTLE_LINE_Y + 90;
+const RANGED_BACKLINE_Y = WALL_Y - 240;
+const SIEGE_BACKLINE_Y = WALL_Y - 190;
+const FORMATION_ROW_GAP = 34;
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function getAttackFormationX(unit, players) {
+  if (unit.type === 'hero' || unit.type === 'friction') return unit.x;
+
+  const sameRole = players
+    .filter(ally =>
+      ally.team === unit.team &&
+      ally.hp > 0 &&
+      ally.stance === 'ATTACK' &&
+      ally.name === unit.name &&
+      ally.type !== 'hero' &&
+      ally.type !== 'friction'
+    )
+    .sort((a, b) => String(a.id).localeCompare(String(b.id)));
+
+  const idx = sameRole.findIndex(ally => ally.id === unit.id);
+  if (idx < 0) return unit.x;
+
+  const slot = idx % SLOT_OFFSETS.length;
+  const row = Math.floor(idx / SLOT_OFFSETS.length);
+  const spacing = unit.type === 'ranged' || unit.type === 'siege'
+    ? BACKLINE_FORMATION_SPACING
+    : FRONTLINE_FORMATION_SPACING;
+  const rowNudge = row === 0 ? 0 : (row % 2 === 0 ? -spacing * 0.35 : spacing * 0.35);
+
+  return clamp(
+    (V_WIDTH / 2) + (SLOT_OFFSETS[slot] * spacing) + rowNudge,
+    FORMATION_EDGE_PADDING,
+    V_WIDTH - FORMATION_EDGE_PADDING
+  );
+}
+
+function steerTowardFormationX(unit, players, now, uSpeed, strength = 0.85) {
+  const anchorX = getAttackFormationX(unit, players);
+  const dx = anchorX - unit.x;
+  const correction = Math.abs(dx) < 8 ? 0 : clamp(dx * 1.4, -uSpeed * strength, uSpeed * strength);
+  const drift = Math.sin((now / 400) + unit.hashOffset) * 3;
+  return correction + drift;
+}
+
+function getAttackFormationY(unit, players) {
+  if (unit.type === 'hero' || unit.type === 'friction') return unit.advanceZone;
+
+  const sameRole = players
+    .filter(ally =>
+      ally.team === unit.team &&
+      ally.hp > 0 &&
+      ally.stance === 'ATTACK' &&
+      ally.name === unit.name &&
+      ally.type !== 'hero' &&
+      ally.type !== 'friction'
+    )
+    .sort((a, b) => String(a.id).localeCompare(String(b.id)));
+
+  const idx = sameRole.findIndex(ally => ally.id === unit.id);
+  const row = idx < 0 ? 0 : Math.floor(idx / SLOT_OFFSETS.length);
+
+  if (unit.type === 'ranged') return RANGED_BACKLINE_Y + (row * FORMATION_ROW_GAP);
+  if (unit.type === 'siege') return SIEGE_BACKLINE_Y + (row * FORMATION_ROW_GAP);
+  if (unit.type === 'cavalry') return unit.advanceZone;
+  return MELEE_FRONTLINE_Y + (row * FORMATION_ROW_GAP);
+}
 
 export function calculateVelocity(unit, target, closestSq, s, now, uSpeed, enemies, players) {
     let vx = 0; let vy = 0;
@@ -25,7 +98,6 @@ export function calculateVelocity(unit, target, closestSq, s, now, uSpeed, enemi
     }
 
     if (unit.team === 'player') {
-      const dxGate = (V_WIDTH / 2) - unit.x;
       if (unit.stance === 'PATROL') {
         if (target && (target.type === 'assassin' || closestSq < unit.aggroRadius * unit.aggroRadius)) {
           const dx = target.x - unit.x; const dy = target.y - unit.y; const dist = Math.max(0.1, Math.hypot(dx, dy));
@@ -48,9 +120,16 @@ export function calculateVelocity(unit, target, closestSq, s, now, uSpeed, enemi
         }
       } else {
         if (unit.y > WALL_Y - 50 && unit.type !== 'flying') {
-          if (Math.abs(dxGate) > 80) { vx = Math.sign(dxGate) * uSpeed * 0.8; vy = -uSpeed * 0.6; } else { vy = -uSpeed; }
+          const dxFormation = getAttackFormationX(unit, players) - unit.x;
+          if (Math.abs(dxFormation) > 35) {
+            vx = steerTowardFormationX(unit, players, now, uSpeed);
+            vy = -uSpeed * 0.6;
+          } else {
+            vx = steerTowardFormationX(unit, players, now, uSpeed, 0.45);
+            vy = -uSpeed;
+          }
         } else if (unit.name === 'Yumi Archer') {
-          const anchorY = unit.advanceZone;
+          const anchorY = getAttackFormationY(unit, players);
           const closestEnemy = enemies.reduce((closest, enemy) => {
             if (enemy.hp <= 0) return closest;
             const distSq = (enemy.x - unit.x) ** 2 + (enemy.y - unit.y) ** 2;
@@ -65,13 +144,13 @@ export function calculateVelocity(unit, target, closestSq, s, now, uSpeed, enemi
             vy = unit.y < WALL_Y - 80 ? uSpeed * 0.8 : 0;
           } else if (unit.y > anchorY + YUMI_BACKLINE_LEASH) {
             vy = -uSpeed;
-            vx = Math.sin((now / 400) + unit.hashOffset) * 6;
+            vx = steerTowardFormationX(unit, players, now, uSpeed, 0.75);
           } else if (unit.y < anchorY - YUMI_BACKLINE_LEASH) {
             vy = uSpeed * 0.8;
-            vx = Math.sin((now / 400) + unit.hashOffset) * 6;
+            vx = steerTowardFormationX(unit, players, now, uSpeed, 0.75);
           } else {
             vy = 0;
-            vx = Math.sin((now / 400) + unit.hashOffset) * 6;
+            vx = steerTowardFormationX(unit, players, now, uSpeed, 0.75);
           }
         } else if (target && closestSq < unit.aggroRadius * unit.aggroRadius) {
           // If we have a claimed slot, navigate to the slot coordinate (not target center)
@@ -80,8 +159,18 @@ export function calculateVelocity(unit, target, closestSq, s, now, uSpeed, enemi
           const dx = navX - unit.x; const dy = navY - unit.y; const dist = Math.max(0.1, Math.hypot(dx, dy));
           vx = (dx / dist) * uSpeed; vy = Math.min(0, (dy / dist) * uSpeed);
         } else {
-          const alignSpeed = Math.sin((now / 400) + unit.hashOffset) * 10;
-          if (unit.y > unit.advanceZone) { vy = -uSpeed; vx = alignSpeed; } else { vy = 0; vx = alignSpeed; }
+          const alignSpeed = steerTowardFormationX(unit, players, now, uSpeed);
+          const anchorY = getAttackFormationY(unit, players);
+          if (unit.y > anchorY + 12) {
+            vy = -uSpeed;
+            vx = alignSpeed;
+          } else if (unit.y < anchorY - 12) {
+            vy = uSpeed * 0.6;
+            vx = alignSpeed;
+          } else {
+            vy = 0;
+            vx = alignSpeed;
+          }
         }
       }
     } else if (unit.team === 'enemy') {

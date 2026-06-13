@@ -1,6 +1,6 @@
 export const CAMPAIGN_MAP = {
-  RIVERLANDS:  { id: 'RIVERLANDS',  name: 'Sakura Riverlands', threatLevel: 1, waves: 5,  reward: 'Command Drops +20%', bossId: 'goki',       bossName: 'Goki',       bossPower: 'Mud Mines' },
-  OUTSKIRTS:   { id: 'OUTSKIRTS',   name: 'Kyoto Outskirts',   threatLevel: 2, waves: 6,  reward: '+1 Max Squad Cap',   bossId: 'kasha',      bossName: 'Kasha',      bossPower: 'Fire Trails' },
+  RIVERLANDS:  { id: 'RIVERLANDS',  name: 'Sakura Riverlands', threatLevel: 1, waves: 5,  reward: 'Unlock Stables, Command Drops +20%', bossId: 'goki',       bossName: 'Goki',       bossPower: 'Mud Mines' },
+  OUTSKIRTS:   { id: 'OUTSKIRTS',   name: 'Kyoto Outskirts',   threatLevel: 2, waves: 6,  reward: 'Unlock Workshop, +1 Max Squad Cap',   bossId: 'kasha',      bossName: 'Kasha',      bossPower: 'Fire Trails' },
   TENGU_PEAKS: { id: 'TENGU_PEAKS', name: 'Tengu Peaks',       threatLevel: 3, waves: 7,  reward: 'Archers +50% DMG',   bossId: 'daitengu',   bossName: 'Daitengu',   bossPower: 'Lightning Strikes' },
   IRON_MINES:  { id: 'IRON_MINES',  name: 'Kurogane Mines',    threatLevel: 3, waves: 7,  reward: 'Hatamoto +50% HP',   bossId: 'yukionna',   bossName: 'Yuki-Onna',  bossPower: 'Deep Freeze' },
   THE_ABYSS:   { id: 'THE_ABYSS',   name: 'Yomi Abyss',        threatLevel: 5, waves: 10, reward: 'Campaign Victory',   bossId: 'otakemaru',  bossName: 'Otakemaru',  bossPower: 'Elemental Chaos' }
@@ -13,6 +13,11 @@ export const CAMPAIGN_CHAPTER_IDS = Object.freeze([
   'IRON_MINES',
   'THE_ABYSS',
 ]);
+
+export const BARRACKS_UNLOCKS_BY_CHAPTER_CLEAR = Object.freeze({
+  RIVERLANDS: ['CAVALRY'],
+  OUTSKIRTS: ['HOROKU'],
+});
 
 export const VISIBLE_BOSS_IDS = Object.freeze(
   Object.values(CAMPAIGN_MAP).map(chapter => chapter.bossId)
@@ -62,6 +67,17 @@ export function getCampaignChapters(conqueredRegions = []) {
     status: getCampaignChapterStatus(id, conqueredRegions),
     enemyStatMult: getChapterEnemyStatMultiplier(id),
   }));
+}
+
+export function getBarracksUnlocksForChapterClear(chapterId) {
+  return BARRACKS_UNLOCKS_BY_CHAPTER_CLEAR[chapterId] ?? [];
+}
+
+export function getBarracksUnlockChapter(barracksKey) {
+  const chapterId = CAMPAIGN_CHAPTER_IDS.find(id =>
+    (BARRACKS_UNLOCKS_BY_CHAPTER_CLEAR[id] ?? []).includes(barracksKey)
+  );
+  return chapterId ? getCampaignChapter(chapterId) : null;
 }
 
 export const ENEMY_COSTS = {
