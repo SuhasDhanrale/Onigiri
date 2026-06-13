@@ -9,13 +9,13 @@ export function BarracksCard({ bKey, def, s, meta, setUiTick, changeQuota, build
   const level = s.barracks[bKey] || 0;
   const cap = getSquadCap(bKey, level, meta.equippedItem, meta.conqueredRegions, meta.activeSquadCapBonus ?? 0);
   const currentCount = s.units.filter(u => u.name === UNIT_TYPES[def.unit].name && u.team === 'player' && u.hp > 0).length;
-  
-  const maxTime = def.spawnRate * bannerMult;
-  const pct = level > 0 ? Math.max(0, Math.min(1, 1 - (s.timers[bKey] / maxTime))) : 0;
-  
+
   const costCap = Math.floor(getCost(def.baseCost, def.costMult, level) * bannerMult);
   const costLvl = Math.floor(getCost(def.baseCost * 1.5, 1.7, s.troopLevel[bKey] - 1) * bannerMult);
   const isFocused = s.focusedBuilding === bKey;
+  const isAtCap = currentCount >= cap;
+  const canUpgradeDamage = s.command >= costLvl && s.gameState === 'COMBAT';
+  const canUpgradeCap = s.command >= costCap && s.gameState === 'COMBAT';
 
   const isPermanentlyUnlocked = meta.unlockedBarracks?.includes(bKey);
   const isRunUnlocked = !isPermanentlyUnlocked && !!s.autoUnlocked[bKey];
@@ -24,61 +24,57 @@ export function BarracksCard({ bKey, def, s, meta, setUiTick, changeQuota, build
   const lockedText = unlockChapter ? `Clear ${unlockChapter.name}` : 'Progress campaign';
 
   return (
-    <div 
+    <div
       onClick={() => {
         if (isUnlocked) {
           s.focusedBuilding = isFocused ? null : bKey;
           setUiTick(t => t + 1);
         }
       }}
-      className={`bg-[var(--color-ink)] border-2 flex flex-col text-[var(--color-parchment)] transition-all ${isUnlocked ? 'cursor-pointer hover:border-[#8b8574]' : 'opacity-60 grayscale'} overflow-hidden ${isFocused ? 'border-[#d4af37] shadow-[0_0_15px_rgba(212,175,55,0.25)]' : 'border-[var(--color-ink-dark)]'}`}
+      className={`relative grid min-h-[78px] grid-cols-[88px_58px_minmax(0,1fr)] overflow-hidden border-2 bg-[var(--color-ink)] text-[var(--color-parchment)] transition-all ${isUnlocked ? 'cursor-pointer hover:border-[#8b8574]' : 'opacity-60 grayscale'} ${isFocused ? 'border-[#d4af37] shadow-[0_0_15px_rgba(212,175,55,0.25)]' : 'border-[var(--color-ink-dark)]'}`}
     >
-      <div className="flex items-center h-14 px-2 relative">
-        {isFocused && <div className="absolute inset-0 bg-[#d4af37]/10 animate-pulse pointer-events-none" />}
-        
-        <div className="w-16 flex flex-col items-center justify-center shrink-0 relative z-10 border-r-2 border-[var(--color-ink-dark)] h-full bg-[#2b3d60] mr-2">
-          <span className="text-[10px] font-black tracking-widest leading-none text-center px-1">{def.name}</span>
-          {level > 0 && <div className="absolute -top-1 -left-1 bg-[#b84235] text-white text-[8px] font-bold px-1 py-0.5 border border-[var(--color-ink)]">Lv.{s.troopLevel[bKey]}</div>}
-        </div>
+      {isFocused && <div className="pointer-events-none absolute inset-0 bg-[#d4af37]/10" />}
 
-        <div className="flex-1 flex flex-col justify-center relative z-10 pr-1">
-          {!isUnlocked ? (
-            <div className="text-[10px] font-bold text-[#8b8574] text-center tracking-widest leading-tight">LOCKED<br/><span className="text-[6px] opacity-70">{lockedText}</span></div>
-          ) : (
-            <>
-              <div className="flex justify-between text-[8px] font-bold tracking-widest text-[var(--color-khaki)] mb-1">
-                <span className={isFocused ? 'text-[#d4af37]' : ''}>{isFocused ? `> FOCUS ${meta.focusMult || 1.2}x <` : (isRunUnlocked ? 'THIS RUN' : 'AUTO RUN')}</span>
-                <span className={currentCount >= cap ? 'text-[#b84235]' : (isFocused ? 'text-[#d4af37]' : '')}>{currentCount}/{cap}</span>
-              </div>
-              <div className="w-full h-2 bg-[var(--color-parchment)]/20 relative border border-[var(--color-ink)]">
-                <div className={`h-full transition-all ${currentCount >= cap ? 'bg-[#b84235]' : (isFocused ? 'bg-[#d4af37]' : 'bg-[#4a5d23]')}`} style={{ width: `${currentCount >= cap ? 100 : pct * 100}%` }} />
-              </div>
-            </>
-          )}
-        </div>
+      <div className="relative z-10 flex min-h-[78px] flex-col items-center justify-center border-r-2 border-[var(--color-ink-dark)] bg-[#2b3d60] px-1">
+        <span className="text-center text-[11px] font-black leading-none tracking-wide">{def.name}</span>
+        {level > 0 && <div className="absolute left-1 top-1 bg-[#b84235] px-1 py-0.5 text-[8px] font-bold leading-none text-white">Lv.{s.troopLevel[bKey]}</div>}
       </div>
 
-      {isFocused && isUnlocked && (
-        <div className="flex flex-col border-t-2 border-[var(--color-ink)] bg-[var(--color-parchment)] text-[var(--color-ink)] p-1.5 gap-1.5">
-              <div className="flex gap-1.5">
-                <button onClick={(e) => { e.stopPropagation(); upgradeTroopLevel(bKey, costLvl); }} className={`flex-1 py-1.5 flex items-center justify-center transition-colors border-2 border-[var(--color-ink)] ${s.command >= costLvl && s.gameState === 'COMBAT' ? 'bg-[var(--color-ink)] text-[var(--color-parchment)] hover:bg-[#d4af37] hover:text-[var(--color-ink)]' : 'bg-[#cfc4af] text-[var(--color-khaki)] cursor-not-allowed'}`}>
-                  <span className="text-[8px] font-black tracking-tighter leading-tight text-center">UPG DMG<br/>{costLvl} K</span>
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); upgradeBarracksCap(bKey, costCap); }} className={`flex-1 py-1.5 flex items-center justify-center transition-colors border-2 border-[var(--color-ink)] ${s.command >= costCap && s.gameState === 'COMBAT' ? 'bg-[var(--color-ink)] text-[var(--color-parchment)] hover:bg-[#d4af37] hover:text-[var(--color-ink)]' : 'bg-[#cfc4af] text-[var(--color-khaki)] cursor-not-allowed'}`}>
-                  <span className="text-[8px] font-black tracking-tighter leading-tight text-center">+1 CAP<br/>{costCap} K</span>
-                </button>
-              </div>
-              
-              <div className="flex justify-between items-center mt-1 border-t-2 border-[var(--color-ink)] pt-1.5 px-1">
-                <span className="text-[9px] font-black tracking-widest text-[var(--color-khaki)]">GUARD QUOTA</span>
-                <div className="flex items-center gap-2 bg-[var(--color-ink)] px-2 py-0.5 border border-[#4a5d23]">
-                  <button onClick={(e) => { e.stopPropagation(); changeQuota(bKey, -1); }} className="hover:text-[#d4af37] text-lg leading-none cursor-pointer text-[var(--color-parchment)] px-1 font-bold">-</button>
-                  <span className="text-[var(--color-parchment)] min-w-[2ch] text-center font-mono text-[10px] font-bold">{s.guardQuotas[bKey] || 0}</span>
-                  <button onClick={(e) => { e.stopPropagation(); changeQuota(bKey, 1); }} className="hover:text-[#d4af37] text-lg leading-none cursor-pointer text-[var(--color-parchment)] px-1 font-bold">+</button>
-                </div>
-              </div>
-        </div>
-      )}
+      <div className="relative z-10 flex min-w-0 flex-col items-center justify-center border-r-2 border-[var(--color-ink-dark)] px-1 py-2">
+        {!isUnlocked ? (
+          <div className="text-center text-[9px] font-bold leading-tight tracking-wide text-[#8b8574]">
+            LOCKED
+          </div>
+        ) : (
+          <>
+            <div className={`text-[15px] font-black leading-none ${isAtCap ? 'text-[#b84235]' : (isFocused ? 'text-[#d4af37]' : 'text-[var(--color-parchment)]')}`}>{currentCount}/{cap}</div>
+            <div className="mt-1 text-[8px] font-black uppercase tracking-wide text-[var(--color-khaki)]">Units</div>
+          </>
+        )}
+      </div>
+
+      <div className="relative z-10 flex min-h-[78px] items-center p-1.5">
+        {isUnlocked ? (
+          <div className="grid w-full grid-cols-2 gap-1.5">
+            <button
+              onClick={(e) => { e.stopPropagation(); upgradeTroopLevel(bKey, costLvl); }}
+              className={`flex h-12 items-center justify-center border-2 border-[var(--color-ink)] text-center transition-colors ${canUpgradeDamage ? 'bg-[var(--color-parchment)] text-[var(--color-ink)] hover:bg-[#d4af37]' : 'bg-[#cfc4af] text-[var(--color-khaki)] cursor-not-allowed'}`}
+            >
+              <span className="text-[9px] font-black leading-tight tracking-normal">DMG<br/>{costLvl}K</span>
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); upgradeBarracksCap(bKey, costCap); }}
+              className={`flex h-12 items-center justify-center border-2 border-[var(--color-ink)] text-center transition-colors ${canUpgradeCap ? 'bg-[var(--color-parchment)] text-[var(--color-ink)] hover:bg-[#d4af37]' : 'bg-[#cfc4af] text-[var(--color-khaki)] cursor-not-allowed'}`}
+            >
+              <span className="text-[9px] font-black leading-tight tracking-normal">CAP<br/>{costCap}K</span>
+            </button>
+          </div>
+        ) : (
+          <div className="w-full text-center text-[9px] font-black uppercase leading-tight tracking-wide text-[#8b8574]">
+            {lockedText}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
