@@ -36,6 +36,11 @@ import { spriteRenderer } from './renderer/SpriteRenderer.js';
 import { TUTORIAL_STEP_ORDER } from './config/tutorial.js';
 import { TutorialOverlay } from './ui/components/TutorialOverlay.jsx';
 import { TutorialBook } from './ui/components/TutorialBook.jsx';
+import {
+  reportCrazyGamesGameplayStart,
+  reportCrazyGamesGameplayStop,
+  reportCrazyGamesHappyTime
+} from './platforms/crazygamesSdk.js';
 
 export default function App() {
   const fgCanvasRef = useRef(null);
@@ -197,6 +202,8 @@ export default function App() {
   }, [uiTick, resultContext]);
 
   const startCombat = useCallback((regionId, explicitNode = null) => {
+    reportCrazyGamesGameplayStart();
+
     if (!spriteRenderer.isLoaded()) {
       spriteRenderer.loadAllSprites().catch(err => {
         console.warn('[Sprites] Failed to load some sprites:', err);
@@ -320,6 +327,9 @@ export default function App() {
   }, []);
 
   const handleRegionVictory = useCallback(() => {
+    reportCrazyGamesGameplayStop();
+    reportCrazyGamesHappyTime();
+
     const regionId      = state.current.currentRegion;
     const currentRun    = runStateRef.current;
     const isBossClear   = currentRun?.currentNodeType === 'boss';
@@ -584,6 +594,9 @@ export default function App() {
 
   const handleResultClose = useCallback(() => {
     const isLoss = resultContext?.type === 'battle_loss';
+    if (isLoss) {
+      reportCrazyGamesGameplayStop();
+    }
     setResultContext(null);
     
     if (isLoss) {

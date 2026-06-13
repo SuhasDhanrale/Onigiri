@@ -7,6 +7,8 @@
     "dev": "vite",
     "dev:mocks": "vite --open /mocks.html",
     "build": "vite build",
+    "build:crazygames": "vite build --mode crazygames",
+    "dev:crazygames": "vite --mode crazygames",
     "preview": "vite preview",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"

@@ -34,6 +34,9 @@ export default defineConfig(({ command, mode }) => {
   const isCrazyGamesSdkOnly = env.VITE_CG_SDK_ONLY === 'true'
 
   const outDir = PLATFORM_OUTPUT_DIR[platform] || `dist-${platform}`
+  const externalModules = [
+    ...(isFirebaseEnabled ? [] : ['firebase/app', 'firebase/analytics', 'firebase/auth', 'firebase/firestore'])
+  ]
 
   console.log(`[Vite] Command: ${command}`)
   console.log(`[Vite] Mode: ${mode}`)
@@ -83,10 +86,10 @@ export default defineConfig(({ command, mode }) => {
               }
             : undefined
         },
-        external: [
-          ...(isFirebaseEnabled ? [] : ['firebase/app', 'firebase/analytics', 'firebase/auth', 'firebase/firestore']),
-          ...(isAdsEnabled ? [] : [])
-        ]
+        external: (id) => {
+          if (externalModules.includes(id)) return true
+          return platform !== 'playgama' && id === './adapters/PlaygamaAdapter.js'
+        }
       }
     },
 
