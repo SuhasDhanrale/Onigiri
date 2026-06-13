@@ -26,6 +26,16 @@ export function tickParticles(s, dt) {
  * @param {number} dt
  */
 export function tickEffects(s, dt) {
+  if (!s.visualEffects) s.visualEffects = [];
+  for (let i = s.visualEffects.length - 1; i >= 0; i--) {
+    const fx = s.visualEffects[i];
+    fx.life -= dt;
+    if (fx.vx) fx.x += fx.vx * dt;
+    if (fx.vy) fx.y += fx.vy * dt;
+    if (fx.life <= 0) s.visualEffects.splice(i, 1);
+  }
+  if (s.visualEffects.length > 90) s.visualEffects.splice(0, s.visualEffects.length - 90);
+
   for (let i = s.explosions.length - 1; i >= 0; i--) {
     s.explosions[i].life -= dt;
     if (s.explosions[i].life <= 0) s.explosions.splice(i, 1);

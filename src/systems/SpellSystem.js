@@ -1,5 +1,5 @@
-import { WALL_Y } from '../config/constants.js';
-import { addParticle } from './SpawnSystem.js';
+import { V_WIDTH, WALL_Y } from '../config/constants.js';
+import { pushFx } from '../renderer/drawSumiFx.js';
 import { bus } from '../core/EventBus.js';
 import { EVENTS } from '../core/events.js';
 
@@ -63,8 +63,12 @@ export function triggerThunder(s, options = {}) {
     const targets = enemies.sort((a, b) => b.hp - a.hp).slice(0, 3);
     targets.forEach(t => {
       t.hp -= 300;
-      s.lightnings.push({ x: t.x, y: t.y, life: 0.5 });
+      s.lightnings.push({ x: t.x, y: t.y, life: 0.35 });
+      pushFx(s, { kind: 'lightning', layer: 'foreground', x: t.x, y: t.y, life: 0.55, maxLife: 0.55, branches: 5 });
+      pushFx(s, { kind: 'ground_star', layer: 'foreground', x: t.x, y: t.y, radius: 88, color: '#facc15', life: 0.45, maxLife: 0.45 });
+      pushFx(s, { kind: 'shockwave', layer: 'foreground', x: t.x, y: t.y, radius: 96, color: '#ffffff', life: 0.45, maxLife: 0.45 });
     });
+    pushFx(s, { kind: 'screen_pulse', layer: 'background', color: '#facc15', life: 0.22, maxLife: 0.22 });
     s.screenShake = 0.4;
     bus.emit(EVENTS.SCREEN_SHAKE, { amount: s.screenShake });
   }
@@ -76,7 +80,9 @@ export function triggerFoxFire(s, options = {}) {
     s.command -= cost;
     bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
     s.foxFireCooldown = 10.0 * (s.shopSpellCooldownMult ?? 1.0);  // spell_mastery
-    s.foxFires.push({ yTop: 1000, yBottom: 1200, life: 8.0 });
+    s.foxFires.push({ yTop: 1000, yBottom: 1200, life: 8.0, maxLife: 8.0, seed: Math.random() * 100000 });
+    pushFx(s, { kind: 'fox_wall', layer: 'background', yTop: 1000, yBottom: 1200, life: 8.0, maxLife: 8.0 });
+    pushFx(s, { kind: 'aura', layer: 'foreground', x: V_WIDTH / 2, y: 1100, radius: 190, color: '#ea580c', life: 0.9, maxLife: 0.9, spin: 0.7 });
   }
 }
 
@@ -85,7 +91,9 @@ export function triggerDragonWave(s) {
     s.command -= 600;
     bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
     s.dragonCooldown = 15.0 * (s.shopSpellCooldownMult ?? 1.0);  // spell_mastery
-    s.dragonWaves.push({ y: WALL_Y - 50, life: 2.0 });
+    s.dragonWaves.push({ y: WALL_Y - 50, life: 2.0, maxLife: 2.0, seed: Math.random() * 100000 });
+    pushFx(s, { kind: 'dragon_crest', layer: 'background', y: WALL_Y - 50, life: 2.0, maxLife: 2.0, vy: -600 });
+    pushFx(s, { kind: 'screen_pulse', layer: 'background', color: '#38bdf8', life: 0.35, maxLife: 0.35 });
     s.screenShake = 1.0;
     bus.emit(EVENTS.SCREEN_SHAKE, { amount: s.screenShake });
   }
@@ -96,6 +104,8 @@ export function triggerWarDrums(s) {
     s.command -= 200;
     bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
     s.warDrumsActive = 5.0;
+    pushFx(s, { kind: 'aura', layer: 'foreground', x: V_WIDTH / 2, y: WALL_Y - 220, radius: 190, color: '#d4af37', life: 1.2, maxLife: 1.2, spin: 0.45 });
+    pushFx(s, { kind: 'shockwave', layer: 'foreground', x: V_WIDTH / 2, y: WALL_Y - 220, radius: 220, color: '#d4af37', life: 0.55, maxLife: 0.55 });
   }
 }
 
@@ -104,6 +114,8 @@ export function triggerHarvest(s) {
     s.command -= 300;
     bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
     s.harvestActive = 10.0;
+    pushFx(s, { kind: 'aura', layer: 'foreground', x: V_WIDTH / 2, y: WALL_Y - 250, radius: 170, color: '#4a5d23', life: 1.4, maxLife: 1.4, spin: -0.35 });
+    pushFx(s, { kind: 'screen_pulse', layer: 'background', color: '#4a5d23', life: 0.25, maxLife: 0.25 });
   }
 }
 
@@ -120,6 +132,8 @@ export function triggerResolve(s) {
       }
     });
     if (healedAny) {
+      pushFx(s, { kind: 'aura', layer: 'foreground', x: V_WIDTH / 2, y: WALL_Y - 180, radius: 160, color: '#4a5d23', life: 0.95, maxLife: 0.95, spin: 0.3 });
+      pushFx(s, { kind: 'shockwave', layer: 'foreground', x: V_WIDTH / 2, y: WALL_Y - 180, radius: 180, color: '#dfd4ba', life: 0.5, maxLife: 0.5 });
       s.screenShake = 0.3;
       bus.emit(EVENTS.SCREEN_SHAKE, { amount: s.screenShake });
     }

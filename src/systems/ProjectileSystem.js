@@ -1,5 +1,13 @@
 import { V_HEIGHT } from '../config/constants.js';
 import { damageOrb } from './CaveSystem.js';
+import { pushFx } from '../renderer/drawSumiFx.js';
+import { bus } from '../core/EventBus.js';
+import { EVENTS } from '../core/events.js';
+
+function bumpShake(s, amount) {
+  s.screenShake = Math.max(s.screenShake, amount);
+  bus.emit(EVENTS.SCREEN_SHAKE, { amount: s.screenShake });
+}
 
 /**
  * Ticks all projectiles — moves them, checks hits, removes expired ones.
@@ -17,7 +25,10 @@ export function tickProjectiles(s, dt) {
       p.z = Math.sin(p.progress * Math.PI) * 150;
 
       if (p.progress >= 1.0) {
-        s.screenShake = 0.4;
+        bumpShake(s, 0.4);
+        pushFx(s, { kind: 'shockwave', layer: 'foreground', x: p.x, y: p.y, radius: 126, color: '#dfd4ba', life: 0.42, maxLife: 0.42 });
+        pushFx(s, { kind: 'impact_sparks', layer: 'foreground', x: p.x, y: p.y, radius: 82, color: '#d4af37', life: 0.34, maxLife: 0.34, rays: 12 });
+        pushFx(s, { kind: 'smoke_puff', layer: 'foreground', x: p.x, y: p.y, radius: 74, color: 'rgba(27, 25, 24, 0.45)', life: 0.8, maxLife: 0.8 });
         
         if (p.isOrbAttack && s.orb && s.orb.active) {
           damageOrb(s, p.damage);
@@ -47,6 +58,8 @@ export function tickProjectiles(s, dt) {
         const orbDist = Math.hypot(s.orb.x - p.x, s.orb.y - p.y);
         if (orbDist < s.orb.radius + 15) {
           damageOrb(s, p.damage);
+          pushFx(s, { kind: 'impact_sparks', layer: 'foreground', x: s.orb.x, y: s.orb.y, radius: 54, color: '#b84235', life: 0.28, maxLife: 0.28, rays: 8 });
+          pushFx(s, { kind: 'shockwave', layer: 'foreground', x: s.orb.x, y: s.orb.y, radius: 70, color: '#dfd4ba', life: 0.26, maxLife: 0.26 });
           hit = true;
         }
       } else {
@@ -58,6 +71,20 @@ export function tickProjectiles(s, dt) {
             u.hp -= dmg;
             if (p.team === 'player' && s.combatStats) s.combatStats.damageDealt += dmg;
             if (p.isFlaming) u.burn = Math.max(u.burn || 0, 4.0);
+            pushFx(s, {
+              kind: 'impact_sparks',
+              layer: 'foreground',
+              x: p.x,
+              y: p.y,
+              radius: p.isFlaming ? 58 : 34,
+              color: p.isFlaming ? '#ea580c' : '#dfd4ba',
+              life: p.isFlaming ? 0.34 : 0.22,
+              maxLife: p.isFlaming ? 0.34 : 0.22,
+              rays: p.isFlaming ? 10 : 6,
+            });
+            if (p.isFlaming) {
+              pushFx(s, { kind: 'smoke_puff', layer: 'foreground', x: p.x, y: p.y, radius: 36, color: 'rgba(234, 88, 12, 0.28)', life: 0.5, maxLife: 0.5, puffs: 4 });
+            }
             if (!p.pierce) hit = true;
             if (hit) break;
           }

@@ -2,6 +2,7 @@ import { CAVE_CONFIG } from '../config/cave.js';
 import { V_WIDTH, WALL_Y } from '../config/constants.js';
 import { isVisibleBossId } from '../config/campaign.js';
 import { addParticle, spawnUnit } from './SpawnSystem.js';
+import { pushFx } from '../renderer/drawSumiFx.js';
 import { bus } from '../core/EventBus.js';
 import { EVENTS } from '../core/events.js';
 
@@ -153,8 +154,11 @@ function ensureVisibleBoss(s, metaRef, bossId) {
   boss.attackSpeed = def.attackSpeed;
   boss.renderLayer = 5;
   s.chapterBossSpawned = true;
+  pushFx(s, { kind: 'summon_chakra', layer: 'background', x: boss.x, y: boss.y + boss.radius * 0.8, radius: boss.radius * 2.2, color: def.color, life: 1.7, maxLife: 1.7 });
+  pushFx(s, { kind: 'ink_burst', layer: 'foreground', x: boss.x, y: boss.y, radius: boss.radius * 2.4, color: '#1b1918', life: 0.9, maxLife: 0.9, rays: 18 });
+  pushFx(s, { kind: 'screen_pulse', layer: 'background', x: boss.x, y: boss.y, color: def.color, life: 0.45, maxLife: 0.45 });
   s.floatingTexts.push({ x: boss.x, y: boss.y - 100, text: `${def.name.toUpperCase()} APPEARS`, color: '#d4af37', life: 2.0, vy: -25 });
-  s.screenShake = Math.max(s.screenShake, 0.4);
+  s.screenShake = Math.max(s.screenShake, 0.65);
   bus.emit(EVENTS.SCREEN_SHAKE, { amount: s.screenShake });
 }
 
@@ -201,7 +205,10 @@ function tickGokiMines(s, dt) {
     life: 10,
     damage: 32,
     slowTimer: 4,
+    maxLife: 10,
+    seed: Math.random() * 100000,
   });
+  pushFx(s, { kind: 'aura', layer: 'background', x: target.x, y: target.y, radius: 92, color: '#8b7355', life: 1.15, maxLife: 1.15, spin: 0.25 });
   s.floatingTexts.push({ x: target.x, y: target.y - 70, text: 'MINE', color: '#8b7355', life: 0.9, vy: -18 });
   s.cave.mineTimer = GOKI_MINE_INTERVAL;
 }
@@ -225,14 +232,20 @@ function tickKashaFireTrails(s, dt) {
       armTimer: 0.75,
       life: 5,
       damagePerSec: 13,
+      maxLife: 5,
+      seed: Math.random() * 100000,
     });
   }
+  pushFx(s, { kind: 'aura', layer: 'background', x: target.x, y: 640, radius: 150, color: '#ea580c', life: 1.0, maxLife: 1.0, spin: 0.8 });
   s.floatingTexts.push({ x: target.x, y: 300, text: 'FIRE TRAIL', color: '#ea580c', life: 1.0, vy: -18 });
   s.cave.fireTimer = KASHA_FIRE_INTERVAL;
 }
 
 function detonateMudMine(s, hazard) {
   s.explosions.push({ x: hazard.x, y: hazard.y, r: hazard.radius * 1.35, life: 1.0, color: '#8b7355' });
+  pushFx(s, { kind: 'shockwave', layer: 'foreground', x: hazard.x, y: hazard.y, radius: hazard.radius * 1.65, color: '#8b7355', life: 0.65, maxLife: 0.65 });
+  pushFx(s, { kind: 'ink_burst', layer: 'foreground', x: hazard.x, y: hazard.y, radius: hazard.radius * 1.55, color: '#1b1918', life: 0.75, maxLife: 0.75, rays: 16 });
+  pushFx(s, { kind: 'ground_star', layer: 'foreground', x: hazard.x, y: hazard.y, radius: hazard.radius * 1.25, color: '#dfd4ba', life: 0.42, maxLife: 0.42 });
   addParticle(s, hazard.x, hazard.y, '#8b7355', 24, 260);
   addParticle(s, hazard.x, hazard.y, '#1b1918', 10, 180);
 

@@ -10,7 +10,7 @@ export function createInitialState() {
     command: 0, totalCommand: 0, wave: 1, fever: 0, feverActive: 0,
     screenShake: 0, conscriptCooldown: 0,
     units: [], projectiles: [], explosions: [], floatingTexts: [],
-    particles: [], slashTrails: [], lightnings: [], dragonWaves: [], foxFires: [], bossHazards: [],
+    particles: [], slashTrails: [], lightnings: [], dragonWaves: [], foxFires: [], bossHazards: [], visualEffects: [],
     isSlashing: false, lastSlashPos: null,
     focusedBuilding: null,
     bossId: null,

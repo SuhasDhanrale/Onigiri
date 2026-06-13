@@ -1,6 +1,7 @@
 import { COLORS } from '../config/colors.js';
 import { WALL_Y, V_WIDTH } from '../config/constants.js';
 import { addParticle } from './SpawnSystem.js';
+import { pushFx } from '../renderer/drawSumiFx.js';
 import { calculateVelocity, applySeparation } from './MovementSystem.js';
 import { bus } from '../core/EventBus.js';
 import { EVENTS } from '../core/events.js';
@@ -10,6 +11,22 @@ import { canAttackOrb } from './CaveSystem.js';
 const YUMI_EXPOSED_RANGE = 150;
 const YUMI_EXPOSED_DAMAGE_MULT = 0.6;
 const YUMI_EXPOSED_ATTACK_TIME_MULT = 1.75;
+
+function bumpShake(s, amount) {
+  s.screenShake = Math.max(s.screenShake, amount);
+  bus.emit(EVENTS.SCREEN_SHAKE, { amount: s.screenShake });
+}
+
+function emitMeleeImpact(s, unit, target, amount = 0.16) {
+  const angle = Math.atan2(target.y - unit.y, target.x - unit.x);
+  const x = (unit.x + target.x) / 2;
+  const y = (unit.y + target.y) / 2;
+  const isPlayerHit = unit.team === 'player';
+  const color = isPlayerHit ? '#dfd4ba' : '#8b8574';
+  pushFx(s, { kind: 'slash_arc', layer: 'foreground', x, y, radius: unit.radius + target.radius + 36, rotation: angle, color, life: 0.22, maxLife: 0.22 });
+  pushFx(s, { kind: 'impact_sparks', layer: 'foreground', x: target.x, y: target.y, radius: 42, color: isPlayerHit ? '#d4af37' : '#dfd4ba', life: 0.28, maxLife: 0.28, rays: 7 });
+  bumpShake(s, amount);
+}
 
 /**
  * Full unit movement + combat loop. Processes all units each frame.
@@ -63,9 +80,9 @@ export function tickUnits(s, dt, now, metaRef) {
     if (unit.type === 'boss' && unit.telegraphTimer > 0) {
       unit.telegraphTimer -= dt;
       if (unit.telegraphTimer <= 0) {
-        s.screenShake = 0.5;
-        bus.emit('SCREEN_SHAKE', s.screenShake);
+        bumpShake(s, 0.55);
         s.explosions.push({ x: unit.x, y: unit.y, r: unit.range, life: 0.6, color: COLORS.vermilion });
+        pushFx(s, { kind: 'shockwave', layer: 'foreground', x: unit.x, y: unit.y, radius: unit.range, color: COLORS.vermilion, life: 0.55, maxLife: 0.55 });
         players.forEach(p => { if (Math.hypot(p.x - unit.x, p.y - unit.y) < unit.range) { p.hp -= unit.damage * 2; p.y += 100; } });
       }
       continue;
@@ -202,13 +219,19 @@ export function tickUnits(s, dt, now, metaRef) {
     // Combat engagement
     const isEngaged = target && slotDistSq <= engageDist * engageDist && unit.type !== 'support';
     if (isEngaged) {
-      if (unit.name === 'Ikki Rebel') { target.hp -= unit.damage; unit.hp = 0; addParticle(s, unit.x, unit.y, COLORS.ink, 5); continue; }
+      if (unit.name === 'Ikki Rebel') {
+        target.hp -= unit.damage;
+        unit.hp = 0;
+        pushFx(s, { kind: 'impact_sparks', layer: 'foreground', x: target.x, y: target.y, radius: 36, color: '#8b8574', life: 0.22, maxLife: 0.22, rays: 6 });
+        addParticle(s, unit.x, unit.y, COLORS.ink, 5);
+        continue;
+      }
 
       if (unit.type === 'assassin' && target.name === 'Bamboo Barricade') {
         unit.hp -= 1000; target.hp -= 1000; 
-        s.screenShake = 0.5;
-        bus.emit('SCREEN_SHAKE', s.screenShake);
-        addParticle(s, target.x, target.y, COLORS.vermilion, 10, 300);
+        bumpShake(s, 0.55);
+        pushFx(s, { kind: 'impact_sparks', layer: 'foreground', x: target.x, y: target.y, radius: 72, color: COLORS.khaki, life: 0.35, maxLife: 0.35, rays: 12 });
+        pushFx(s, { kind: 'smoke_puff', layer: 'foreground', x: target.x, y: target.y, radius: 58, color: 'rgba(74, 59, 50, 0.55)', life: 0.7, maxLife: 0.7 });
         addParticle(s, target.x, target.y, COLORS.khaki, 10, 300);
         continue;
       }
@@ -228,21 +251,23 @@ export function tickUnits(s, dt, now, metaRef) {
           target.hp -= unit.damage;
           if (unit.team === 'player' && s.combatStats) s.combatStats.damageDealt += unit.damage;
           unit.swingPhase = 1.0;
+          emitMeleeImpact(s, unit, target, unit.type === 'boss' ? 0.34 : unit.type === 'cavalry' ? 0.26 : 0.14);
           if (target.name === 'Bamboo Barricade' && target.team === 'player' && metaRef.current.unlockedProvisions.includes('SPIKED_CALTROPS')) {
             unit.hp -= unit.damage * 0.5;
             s.floatingTexts.push({ x: unit.x, y: unit.y - 10, text: 'REFLECT', color: '#b84235', life: 0.5, vy: -30 });
+            pushFx(s, { kind: 'impact_sparks', layer: 'foreground', x: unit.x, y: unit.y, radius: 46, color: '#dfd4ba', life: 0.28, maxLife: 0.28, rays: 9 });
           }
           if (unit.type === 'cavalry') {
             if (target.type === 'shield' || target.type === 'boss') { 
-              s.screenShake = 0.1; 
-              bus.emit(EVENTS.SCREEN_SHAKE, { amount: s.screenShake });
+              pushFx(s, { kind: 'shockwave', layer: 'foreground', x: target.x, y: target.y, radius: 60, color: '#dfd4ba', life: 0.3, maxLife: 0.3 });
+              bumpShake(s, 0.18);
             }
             else {
               const shoveDir = unit.team === 'player' ? -1 : 1;
               target.y += shoveDir * (unit.chargeTimer > 0 ? 180 : 60);
               target.x += (Math.random() - 0.5) * 20;
-              s.screenShake = unit.chargeTimer > 0 ? 0.5 : 0.2;
-              bus.emit(EVENTS.SCREEN_SHAKE, { amount: s.screenShake });
+              pushFx(s, { kind: 'shockwave', layer: 'foreground', x: target.x, y: target.y, radius: unit.chargeTimer > 0 ? 96 : 62, color: '#dfd4ba', life: 0.32, maxLife: 0.32 });
+              bumpShake(s, unit.chargeTimer > 0 ? 0.5 : 0.24);
               addParticle(s, target.x, target.y, '#dfd4ba', 5);
             }
           }

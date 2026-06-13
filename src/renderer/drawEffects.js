@@ -1,47 +1,17 @@
 import { COLORS } from '../config/colors.js';
 import { V_WIDTH } from '../config/constants.js';
+import { drawBossHazardFx, drawVisualEffect } from './drawSumiFx.js';
 
 export function drawBackgroundEffects(ctx, s) {
     (s.bossHazards ?? []).forEach(h => {
-        const warning = h.armTimer > 0;
         ctx.save();
-        if (h.type === 'mud_mine') {
-            ctx.globalAlpha = warning ? 0.35 + Math.sin(Date.now() / 80) * 0.12 : 0.62;
-            ctx.fillStyle = warning ? 'rgba(139, 115, 85, 0.32)' : 'rgba(139, 115, 85, 0.55)';
-            ctx.strokeStyle = warning ? '#dfd4ba' : '#8b7355';
-            ctx.lineWidth = warning ? 3 : 5;
-            ctx.setLineDash(warning ? [10, 8] : []);
-            ctx.beginPath();
-            ctx.arc(h.x, h.y, h.radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-            ctx.setLineDash([]);
-            ctx.fillStyle = '#1b1918';
-            ctx.globalAlpha = warning ? 0.8 : 1;
-            ctx.beginPath();
-            ctx.arc(h.x, h.y, 10, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        if (h.type === 'fire_zone') {
-            ctx.globalAlpha = warning ? 0.28 + Math.sin(Date.now() / 70) * 0.1 : Math.min(0.65, h.life / 3);
-            const grad = ctx.createRadialGradient(h.x, h.y, 0, h.x, h.y, h.radius);
-            grad.addColorStop(0, warning ? 'rgba(234, 88, 12, 0.22)' : 'rgba(234, 88, 12, 0.55)');
-            grad.addColorStop(0.65, warning ? 'rgba(184, 66, 53, 0.18)' : 'rgba(184, 66, 53, 0.35)');
-            grad.addColorStop(1, 'rgba(184, 66, 53, 0)');
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.arc(h.x, h.y, h.radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = warning ? '#dfd4ba' : '#ea580c';
-            ctx.lineWidth = warning ? 2 : 4;
-            ctx.setLineDash(warning ? [8, 8] : []);
-            ctx.beginPath();
-            ctx.arc(h.x, h.y, h.radius * 0.86, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.setLineDash([]);
-        }
+        drawBossHazardFx(ctx, h, Date.now());
         ctx.restore();
     });
+
+    (s.visualEffects ?? [])
+      .filter(fx => fx.layer !== 'foreground')
+      .forEach(fx => drawVisualEffect(ctx, fx));
 
     s.lightnings.forEach(l => { 
         ctx.strokeStyle = '#facc15'; ctx.lineWidth = l.life * 20; ctx.lineCap = 'round'; 
@@ -63,12 +33,16 @@ export function drawBackgroundEffects(ctx, s) {
 }
 
 export function drawForegroundEffects(ctx, s) {
+    (s.visualEffects ?? [])
+      .filter(fx => fx.layer === 'foreground')
+      .forEach(fx => drawVisualEffect(ctx, fx));
+
     s.projectiles.forEach(p => { 
         if (p.type === 'lob') { 
             const sz = Math.max(0.1, 8 + (p.z * 0.1)); 
             ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.arc(p.x, p.y + p.z*0.5, sz, 0, Math.PI*2); ctx.fill(); 
             ctx.fillStyle = COLORS.ink; ctx.beginPath(); ctx.arc(p.x, p.y, sz, 0, Math.PI*2); ctx.fill(); 
-            ctx.fillStyle = COLORS.vermilion; ctx.beginPath(); ctx.arc(p.x, p.y, sz*0.4, 0, Math.PI*2); ctx.fill(); 
+            ctx.fillStyle = COLORS.gold; ctx.beginPath(); ctx.arc(p.x, p.y, sz*0.4, 0, Math.PI*2); ctx.fill(); 
         } else { 
             if (p.isFlaming) {
                 ctx.shadowColor = '#ea580c'; ctx.shadowBlur = 8;
@@ -83,7 +57,9 @@ export function drawForegroundEffects(ctx, s) {
     
     s.slashTrails.forEach(t => { 
         ctx.lineCap = 'round'; 
-        ctx.strokeStyle = `rgba(184, 66, 53, ${t.life * 0.8})`; ctx.lineWidth = 30 * t.life; 
+        ctx.strokeStyle = `rgba(27, 25, 24, ${t.life * 0.34})`; ctx.lineWidth = 34 * t.life; 
+        ctx.beginPath(); ctx.moveTo(t.x1, t.y1); ctx.lineTo(t.x2, t.y2); ctx.stroke(); 
+        ctx.strokeStyle = `rgba(212, 175, 55, ${t.life * 0.7})`; ctx.lineWidth = 20 * t.life; 
         ctx.beginPath(); ctx.moveTo(t.x1, t.y1); ctx.lineTo(t.x2, t.y2); ctx.stroke(); 
         ctx.strokeStyle = `rgba(255,255,255, ${t.life})`; ctx.lineWidth = 10 * t.life; 
         ctx.beginPath(); ctx.moveTo(t.x1, t.y1); ctx.lineTo(t.x2, t.y2); ctx.stroke(); 

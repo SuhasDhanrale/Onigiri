@@ -1,5 +1,6 @@
 import { addParticle } from './SpawnSystem.js';
 import { COLORS } from '../config/colors.js';
+import { pushFx } from '../renderer/drawSumiFx.js';
 import { bus } from '../core/EventBus.js';
 import { EVENTS } from '../core/events.js';
 
@@ -21,6 +22,16 @@ export function processDeaths(s, metaRef) {
       }
 
       if (u.team === 'enemy') {
+        if (u.isChapterBoss) {
+          pushFx(s, { kind: 'shockwave', layer: 'foreground', x: u.x, y: u.y, radius: u.radius * 3.2, color: u.color || '#b84235', life: 1.1, maxLife: 1.1 });
+          pushFx(s, { kind: 'ink_burst', layer: 'foreground', x: u.x, y: u.y, radius: u.radius * 3.0, color: '#1b1918', life: 1.1, maxLife: 1.1, rays: 22 });
+          pushFx(s, { kind: 'screen_pulse', layer: 'background', x: u.x, y: u.y, color: u.color || '#b84235', life: 0.6, maxLife: 0.6 });
+        } else {
+          const deathRadius = u.isElite ? u.radius * 2.2 : u.radius * 1.8;
+          pushFx(s, { kind: 'smoke_puff', layer: 'foreground', x: u.x, y: u.y, radius: deathRadius, color: 'rgba(27, 25, 24, 0.5)', life: u.isElite ? 0.85 : 0.55, maxLife: u.isElite ? 0.85 : 0.55, puffs: u.isElite ? 8 : 5 });
+          pushFx(s, { kind: 'ink_burst', layer: 'foreground', x: u.x, y: u.y, radius: deathRadius, color: '#1b1918', life: 0.35, maxLife: 0.35, rays: u.isElite ? 12 : 7 });
+        }
+
         const isBloodKatana = metaRef.current.equippedItem === 'BLOOD_KATANA';
         const hasRiverlands = metaRef.current.conqueredRegions.includes('RIVERLANDS');
         const lootMult      = metaRef.current.activeCommandDropMult ?? 1.0;  // LOOTING blessing
@@ -55,6 +66,10 @@ export function processDeaths(s, metaRef) {
            const tName = u.name || 'Unknown Enemy';
            s.combatStats.enemiesSlain.types[tName] = (s.combatStats.enemiesSlain.types[tName] || 0) + 1;
         }
+      }
+
+      if (u.team === 'player') {
+        pushFx(s, { kind: 'smoke_puff', layer: 'foreground', x: u.x, y: u.y, radius: u.radius * 1.8, color: 'rgba(139, 133, 116, 0.42)', life: 0.65, maxLife: 0.65, puffs: 5 });
       }
 
       addParticle(s, u.x, u.y, COLORS.ink, 12);
