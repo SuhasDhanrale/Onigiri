@@ -70,15 +70,6 @@ const STEPS = [
     placement: 'left',
   },
   {
-    id: 'combat_army_roles',
-    stage: 'combat',
-    label: 'Army',
-    title: 'Build A Line',
-    body: 'Hatamoto hold the front. Yumi attack from behind. A balanced army is easier to keep alive.',
-    target: 'barracks-list',
-    placement: 'left',
-  },
-  {
     id: 'combat_spell_crisis',
     stage: 'combat',
     label: 'Spells',
@@ -103,7 +94,6 @@ const TARGETS = {
   upgrades: 'right-[5%] top-[5%] h-[66px] w-[220px]',
   'node-card': 'right-[5%] bottom-[7%] h-[255px] w-[350px]',
   'command-panel': 'right-[0%] top-[0%] h-full w-[31%]',
-  'barracks-list': 'right-[2%] top-[37%] h-[34%] w-[27%]',
   'spell-shrine': 'right-[2%] top-[18%] h-[110px] w-[27%]',
 };
 
@@ -411,7 +401,7 @@ function CombatStage() {
             </div>
           </div>
 
-          <div data-tutorial-target="barracks-list" className="flex-1 space-y-3 p-4">
+          <div className="flex-1 space-y-3 p-4">
             <p className="text-[10px] font-black uppercase tracking-[0.2em]">Military Forces</p>
             {[
               ['Hatamoto', 'Frontline guard', 'Build 40'],

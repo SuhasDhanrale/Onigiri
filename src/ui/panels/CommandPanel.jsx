@@ -31,7 +31,7 @@ export function CommandPanel({
         />
       </div>
 
-      <div data-tutorial-target="barracks-list" className="p-4 flex flex-col gap-3 bg-[var(--color-parchment)] border-b-4 border-[var(--color-ink-dark)]">
+      <div className="p-4 flex flex-col gap-3 bg-[var(--color-parchment)] border-b-4 border-[var(--color-ink-dark)]">
         <h3 className="text-[var(--color-ink-dark)] font-black text-[10px] uppercase tracking-[0.2em] border-b-2 border-[var(--color-ink-dark)] pb-1">Military Forces</h3>
         {Object.entries(BARRACKS_DEFS).map(([key, def]) => (
           <BarracksCard 
@@ -46,7 +46,6 @@ export function CommandPanel({
             upgradeTroopLevel={upgradeTroopLevel}
             upgradeBarracksCap={upgradeBarracksCap}
             hireDrill={hireDrill}
-            tutorial={tutorial}
           />
         ))}
       </div>

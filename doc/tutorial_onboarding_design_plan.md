@@ -155,25 +155,7 @@ Player action:
 
 ---
 
-### Step 7: Army Roles
-
-**Screen:** `CommandPanel`, `BarracksCard` area  
-**Trigger:** first combat, after Step 4  
-**Teaches:** basic composition
-
-Message:
-
-```text
-Hatamoto hold the front. Yumi attack from behind. A balanced army is easier to keep alive.
-```
-
-Player action:
-
-- inspect or use barracks controls.
-
----
-
-### Step 8: Spell Crisis
+### Step 7: Spell Crisis
 
 **Screen:** `SpellShrine` / battlefield  
 **Trigger:** first meaningful danger condition  
@@ -275,7 +257,6 @@ tutorial: {
     map_upgrades: false,
     node_detail: false,
     combat_command: false,
-    combat_army_roles: false,
     combat_spell_crisis: false,
   }
 }
@@ -417,7 +398,7 @@ Triggers:
 Triggers:
 
 - `combat_command` when `s.waveState === 'PRE_WAVE'`,
-- `combat_spell_crisis` when enemies create early pressure after army roles are complete.
+- `combat_spell_crisis` when enemies create early pressure after the command step is complete.
 
 ### `src/ui/panels/CommandPanel.jsx`
 
@@ -518,7 +499,6 @@ Risk: medium
 Tasks:
 
 - trigger `combat_command`,
-- trigger `combat_army_roles`,
 - trigger `combat_spell_crisis`.
 
 Guardrails:
@@ -627,7 +607,7 @@ This teaches the core loop without touching the riskiest combat timing logic.
 After that works, add:
 
 ```text
-army roles -> free spell crisis -> Tutorial Book
+free spell crisis -> Tutorial Book
 ```
 
 This order keeps the project stable while building toward a complete onboarding experience.

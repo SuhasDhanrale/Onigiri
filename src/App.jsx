@@ -628,9 +628,6 @@ export default function App() {
 
     if (current.waveState === 'PRE_WAVE') {
       tutorial.requestStep('combat_command');
-      if (tutorial.completed.combat_command) {
-        tutorial.requestStep('combat_army_roles');
-      }
     }
 
     if (current.waveState === 'SPAWNING' || current.waveState === 'CLEANUP') {
@@ -641,14 +638,13 @@ export default function App() {
         unit.maxHp > 0 &&
         unit.hp / unit.maxHp < 0.4
       );
-      if (tutorial.completed.combat_army_roles && (liveEnemies >= 8 || failingFrontline)) {
+      if (tutorial.completed.combat_command && (liveEnemies >= 8 || failingFrontline)) {
         tutorial.requestStep('combat_spell_crisis');
       }
     }
   }, [
     uiTick,
     tutorial.completed.combat_command,
-    tutorial.completed.combat_army_roles,
     tutorial.requestStep,
   ]);
 
@@ -667,7 +663,7 @@ export default function App() {
       return;
     }
 
-    if (current.gameState === 'COMBAT' && current.waveState !== 'PRE_WAVE' && ['combat_command', 'combat_army_roles'].includes(activeStepId)) {
+    if (current.gameState === 'COMBAT' && current.waveState !== 'PRE_WAVE' && activeStepId === 'combat_command') {
       tutorial.completeStep(activeStepId);
       return;
     }
