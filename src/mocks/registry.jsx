@@ -10,8 +10,17 @@ import { BaseMock, BaseControls } from './screens/BaseMock.jsx';
 import { MusicMock } from './screens/MusicMock.jsx';
 import { EffectsMock } from './screens/EffectsMock.jsx';
 import { MapUXMock } from './screens/MapUXMock.jsx';
+import { TutorialOnboardingMock, TutorialOnboardingControls } from './screens/TutorialOnboardingMock.jsx';
 
 export const mockScreens = [
+  {
+    id: 'tutorial_onboarding',
+    title: 'Tutorial Onboarding',
+    description: 'Isolated guided first-run tutorial prototype with map, combat, rewards, and boss steps.',
+    component: TutorialOnboardingMock,
+    initialState: { showTargetLabels: false },
+    controls: TutorialOnboardingControls,
+  },
   {
     id: 'boss_anim',
     title: 'Boss Animation Viewer',
