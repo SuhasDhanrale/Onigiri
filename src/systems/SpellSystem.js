@@ -53,9 +53,10 @@ export function tickDragonWaves(s, dt) {
 
 // --- Trigger functions (called via React callbacks, operate directly on s) ---
 
-export function triggerThunder(s) {
-  if (s.command >= 150 && s.gameState === 'COMBAT' && s.thunderCooldown <= 0) {
-    s.command -= 150;
+export function triggerThunder(s, options = {}) {
+  const cost = options.free ? 0 : 150;
+  if (s.command >= cost && s.gameState === 'COMBAT' && s.thunderCooldown <= 0) {
+    s.command -= cost;
     bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
     s.thunderCooldown = 2.0 * (s.shopSpellCooldownMult ?? 1.0);  // spell_mastery
     const enemies = s.units.filter(u => u.team === 'enemy' && u.hp > 0);
@@ -69,9 +70,10 @@ export function triggerThunder(s) {
   }
 }
 
-export function triggerFoxFire(s) {
-  if (s.command >= 250 && s.gameState === 'COMBAT' && s.foxFireCooldown <= 0) {
-    s.command -= 250;
+export function triggerFoxFire(s, options = {}) {
+  const cost = options.free ? 0 : 250;
+  if (s.command >= cost && s.gameState === 'COMBAT' && s.foxFireCooldown <= 0) {
+    s.command -= cost;
     bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
     s.foxFireCooldown = 10.0 * (s.shopSpellCooldownMult ?? 1.0);  // spell_mastery
     s.foxFires.push({ yTop: 1000, yBottom: 1200, life: 8.0 });

@@ -21,7 +21,7 @@ The player is not a direct unit controller. The player acts as a battlefield com
 - collect rewards, curses, and upgrades between nodes,
 - prepare for the boss.
 
-Because combat can become visually dense, the tutorial must teach **battle reading** more than button memorization.
+Because combat can become visually dense, the tutorial should support battle reading without stopping the first fight with too many popups.
 
 ---
 
@@ -173,25 +173,7 @@ Player action:
 
 ---
 
-### Step 8: Battle Reading
-
-**Screen:** `CombatScreen` battlefield  
-**Trigger:** first wave enters `SPAWNING` or `CLEANUP`  
-**Teaches:** reading pressure
-
-Message:
-
-```text
-Watch the frontline. If enemies cluster or break through, use a spell or reinforce.
-```
-
-Player action:
-
-- continue the fight.
-
----
-
-### Step 9: Spell Crisis
+### Step 8: Spell Crisis
 
 **Screen:** `SpellShrine` / battlefield  
 **Trigger:** first meaningful danger condition  
@@ -206,7 +188,7 @@ Suggested low-risk trigger:
 Message:
 
 ```text
-Spells are emergency tools. Use them when the enemy group becomes too dense or your line is failing.
+Combat keeps moving. Your first tutorial spell is free: use Thunder for a few tough enemies, or Fox Fire when enemies crowd the gate approach.
 ```
 
 Player action:
@@ -216,6 +198,7 @@ Player action:
 Implementation note:
 
 - Do not auto-cast.
+- Grant exactly one free tutorial spell cast, limited to early available spells.
 - Do not pause the simulation in the first implementation.
 
 ---
@@ -293,7 +276,6 @@ tutorial: {
     node_detail: false,
     combat_command: false,
     combat_army_roles: false,
-    combat_battle_reading: false,
     combat_spell_crisis: false,
   }
 }
@@ -435,7 +417,7 @@ Triggers:
 Triggers:
 
 - `combat_command` when `s.waveState === 'PRE_WAVE'`,
-- `combat_battle_reading` when enemies begin spawning.
+- `combat_spell_crisis` when enemies create early pressure after army roles are complete.
 
 ### `src/ui/panels/CommandPanel.jsx`
 
@@ -537,7 +519,6 @@ Tasks:
 
 - trigger `combat_command`,
 - trigger `combat_army_roles`,
-- trigger `combat_battle_reading`,
 - trigger `combat_spell_crisis`.
 
 Guardrails:
@@ -646,7 +627,7 @@ This teaches the core loop without touching the riskiest combat timing logic.
 After that works, add:
 
 ```text
-army roles -> battle reading -> spell crisis -> Tutorial Book
+army roles -> free spell crisis -> Tutorial Book
 ```
 
 This order keeps the project stable while building toward a complete onboarding experience.

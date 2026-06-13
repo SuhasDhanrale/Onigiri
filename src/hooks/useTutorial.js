@@ -5,7 +5,9 @@ const createInitialTutorialState = () => ({
   skipped: false,
   completed: {},
   activeStepId: null,
+  pausedStepId: null,
   bookOpen: false,
+  freeSpellUsed: false,
 });
 
 function readStoredTutorial() {
@@ -19,6 +21,7 @@ function readStoredTutorial() {
       ...createInitialTutorialState(),
       ...parsed,
       activeStepId: null,
+      pausedStepId: null,
       bookOpen: false,
       completed: parsed?.completed ?? {},
     };
@@ -42,7 +45,7 @@ export function useTutorial() {
 
   useEffect(() => {
     try {
-      const { activeStepId, bookOpen, ...persistable } = tutorial;
+      const { activeStepId, pausedStepId, bookOpen, ...persistable } = tutorial;
       window.localStorage.setItem(TUTORIAL_STORAGE_KEY, JSON.stringify(persistable));
     } catch {
       // Tutorial persistence is helpful, not required.
@@ -53,6 +56,7 @@ export function useTutorial() {
 
   const requestStep = useCallback((stepId) => {
     setTutorial(prev => {
+      if (prev.pausedStepId === stepId) return prev;
       if (prev.activeStepId || !canShowStep(stepId, prev)) return prev;
       return { ...prev, activeStepId: stepId };
     });
@@ -62,6 +66,7 @@ export function useTutorial() {
     setTutorial(prev => ({
       ...prev,
       activeStepId: prev.activeStepId === stepId ? null : prev.activeStepId,
+      pausedStepId: prev.pausedStepId === stepId ? null : prev.pausedStepId,
       completed: {
         ...prev.completed,
         [stepId]: true,
@@ -69,11 +74,23 @@ export function useTutorial() {
     }));
   }, []);
 
+  const pauseStep = useCallback((stepId) => {
+    setTutorial(prev => {
+      if (prev.activeStepId !== stepId) return prev;
+      return {
+        ...prev,
+        activeStepId: null,
+        pausedStepId: stepId,
+      };
+    });
+  }, []);
+
   const skipTutorial = useCallback(() => {
     setTutorial(prev => ({
       ...prev,
       skipped: true,
       activeStepId: null,
+      pausedStepId: null,
     }));
   }, []);
 
@@ -89,6 +106,10 @@ export function useTutorial() {
     setTutorial(prev => ({ ...prev, bookOpen: false }));
   }, []);
 
+  const consumeFreeSpell = useCallback(() => {
+    setTutorial(prev => ({ ...prev, freeSpellUsed: true }));
+  }, []);
+
   const completedCount = useMemo(
     () => TUTORIAL_STEP_ORDER.filter(stepId => tutorial.completed?.[stepId]).length,
     [tutorial.completed],
@@ -100,11 +121,14 @@ export function useTutorial() {
     completedCount,
     skipped: tutorial.skipped,
     bookOpen: tutorial.bookOpen,
+    freeSpellUsed: tutorial.freeSpellUsed,
     requestStep,
     completeStep,
+    pauseStep,
     skipTutorial,
     resetTutorial,
     openBook,
     closeBook,
+    consumeFreeSpell,
   };
 }

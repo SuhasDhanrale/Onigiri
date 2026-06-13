@@ -7,10 +7,14 @@ import { BARRACKS_DEFS } from '../../config/barracks.js';
 export function CommandPanel({ 
   s, activeTroops, maxTroops, meta, setMeta, setUiTick, changeQuota, 
   triggerWarDrums, triggerHarvest, triggerResolve, triggerThunder, triggerFoxFire, triggerDragonWave,
-  buildBarracks, upgradeTroopLevel, upgradeBarracksCap, hireDrill, unlockHero
+  tutorialFreeSpellAvailable, buildBarracks, upgradeTroopLevel, upgradeBarracksCap, hireDrill, unlockHero, tutorial
 }) {
   return (
-    <div data-tutorial-target="command-panel" className={`flex-[3] min-w-[340px] max-w-[400px] h-full bg-[var(--color-parchment)] flex flex-col shrink-0 overflow-y-auto custom-scrollbar relative z-40 border-l-4 border-[var(--color-ink-dark)] ${s.gameState === 'MAP_SCREEN' ? 'hidden' : ''}`}>
+    <div
+      data-tutorial-target="command-panel"
+      onClick={() => tutorial?.completeStep?.('combat_command')}
+      className={`flex-[3] min-w-[340px] max-w-[400px] h-full bg-[var(--color-parchment)] flex flex-col shrink-0 overflow-y-auto custom-scrollbar relative z-40 border-l-4 border-[var(--color-ink-dark)] ${s.gameState === 'MAP_SCREEN' ? 'hidden' : ''}`}
+    >
       
       <EconomyHeader state={s} activeTroops={activeTroops} maxTroops={maxTroops} />
       
@@ -22,6 +26,8 @@ export function CommandPanel({
           triggerFoxFire={triggerFoxFire} 
           triggerDragonWave={triggerDragonWave}
           unlockHero={unlockHero}
+          tutorial={tutorial}
+          tutorialFreeSpellAvailable={tutorialFreeSpellAvailable}
         />
       </div>
 
@@ -40,6 +46,7 @@ export function CommandPanel({
             upgradeTroopLevel={upgradeTroopLevel}
             upgradeBarracksCap={upgradeBarracksCap}
             hireDrill={hireDrill}
+            tutorial={tutorial}
           />
         ))}
       </div>

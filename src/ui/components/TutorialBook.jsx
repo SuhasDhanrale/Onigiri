@@ -13,7 +13,7 @@ export function TutorialBook({ open, onClose }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[430] flex justify-end bg-black/55 text-[#dfd4ba]">
+    <div data-tutorial-ui="true" className="fixed inset-0 z-[430] flex justify-end bg-black/55 text-[#dfd4ba]">
       <button className="absolute inset-0 cursor-default" aria-label="Close tutorial book" onClick={onClose} />
       <aside className="relative z-10 h-full w-[min(430px,100vw)] border-l border-[#d4af37]/35 bg-[#0a0908]/98 shadow-[-30px_0_80px_rgba(0,0,0,0.8)]">
         <div className="flex items-start justify-between border-b border-[#d4af37]/25 px-6 py-5">

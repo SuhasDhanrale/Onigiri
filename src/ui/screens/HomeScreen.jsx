@@ -4,7 +4,7 @@ import { getCampaignChapters, getCurrentCampaignChapterId } from '../../config/c
 
 const ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V'];
 
-export function HomeScreen({ meta, onStartChapter }) {
+export function HomeScreen({ meta, onStartChapter, tutorial }) {
   const [view, setView] = useState('main');
   const chapters = useMemo(
     () => getCampaignChapters(meta?.conqueredRegions ?? []),
@@ -14,11 +14,15 @@ export function HomeScreen({ meta, onStartChapter }) {
   const currentChapter = chapters.find(chapter => chapter.id === currentChapterId) ?? chapters[0];
 
   const startCurrentChapter = () => {
+    tutorial?.completeStep?.('home_start');
     if (currentChapter) onStartChapter(currentChapter.id);
   };
 
   const handleChapterClick = (chapter) => {
-    if (chapter.status === 'current') onStartChapter(chapter.id);
+    if (chapter.status === 'current') {
+      tutorial?.completeStep?.('home_start');
+      onStartChapter(chapter.id);
+    }
   };
 
   return (

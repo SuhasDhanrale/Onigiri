@@ -62,8 +62,24 @@ export function HubTestScreen({
     scrollRef.current.scrollLeft = scrollLeft - walk;
   };
 
+  const openLoadout = () => {
+    tutorial?.pauseStep?.('map_upgrades');
+    setIsLoadoutOpen(true);
+  };
+
+  const closeLoadout = () => {
+    setIsLoadoutOpen(false);
+    if (
+      tutorial?.activeStep?.id === 'map_upgrades' ||
+      (tutorial?.completed?.map_select_node && !tutorial?.completed?.map_upgrades)
+    ) {
+      tutorial?.completeStep?.('map_upgrades');
+    }
+  };
+
   const handleNodeClick = (node) => {
     if (node.status === 'available') {
+      tutorial?.completeStep?.('map_select_node');
       setSelectedNode(node);
       tutorial?.requestStep?.('node_detail');
     }
@@ -88,6 +104,7 @@ export function HubTestScreen({
   const handlePlayClick = () => {
     if (!selectedNode || selectedNode.status !== 'available') return;
     const node = selectedNode;
+    tutorial?.completeStep?.('node_detail');
 
     if (node.type === 'combat' || node.type === 'elite' || node.type === 'boss') {
       // Navigate to combat
@@ -393,7 +410,7 @@ export function HubTestScreen({
         
         <div className="flex-1 flex items-center justify-start pointer-events-auto">
           <button 
-            onClick={() => setIsLoadoutOpen(true)}
+            onClick={openLoadout}
             data-tutorial-target="map-upgrades"
             className="flex items-center justify-center gap-2 px-3 py-1.5 md:px-4 md:py-2 border border-[#d4af37]/30 bg-[#1a1816]/90 text-[#d4af37] font-black uppercase tracking-[0.1em] text-[10px] md:tracking-[0.2em] md:text-xs hover:bg-[#d4af37]/10 hover:border-[#d4af37] transition-all shadow-[0_0_15px_rgba(212,175,55,0.15)] rounded-sm whitespace-nowrap"
           >
@@ -429,14 +446,14 @@ export function HubTestScreen({
         {isLoadoutOpen && (
           <div 
             className="absolute inset-0 bg-black/60 backdrop-blur-sm z-40 animate-[fade-in_0.3s_ease-out]" 
-            onClick={() => setIsLoadoutOpen(false)} 
+            onClick={closeLoadout} 
           />
         )}
 
         {/* LEFT PILLAR OVERLAY (DRAWER) */}
         <div className={`absolute top-0 bottom-0 left-0 w-[420px] bg-[#0a0908]/95 backdrop-blur-xl border-r border-[#d4af37]/30 flex flex-col shadow-[20px_0_50px_rgba(0,0,0,0.9)] z-50 transition-transform duration-300 ${isLoadoutOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="absolute top-2 right-4 z-50">
-            <button onClick={() => setIsLoadoutOpen(false)} className="text-[#8b8574] hover:text-[#dfd4ba] text-3xl font-black transition-colors">&times;</button>
+            <button onClick={closeLoadout} className="text-[#8b8574] hover:text-[#dfd4ba] text-3xl font-black transition-colors">&times;</button>
           </div>
 
           {/* Tabs Header */}

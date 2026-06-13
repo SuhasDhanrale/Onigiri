@@ -454,6 +454,7 @@ export default function App() {
   }, [meta, runStateRef, startRun, startCombat, setRunState, setMeta]);
 
   const handleStartChapter = useCallback((chapterId) => {
+    tutorial.completeStep('home_start');
     const existingRun = runStateRef.current;
     const activeRun = existingRun?.chapterId === chapterId
       ? existingRun
@@ -467,7 +468,7 @@ export default function App() {
     state.current.gameState = 'MAP_SCREEN';
     setShowHome(false);
     setUiTick(t => t + 1);
-  }, [metaRef, runStateRef, setMapNodes, setMeta, startRun]);
+  }, [metaRef, runStateRef, setMapNodes, setMeta, startRun, tutorial]);
 
   const spawnUnit = useCallback((typeKey, team, customX = null, customY = null) => {
     _spawnUnit(state.current, typeKey, team, customX, customY, metaRef);
@@ -550,8 +551,17 @@ export default function App() {
   const triggerWarDrums  = useCallback(() => _triggerWarDrums(state.current), []);
   const triggerHarvest   = useCallback(() => _triggerHarvest(state.current), []);
   const triggerResolve   = useCallback(() => _triggerResolve(state.current), []);
-  const triggerThunder   = useCallback(() => _triggerThunder(state.current), []);
-  const triggerFoxFire   = useCallback(() => _triggerFoxFire(state.current), []);
+  const tutorialFreeSpellAvailable = tutorial.activeStep?.id === 'combat_spell_crisis' && !tutorial.freeSpellUsed;
+  const triggerThunder   = useCallback(() => {
+    const free = tutorial.activeStep?.id === 'combat_spell_crisis' && !tutorial.freeSpellUsed;
+    _triggerThunder(state.current, { free });
+    if (free) tutorial.consumeFreeSpell();
+  }, [tutorial]);
+  const triggerFoxFire   = useCallback(() => {
+    const free = tutorial.activeStep?.id === 'combat_spell_crisis' && !tutorial.freeSpellUsed;
+    _triggerFoxFire(state.current, { free });
+    if (free) tutorial.consumeFreeSpell();
+  }, [tutorial]);
   const triggerDragonWave= useCallback(() => _triggerDragonWave(state.current), []);
   
   const changeQuota = useCallback((key, delta) => {
@@ -624,8 +634,6 @@ export default function App() {
     }
 
     if (current.waveState === 'SPAWNING' || current.waveState === 'CLEANUP') {
-      tutorial.requestStep('combat_battle_reading');
-
       const liveEnemies = current.units.filter(unit => unit.team === 'enemy' && unit.hp > 0).length;
       const failingFrontline = current.units.some(unit =>
         unit.team === 'player' &&
@@ -633,16 +641,46 @@ export default function App() {
         unit.maxHp > 0 &&
         unit.hp / unit.maxHp < 0.4
       );
-      if (tutorial.completed.combat_battle_reading && (liveEnemies >= 8 || failingFrontline)) {
+      if (tutorial.completed.combat_army_roles && (liveEnemies >= 8 || failingFrontline)) {
         tutorial.requestStep('combat_spell_crisis');
       }
     }
   }, [
     uiTick,
     tutorial.completed.combat_command,
-    tutorial.completed.combat_battle_reading,
+    tutorial.completed.combat_army_roles,
     tutorial.requestStep,
   ]);
+
+  useEffect(() => {
+    const activeStepId = tutorial.activeStep?.id;
+    if (!activeStepId) return;
+
+    const current = state.current;
+    if (!showHome && activeStepId === 'home_start') {
+      tutorial.completeStep(activeStepId);
+      return;
+    }
+
+    if (current.gameState === 'COMBAT' && ['map_select_node', 'map_upgrades', 'node_detail'].includes(activeStepId)) {
+      tutorial.completeStep(activeStepId);
+      return;
+    }
+
+    if (current.gameState === 'COMBAT' && current.waveState !== 'PRE_WAVE' && ['combat_command', 'combat_army_roles'].includes(activeStepId)) {
+      tutorial.completeStep(activeStepId);
+      return;
+    }
+
+    if (activeStepId === 'combat_spell_crisis' && current.gameState !== 'COMBAT') {
+      tutorial.completeStep(activeStepId);
+      return;
+    }
+
+    if (activeStepId === 'combat_spell_crisis' && !['SPAWNING', 'CLEANUP'].includes(current.waveState)) {
+      tutorial.completeStep(activeStepId);
+    }
+  }, [showHome, uiTick, tutorial]);
 
   const s = state.current;
   const activeUnits = s.units.filter(u => u.team === 'player' && u.hp > 0 && u.type !== 'friction' && u.type !== 'hero' && u.name !== 'Arrow Tower').length;
@@ -655,6 +693,7 @@ export default function App() {
         <HomeScreen
           meta={meta}
           onStartChapter={handleStartChapter}
+          tutorial={tutorial}
         />
       )}
 
@@ -711,11 +750,13 @@ export default function App() {
           triggerThunder={triggerThunder} 
           triggerFoxFire={triggerFoxFire} 
           triggerDragonWave={triggerDragonWave}
+          tutorialFreeSpellAvailable={tutorialFreeSpellAvailable}
           buildBarracks={buildBarracks}
           upgradeTroopLevel={upgradeTroopLevel}
           upgradeBarracksCap={upgradeBarracksCap}
           hireDrill={hireDrill}
           unlockHero={unlockHero}
+          tutorial={tutorial}
         />
       )}
 

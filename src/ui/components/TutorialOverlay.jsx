@@ -89,6 +89,37 @@ function useTargetRect(target) {
   return rect;
 }
 
+function useTutorialInteractionGuard(step) {
+  useEffect(() => {
+    if (!step || step.mode === 'monologue') return undefined;
+
+    const isAllowedTarget = (eventTarget) => {
+      if (eventTarget?.closest?.('[data-tutorial-ui="true"]')) return true;
+      if (!step.target) return false;
+
+      const targetElements = Array.from(document.querySelectorAll(`[data-tutorial-target="${step.target}"]`));
+      return targetElements.some(element => element.contains(eventTarget));
+    };
+
+    const blockOutsideTarget = (event) => {
+      if (isAllowedTarget(event.target)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+    };
+
+    document.addEventListener('pointerdown', blockOutsideTarget, true);
+    document.addEventListener('click', blockOutsideTarget, true);
+    document.addEventListener('touchstart', blockOutsideTarget, true);
+
+    return () => {
+      document.removeEventListener('pointerdown', blockOutsideTarget, true);
+      document.removeEventListener('click', blockOutsideTarget, true);
+      document.removeEventListener('touchstart', blockOutsideTarget, true);
+    };
+  }, [step]);
+}
+
 function StepBody({ body }) {
   if (Array.isArray(body)) {
     return (
@@ -105,7 +136,7 @@ function StepBody({ body }) {
 
 function MonologueOverlay({ step, onComplete, onSkip, onOpenBook }) {
   return (
-    <div className="fixed inset-0 z-[420] flex items-center justify-center overflow-hidden bg-[#090807] text-[#dfd4ba]">
+    <div data-tutorial-ui="true" className="fixed inset-0 z-[420] flex items-center justify-center overflow-hidden bg-[#090807] text-[#dfd4ba]">
       <div className="absolute inset-0 bg-cover bg-center opacity-35" style={{ backgroundImage: 'url(/assets/oni_bg.png)' }} />
       <div className="absolute inset-0 bg-gradient-to-b from-[#090807]/95 via-[#1b1918]/85 to-[#090807]/95" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(184,66,53,0.18),_transparent_58%)]" />
@@ -151,6 +182,7 @@ function MonologueOverlay({ step, onComplete, onSkip, onOpenBook }) {
 
 export function TutorialOverlay({ step, completedCount, totalSteps, onComplete, onSkip, onOpenBook }) {
   const rect = useTargetRect(step?.target);
+  useTutorialInteractionGuard(step);
   const panelPosition = useMemo(
     () => getPanelPosition(rect, step?.placement),
     [rect, step?.placement],
@@ -191,6 +223,7 @@ export function TutorialOverlay({ step, completedCount, totalSteps, onComplete, 
       )}
 
       <div
+        data-tutorial-ui="true"
         className="absolute w-[min(320px,calc(100vw-32px))] border border-[#d4af37]/45 bg-[#0a0908]/95 text-[#dfd4ba] shadow-[0_25px_80px_rgba(0,0,0,0.85)] pointer-events-auto"
         style={panelPosition}
       >

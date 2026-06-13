@@ -2,7 +2,7 @@ import { UNIT_TYPES } from '../../config/units.js';
 import { getBarracksUnlockChapter } from '../../config/campaign.js';
 import { getCost, getSquadCap } from '../../core/utils.js';
 
-export function BarracksCard({ bKey, def, s, meta, setUiTick, changeQuota, buildBarracks, upgradeTroopLevel, upgradeBarracksCap, hireDrill }) {
+export function BarracksCard({ bKey, def, s, meta, setUiTick, changeQuota, buildBarracks, upgradeTroopLevel, upgradeBarracksCap, hireDrill, tutorial }) {
   const isImperial = meta.equippedItem === 'IMPERIAL_BANNER';
   const bannerMult = isImperial ? 1.5 : 1.0;
 
@@ -25,7 +25,13 @@ export function BarracksCard({ bKey, def, s, meta, setUiTick, changeQuota, build
 
   return (
     <div 
-      onClick={() => { if (isUnlocked) { s.focusedBuilding = isFocused ? null : bKey; setUiTick(t => t + 1); } }}
+      onClick={() => {
+        if (isUnlocked) {
+          tutorial?.completeStep?.('combat_army_roles');
+          s.focusedBuilding = isFocused ? null : bKey;
+          setUiTick(t => t + 1);
+        }
+      }}
       className={`bg-[var(--color-ink)] border-2 flex flex-col text-[var(--color-parchment)] transition-all ${isUnlocked ? 'cursor-pointer hover:border-[#8b8574]' : 'opacity-60 grayscale'} overflow-hidden ${isFocused ? 'border-[#d4af37] shadow-[0_0_15px_rgba(212,175,55,0.25)]' : 'border-[var(--color-ink-dark)]'}`}
     >
       <div className="flex items-center h-14 px-2 relative">
@@ -56,10 +62,10 @@ export function BarracksCard({ bKey, def, s, meta, setUiTick, changeQuota, build
       {isFocused && isUnlocked && (
         <div className="flex flex-col border-t-2 border-[var(--color-ink)] bg-[var(--color-parchment)] text-[var(--color-ink)] p-1.5 gap-1.5">
               <div className="flex gap-1.5">
-                <button onClick={(e) => { e.stopPropagation(); upgradeTroopLevel(bKey, costLvl); }} className={`flex-1 py-1.5 flex items-center justify-center transition-colors border-2 border-[var(--color-ink)] ${s.command >= costLvl && s.gameState === 'COMBAT' ? 'bg-[var(--color-ink)] text-[var(--color-parchment)] hover:bg-[#d4af37] hover:text-[var(--color-ink)]' : 'bg-[#cfc4af] text-[var(--color-khaki)] cursor-not-allowed'}`}>
+                <button onClick={(e) => { e.stopPropagation(); tutorial?.completeStep?.('combat_army_roles'); upgradeTroopLevel(bKey, costLvl); }} className={`flex-1 py-1.5 flex items-center justify-center transition-colors border-2 border-[var(--color-ink)] ${s.command >= costLvl && s.gameState === 'COMBAT' ? 'bg-[var(--color-ink)] text-[var(--color-parchment)] hover:bg-[#d4af37] hover:text-[var(--color-ink)]' : 'bg-[#cfc4af] text-[var(--color-khaki)] cursor-not-allowed'}`}>
                   <span className="text-[8px] font-black tracking-tighter leading-tight text-center">UPG DMG<br/>{costLvl} K</span>
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); upgradeBarracksCap(bKey, costCap); }} className={`flex-1 py-1.5 flex items-center justify-center transition-colors border-2 border-[var(--color-ink)] ${s.command >= costCap && s.gameState === 'COMBAT' ? 'bg-[var(--color-ink)] text-[var(--color-parchment)] hover:bg-[#d4af37] hover:text-[var(--color-ink)]' : 'bg-[#cfc4af] text-[var(--color-khaki)] cursor-not-allowed'}`}>
+                <button onClick={(e) => { e.stopPropagation(); tutorial?.completeStep?.('combat_army_roles'); upgradeBarracksCap(bKey, costCap); }} className={`flex-1 py-1.5 flex items-center justify-center transition-colors border-2 border-[var(--color-ink)] ${s.command >= costCap && s.gameState === 'COMBAT' ? 'bg-[var(--color-ink)] text-[var(--color-parchment)] hover:bg-[#d4af37] hover:text-[var(--color-ink)]' : 'bg-[#cfc4af] text-[var(--color-khaki)] cursor-not-allowed'}`}>
                   <span className="text-[8px] font-black tracking-tighter leading-tight text-center">+1 CAP<br/>{costCap} K</span>
                 </button>
               </div>
@@ -67,9 +73,9 @@ export function BarracksCard({ bKey, def, s, meta, setUiTick, changeQuota, build
               <div className="flex justify-between items-center mt-1 border-t-2 border-[var(--color-ink)] pt-1.5 px-1">
                 <span className="text-[9px] font-black tracking-widest text-[var(--color-khaki)]">GUARD QUOTA</span>
                 <div className="flex items-center gap-2 bg-[var(--color-ink)] px-2 py-0.5 border border-[#4a5d23]">
-                  <button onClick={(e) => { e.stopPropagation(); changeQuota(bKey, -1); }} className="hover:text-[#d4af37] text-lg leading-none cursor-pointer text-[var(--color-parchment)] px-1 font-bold">-</button>
+                  <button onClick={(e) => { e.stopPropagation(); tutorial?.completeStep?.('combat_army_roles'); changeQuota(bKey, -1); }} className="hover:text-[#d4af37] text-lg leading-none cursor-pointer text-[var(--color-parchment)] px-1 font-bold">-</button>
                   <span className="text-[var(--color-parchment)] min-w-[2ch] text-center font-mono text-[10px] font-bold">{s.guardQuotas[bKey] || 0}</span>
-                  <button onClick={(e) => { e.stopPropagation(); changeQuota(bKey, 1); }} className="hover:text-[#d4af37] text-lg leading-none cursor-pointer text-[var(--color-parchment)] px-1 font-bold">+</button>
+                  <button onClick={(e) => { e.stopPropagation(); tutorial?.completeStep?.('combat_army_roles'); changeQuota(bKey, 1); }} className="hover:text-[#d4af37] text-lg leading-none cursor-pointer text-[var(--color-parchment)] px-1 font-bold">+</button>
                 </div>
               </div>
         </div>

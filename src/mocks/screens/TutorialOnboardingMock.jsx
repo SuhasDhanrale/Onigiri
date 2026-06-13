@@ -79,20 +79,11 @@ const STEPS = [
     placement: 'left',
   },
   {
-    id: 'combat_battle_reading',
-    stage: 'combat',
-    label: 'Read',
-    title: 'Read The Pressure',
-    body: 'Watch the frontline. If enemies cluster or break through, use a spell or reinforce.',
-    target: 'frontline',
-    placement: 'right',
-  },
-  {
     id: 'combat_spell_crisis',
     stage: 'combat',
     label: 'Spells',
-    title: 'Intervene At Crisis',
-    body: 'Spells are emergency tools. Use them when the enemy group becomes too dense or your line is failing.',
+    title: 'Try A Free Spell',
+    body: 'Combat keeps moving. Your first tutorial spell is free: use Thunder for a few tough enemies, or Fox Fire when enemies crowd the gate approach.',
     target: 'spell-shrine',
     placement: 'left',
   },
@@ -113,7 +104,6 @@ const TARGETS = {
   'node-card': 'right-[5%] bottom-[7%] h-[255px] w-[350px]',
   'command-panel': 'right-[0%] top-[0%] h-full w-[31%]',
   'barracks-list': 'right-[2%] top-[37%] h-[34%] w-[27%]',
-  frontline: 'left-[22%] top-[43%] h-[150px] w-[28%]',
   'spell-shrine': 'right-[2%] top-[18%] h-[110px] w-[27%]',
 };
 

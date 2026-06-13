@@ -7,8 +7,6 @@ export const TUTORIAL_STEP_ORDER = [
   'map_upgrades',
   'node_detail',
   'combat_command',
-  'combat_army_roles',
-  'combat_battle_reading',
   'combat_spell_crisis',
 ];
 
@@ -63,27 +61,11 @@ export const TUTORIAL_STEPS = {
     target: 'command-panel',
     placement: 'left',
   },
-  combat_army_roles: {
-    id: 'combat_army_roles',
-    label: 'Army',
-    title: 'Build A Line',
-    body: 'Hatamoto hold the front. Yumi attack from behind. A balanced army is easier to keep alive.',
-    target: 'barracks-list',
-    placement: 'left',
-  },
-  combat_battle_reading: {
-    id: 'combat_battle_reading',
-    label: 'Read',
-    title: 'Read The Pressure',
-    body: 'Watch the frontline. If enemies cluster or break through, use a spell or reinforce.',
-    target: 'combat-field',
-    placement: 'right',
-  },
   combat_spell_crisis: {
     id: 'combat_spell_crisis',
     label: 'Spells',
-    title: 'Intervene At Crisis',
-    body: 'Spells are emergency tools. Use them when the enemy group becomes too dense or your line is failing.',
+    title: 'Try A Free Spell',
+    body: 'Combat keeps moving. Your first tutorial spell is free: use Thunder for a few tough enemies, or Fox Fire when enemies crowd the gate approach.',
     target: 'spell-shrine',
     placement: 'left',
   },

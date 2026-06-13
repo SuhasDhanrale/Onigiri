@@ -88,7 +88,15 @@ export function CombatScreen({
         data-mobile={window.innerWidth < 1024}
       >
         <canvas ref={bgCanvasRef} width={size.w} height={size.h} className="absolute top-0 left-0 w-full h-full block touch-none" />
-        <canvas ref={fgCanvasRef} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} width={size.w} height={size.h} className={`absolute top-0 left-0 w-full h-full block touch-none z-10 ${armedSpell ? 'cursor-crosshair' : 'cursor-default'}`} />
+        <canvas
+          ref={fgCanvasRef}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          width={size.w}
+          height={size.h}
+          className={`absolute top-0 left-0 w-full h-full block touch-none z-10 ${armedSpell ? 'cursor-crosshair' : 'cursor-default'}`}
+        />
 
         {showCaveObjective && <DemonCave />}
 
