@@ -50,6 +50,7 @@ export function HomeScreen({ meta, onStartChapter }) {
 
             <button
               onClick={startCurrentChapter}
+              data-tutorial-target="home-play"
               className="group flex w-fit max-w-full items-center gap-5 border-l-4 border-[#b84235] bg-[#dfd4ba]/5 py-4 pl-5 pr-7 text-left backdrop-blur-sm transition-all duration-300 hover:bg-[#dfd4ba]/15 sm:gap-6 sm:pl-6 sm:pr-10"
             >
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#b84235] text-white shadow-[0_0_20px_rgba(184,66,53,0.5)] transition-transform group-hover:scale-105">

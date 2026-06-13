@@ -83,6 +83,7 @@ export function CombatScreen({
     <>
       <div
         ref={containerRef}
+        data-tutorial-target="combat-field"
         className={`flex-[7] relative bg-[var(--color-void)] flex justify-center items-center overflow-hidden ${s.gameState === 'MAP_SCREEN' ? 'hidden' : ''}`}
         data-mobile={window.innerWidth < 1024}
       >

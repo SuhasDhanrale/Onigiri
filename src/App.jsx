@@ -27,10 +27,14 @@ import { applyNodeRewardToRunState, makeNodeFromRun, resolveNodeVictoryReward, s
 // --- Phase 5: Hook & Input imports ---
 import { useMeta } from './hooks/useMeta.js';
 import { useRunState } from './hooks/useRunState.js';
+import { useTutorial } from './hooks/useTutorial.js';
 import { useGameLoop } from './hooks/useGameLoop.js';
 import { useGameEvents } from './hooks/useGameEvents.js';
 import { createInputHandlers } from './input/InputHandler.js';
 import { spriteRenderer } from './renderer/SpriteRenderer.js';
+import { TUTORIAL_STEP_ORDER } from './config/tutorial.js';
+import { TutorialOverlay } from './ui/components/TutorialOverlay.jsx';
+import { TutorialBook } from './ui/components/TutorialBook.jsx';
 
 export default function App() {
   const fgCanvasRef = useRef(null);
@@ -42,6 +46,7 @@ export default function App() {
   
   const { meta, setMeta, metaRef } = useMeta();
   const { runState, setRunState, runStateRef, startRun, endRun } = useRunState();
+  const tutorial = useTutorial();
 
   // Result screen context for combat
   const [resultContext, setResultContext] = useState(null);
@@ -589,6 +594,56 @@ export default function App() {
     []
   );
 
+  useEffect(() => {
+    if (!showHome) return;
+    tutorial.requestStep('opening_monologue');
+    if (tutorial.completed.opening_monologue) {
+      tutorial.requestStep('home_start');
+    }
+  }, [showHome, tutorial.completed.opening_monologue, tutorial.requestStep]);
+
+  useEffect(() => {
+    const current = state.current;
+    if (showHome || current.gameState !== 'MAP_SCREEN') return;
+
+    tutorial.requestStep('map_select_node');
+    if (tutorial.completed.map_select_node) {
+      tutorial.requestStep('map_upgrades');
+    }
+  }, [showHome, uiTick, tutorial.completed.map_select_node, tutorial.requestStep]);
+
+  useEffect(() => {
+    const current = state.current;
+    if (current.gameState !== 'COMBAT') return;
+
+    if (current.waveState === 'PRE_WAVE') {
+      tutorial.requestStep('combat_command');
+      if (tutorial.completed.combat_command) {
+        tutorial.requestStep('combat_army_roles');
+      }
+    }
+
+    if (current.waveState === 'SPAWNING' || current.waveState === 'CLEANUP') {
+      tutorial.requestStep('combat_battle_reading');
+
+      const liveEnemies = current.units.filter(unit => unit.team === 'enemy' && unit.hp > 0).length;
+      const failingFrontline = current.units.some(unit =>
+        unit.team === 'player' &&
+        unit.hp > 0 &&
+        unit.maxHp > 0 &&
+        unit.hp / unit.maxHp < 0.4
+      );
+      if (tutorial.completed.combat_battle_reading && (liveEnemies >= 8 || failingFrontline)) {
+        tutorial.requestStep('combat_spell_crisis');
+      }
+    }
+  }, [
+    uiTick,
+    tutorial.completed.combat_command,
+    tutorial.completed.combat_battle_reading,
+    tutorial.requestStep,
+  ]);
+
   const s = state.current;
   const activeUnits = s.units.filter(u => u.team === 'player' && u.hp > 0 && u.type !== 'friction' && u.type !== 'hero' && u.name !== 'Arrow Tower').length;
   const maxTroops = Object.keys(BARRACKS_DEFS).reduce((sum, key) => sum + getSquadCap(key, s.barracks[key] || 0, meta.equippedItem, meta.conqueredRegions, meta.activeSquadCapBonus ?? 0), 0);
@@ -616,6 +671,7 @@ export default function App() {
           setMapNodes={setMapNodes}
           unlockProvision={unlockProvision}
           equipProvision={equipProvision}
+          tutorial={tutorial}
         />
       )}
 
@@ -662,6 +718,25 @@ export default function App() {
           unlockHero={unlockHero}
         />
       )}
+
+      {!resultContext && !tutorial.activeStep && !tutorial.bookOpen && (
+        <button
+          onClick={tutorial.openBook}
+          className="fixed bottom-3 left-3 z-[410] border border-[#d4af37]/40 bg-[#0a0908]/85 px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#d4af37] shadow-[0_10px_30px_rgba(0,0,0,0.45)] backdrop-blur-sm hover:bg-[#d4af37]/10"
+        >
+          Guide
+        </button>
+      )}
+
+      <TutorialOverlay
+        step={tutorial.activeStep}
+        completedCount={tutorial.completedCount}
+        totalSteps={TUTORIAL_STEP_ORDER.length}
+        onComplete={tutorial.completeStep}
+        onSkip={tutorial.skipTutorial}
+        onOpenBook={tutorial.openBook}
+      />
+      <TutorialBook open={tutorial.bookOpen} onClose={tutorial.closeBook} />
     </div>
   );
 }

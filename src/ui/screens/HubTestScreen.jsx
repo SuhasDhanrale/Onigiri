@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { applyNodeCompletion } from '../../systems/MapGenerator.js';
 import { getEvent, applyEventChoice, tickCurses } from '../../systems/EventSystem.js';
 import { generateShopInventory, purchaseItem } from '../../systems/ShopSystem.js';
@@ -25,6 +25,7 @@ export function HubTestScreen({
   setMapNodes,
   unlockProvision,
   equipProvision,
+  tutorial,
 }) {
   const [activeSidebarTab, setActiveSidebarTab] = useState('DOJO');
   const [hoveredTech, setHoveredTech] = useState(null);
@@ -64,8 +65,15 @@ export function HubTestScreen({
   const handleNodeClick = (node) => {
     if (node.status === 'available') {
       setSelectedNode(node);
+      tutorial?.requestStep?.('node_detail');
     }
   };
+
+  useEffect(() => {
+    if (selectedNode?.status === 'available') {
+      tutorial?.requestStep?.('node_detail');
+    }
+  }, [selectedNode, tutorial?.completed?.map_upgrades, tutorial]);
 
   // Mark a node completed in the map and clear selection
   const completeNode = (nodeId) => {
@@ -386,6 +394,7 @@ export function HubTestScreen({
         <div className="flex-1 flex items-center justify-start pointer-events-auto">
           <button 
             onClick={() => setIsLoadoutOpen(true)}
+            data-tutorial-target="map-upgrades"
             className="flex items-center justify-center gap-2 px-3 py-1.5 md:px-4 md:py-2 border border-[#d4af37]/30 bg-[#1a1816]/90 text-[#d4af37] font-black uppercase tracking-[0.1em] text-[10px] md:tracking-[0.2em] md:text-xs hover:bg-[#d4af37]/10 hover:border-[#d4af37] transition-all shadow-[0_0_15px_rgba(212,175,55,0.15)] rounded-sm whitespace-nowrap"
           >
             <span className="text-sm md:text-base">⛩️</span> 
@@ -714,6 +723,7 @@ export function HubTestScreen({
                 return (
                   <div
                     key={node.id}
+                    data-tutorial-target={isAvailable ? 'map-available-node' : undefined}
                     className="absolute translate-x-[-50%] translate-y-[-50%] flex flex-col items-center justify-center cursor-pointer z-10 group/node"
                     style={{ left: `${node.x}%`, top: `${node.y}%` }}
                     onMouseEnter={() => setHoveredMapNode(node)}
@@ -760,7 +770,7 @@ export function HubTestScreen({
 
           {/* SELECTED NODE INFO CARD */}
           {selectedNode && (
-            <div className="absolute bottom-8 right-8 w-[400px] bg-[#0a0908]/95 backdrop-blur-xl border border-[#d4af37]/30 shadow-[0_30px_60px_rgba(0,0,0,0.95)] z-30 flex flex-col pointer-events-auto animate-[fade-in_0.2s_ease-out] rounded-sm">
+            <div data-tutorial-target="node-detail-card" className="absolute bottom-8 right-8 w-[400px] bg-[#0a0908]/95 backdrop-blur-xl border border-[#d4af37]/30 shadow-[0_30px_60px_rgba(0,0,0,0.95)] z-30 flex flex-col pointer-events-auto animate-[fade-in_0.2s_ease-out] rounded-sm">
               <div className="flex justify-between items-start p-6 border-b border-[#8b8574]/20 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#b84235]/10 rounded-full blur-[40px] pointer-events-none" />
                 <div className="flex flex-col z-10">
