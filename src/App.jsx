@@ -8,6 +8,7 @@ import { BARRACKS_DEFS, BARRACKS_LAYOUT } from './config/barracks.js';
 import { getCost, getSquadCap } from './core/utils.js';
 import { CAVE_CONFIG } from './config/cave.js';
 import { CAMPAIGN_CHAPTER_IDS, getBarracksUnlocksForChapterClear, getCampaignChapter, getChapterBossId, getChapterEnemyStatMultiplier } from './config/campaign.js';
+import { getEncounterPhaseCount } from './config/waves.js';
 
 import { CommandPanel } from './ui/panels/CommandPanel.jsx';
 import { DevModifierOverlay } from './ui/panels/DevModifierOverlay.jsx';
@@ -119,8 +120,10 @@ export default function App() {
           .map(([name, count]) => ({ name, count }));
 
         const currentRun = runStateRef.current;
-        const totalWaves = currentRun?.currentNodeWaves ?? metaRef.current.activeNodeWaves ?? s.wave;
         const isBossClear = currentRun?.currentNodeType === 'boss';
+        const configuredWaves = currentRun?.currentNodeWaves ?? metaRef.current.activeNodeWaves ?? s.wave;
+        const totalWaves = getEncounterPhaseCount(currentRun?.currentNodeType ?? metaRef.current.activeNodeType, configuredWaves);
+        const wavesConquered = isBossClear ? totalWaves : combatStats.conqueredWaves;
         const nodeReward = resolveNodeVictoryReward(makeNodeFromRun(currentRun), currentRun);
         let combatHonor = s.earnedHonor || 0;
         combatHonor = Math.round(combatHonor * getCurseHonorMult(currentRun?.curses ?? []));
@@ -138,7 +141,7 @@ export default function App() {
           time: timeStr,
           title: 'VICTORY',
           stats: {
-            wavesConquered: combatStats.conqueredWaves,
+            wavesConquered,
             totalWaves,
             damageDealt: combatStats.damageDealt,
             enemiesSlain: {
@@ -164,7 +167,11 @@ export default function App() {
           .map(([name, count]) => ({ name, count }));
 
         const currentRun = runStateRef.current;
-        const totalWaves = currentRun?.currentNodeWaves ?? metaRef.current.activeNodeWaves ?? s.wave;
+        const configuredWaves = currentRun?.currentNodeWaves ?? metaRef.current.activeNodeWaves ?? s.wave;
+        const totalWaves = getEncounterPhaseCount(currentRun?.currentNodeType ?? metaRef.current.activeNodeType, configuredWaves);
+        const wavesConquered = currentRun?.currentNodeType === 'boss' && s.waveState === 'BOSS_PHASE'
+          ? totalWaves - 1
+          : combatStats.conqueredWaves;
         const combatHonor = s.earnedHonor || 0;
         
         setResultContext({
@@ -172,7 +179,7 @@ export default function App() {
           time: timeStr,
           title: 'DEFEAT',
           stats: {
-            wavesConquered: combatStats.conqueredWaves,
+            wavesConquered,
             totalWaves,
             damageDealt: combatStats.damageDealt,
             enemiesSlain: {

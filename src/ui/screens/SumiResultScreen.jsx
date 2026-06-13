@@ -74,7 +74,7 @@ export function SumiResultScreen({ data, onClose }) {
                 <h3 className="text-lg md:text-xl font-black uppercase tracking-[0.22em] text-[#1a1818] mb-3 ink-multiply text-left">Battle Report</h3>
                 
                 <div className="grid grid-cols-2 gap-y-3 gap-x-5 text-left min-h-0">
-                  <StatStamp label="Waves" value={`${data.stats.wavesConquered}/${data.stats.totalWaves}`} />
+                  <StatStamp label="Phases" value={`${data.stats.wavesConquered}/${data.stats.totalWaves}`} />
                   <StatStamp label="Damage" value={data.stats.damageDealt.toLocaleString()} />
                   
                   <div className="col-span-2 bg-[#1a1818]/[0.03] p-3 border border-[#1a1818]/10 relative min-h-0">

@@ -9,6 +9,7 @@ import { formatNodeRewardLines } from '../../systems/NodeRewardSystem.js';
 import { CURSES } from '../../config/curses.js';
 import { BARRACKS_DEFS } from '../../config/barracks.js';
 import { UNIT_TYPES } from '../../config/units.js';
+import { getPlayableWaveCount } from '../../config/waves.js';
 import { EventModal } from './EventModal.jsx';
 import { ShopModal } from './ShopModal.jsx';
 import { RestModal } from './RestModal.jsx';
@@ -820,10 +821,13 @@ export function HubTestScreen({
 
               <div className="p-6 flex flex-col gap-5 bg-[#141211]/50">
                 <div className="flex justify-between items-center text-xs font-bold uppercase tracking-[0.2em] border-b border-[#8b8574]/10 pb-3">
-                  <span className="text-[#8b8574] flex items-center gap-2"><span>⚔️</span> Enemy Waves</span>
+                  <span className="text-[#8b8574] flex items-center gap-2"><span>⚔️</span> Encounter Phases</span>
                   <span className="text-[#dfd4ba] font-black text-sm">
                     {(() => {
-                      if (selectedNode.type === 'elite' || selectedNode.type === 'combat') return selectedNode.waves ?? '?';
+                      if (selectedNode.type === 'boss') return `${getPlayableWaveCount('boss', selectedNode.waves)} + Boss`;
+                      if (selectedNode.type === 'elite' || selectedNode.type === 'combat') {
+                        return getPlayableWaveCount(selectedNode.type, selectedNode.waves);
+                      }
                       return 'N/A';
                     })()}
                   </span>

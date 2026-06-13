@@ -1,4 +1,5 @@
 import { ENEMY_COSTS, CAMPAIGN_MAP, isVisibleBossId } from '../config/campaign.js';
+import { getCompressedWavePressure, getPlayableWaveCount, getWaveCompressionMultiplier } from '../config/waves.js';
 import { spawnUnit } from './SpawnSystem.js';
 import { bus } from '../core/EventBus.js';
 import { EVENTS } from '../core/events.js';
@@ -11,26 +12,28 @@ import { EVENTS } from '../core/events.js';
  * @returns {Array<{type: string, count: number, spread: number}>}
  */
 export function generateWave(waveNum, nodeContext = null) {
-  const budgetMult = getNodeBudgetMultiplier(nodeContext);
-  let budget = Math.floor((40 + (waveNum * 45) + Math.floor(Math.pow(waveNum, 1.3) * 5)) * budgetMult);
+  const pressureWave = getCompressedWavePressure(waveNum, nodeContext?.nodeType, nodeContext?.nodeWaves);
+  const compressionMult = getWaveCompressionMultiplier(nodeContext?.nodeType, nodeContext?.nodeWaves);
+  const budgetMult = getNodeBudgetMultiplier(nodeContext) * compressionMult;
+  let budget = Math.floor((40 + (pressureWave * 45) + Math.floor(Math.pow(pressureWave, 1.3) * 5)) * budgetMult);
   const squads = [];
 
-  if (waveNum === 1) {
+  if (pressureWave === 1) {
     squads.push({ type: 'REBEL', count: scaleCount(4, budgetMult), spread: 80 });
-    return finalizeSquads(squads, waveNum, nodeContext);
+    return finalizeSquads(squads, waveNum, pressureWave, nodeContext);
   }
-  if (waveNum === 2) {
+  if (pressureWave === 2) {
     squads.push({ type: 'REBEL', count: scaleCount(12, budgetMult), spread: 150 });
-    return finalizeSquads(squads, waveNum, nodeContext);
+    return finalizeSquads(squads, waveNum, pressureWave, nodeContext);
   }
-  if (waveNum === 3) {
+  if (pressureWave === 3) {
     squads.push({ type: 'REBEL', count: scaleCount(12, budgetMult), spread: 120 });
     squads.push({ type: 'SHINOBI', count: scaleCount(2, budgetMult), spread: 60 });
-    return finalizeSquads(squads, waveNum, nodeContext);
+    return finalizeSquads(squads, waveNum, pressureWave, nodeContext);
   }
 
-  if (waveNum % 5 === 0) {
-    const oniCount = Math.floor(waveNum / 5);
+  if (pressureWave % 5 === 0) {
+    const oniCount = Math.floor(pressureWave / 5);
     squads.push({ type: 'ONI', count: oniCount, spread: 100 });
     budget -= ENEMY_COSTS.ONI * oniCount;
   }
@@ -38,11 +41,11 @@ export function generateWave(waveNum, nodeContext = null) {
   while (budget >= ENEMY_COSTS.REBEL) {
     const r = Math.random();
     let squad;
-    if (waveNum >= 3 && r > 0.7 && budget >= ENEMY_COSTS.TENGU * 4) {
+    if (pressureWave >= 3 && r > 0.7 && budget >= ENEMY_COSTS.TENGU * 4) {
       squad = { type: 'TENGU', count: 4 + Math.floor(Math.random() * 3) };
-    } else if (waveNum >= 4 && r > 0.85 && budget >= ENEMY_COSTS.ONMYOJI) {
+    } else if (pressureWave >= 4 && r > 0.85 && budget >= ENEMY_COSTS.ONMYOJI) {
       squad = { type: 'ONMYOJI', count: 1 + Math.floor(Math.random() * 2) };
-    } else if (waveNum >= 2 && r > 0.45 && r <= 0.7 && budget >= ENEMY_COSTS.SHINOBI * 2) {
+    } else if (pressureWave >= 2 && r > 0.45 && r <= 0.7 && budget >= ENEMY_COSTS.SHINOBI * 2) {
       squad = { type: 'SHINOBI', count: 2 + Math.floor(Math.random() * 2) };
     } else if (budget >= ENEMY_COSTS.REBEL * 5) {
       squad = { type: 'REBEL', count: 5 + Math.floor(Math.random() * 10) };
@@ -59,7 +62,7 @@ export function generateWave(waveNum, nodeContext = null) {
     }
   }
 
-  return finalizeSquads(squads, waveNum, nodeContext);
+  return finalizeSquads(squads, waveNum, pressureWave, nodeContext);
 }
 
 function getNodeBudgetMultiplier(nodeContext) {
@@ -78,9 +81,11 @@ function scaleCount(count, multiplier) {
   return Math.max(1, Math.round(count * multiplier));
 }
 
-function applyNodeVariantSquads(squads, waveNum, nodeContext) {
+function applyNodeVariantSquads(squads, waveNum, pressureWave, nodeContext) {
   const variant = nodeContext?.nodeVariant;
-  const maxWaves = nodeContext?.nodeWaves ?? null;
+  const maxWaves = nodeContext?.nodeWaves
+    ? getPlayableWaveCount(nodeContext?.nodeType, nodeContext.nodeWaves)
+    : null;
   const isFinalWave = maxWaves !== null && waveNum >= maxWaves;
   const next = squads.map(squad => ({ ...squad }));
 
@@ -91,17 +96,17 @@ function applyNodeVariantSquads(squads, waveNum, nodeContext) {
       });
       break;
     case 'tengu_master':
-      next.push({ type: 'TENGU', count: 2 + Math.floor(waveNum / 2), spread: 90 });
+      next.push({ type: 'TENGU', count: 2 + Math.floor(pressureWave / 2), spread: 90 });
       break;
     case 'shinobi_squad':
-      next.push({ type: 'SHINOBI', count: 2 + waveNum, spread: 90 });
+      next.push({ type: 'SHINOBI', count: 2 + pressureWave, spread: 90 });
       break;
     case 'onmyoji_ritual':
       next.push({ type: 'ONMYOJI', count: isFinalWave ? 2 : 1, spread: 70 });
       break;
     case 'oni_warlord':
       if (isFinalWave) next.push({ type: 'ONI', count: 1, spread: 100 });
-      else next.push({ type: 'REBEL', count: 6 + waveNum, spread: 120 });
+      else next.push({ type: 'REBEL', count: 6 + pressureWave, spread: 120 });
       break;
     case 'yamabushi':
       next.push({ type: 'ONMYOJI', count: isFinalWave ? 2 : 1, spread: 70 });
@@ -116,19 +121,19 @@ function applyNodeVariantSquads(squads, waveNum, nodeContext) {
   return next;
 }
 
-function applyChapterSquads(squads, waveNum, nodeContext) {
+function applyChapterSquads(squads, pressureWave, nodeContext) {
   const next = squads.map(squad => ({ ...squad }));
-  if (nodeContext?.chapterId === 'RIVERLANDS' && waveNum >= 4) {
-    next.push({ type: 'REBEL', count: 6 + waveNum, spread: 120 });
+  if (nodeContext?.chapterId === 'RIVERLANDS' && pressureWave >= 4) {
+    next.push({ type: 'REBEL', count: 6 + pressureWave, spread: 120 });
   }
-  if (nodeContext?.chapterId === 'OUTSKIRTS' && waveNum >= 2) {
-    next.push({ type: 'SHINOBI', count: Math.max(1, Math.floor(waveNum / 2)), spread: 80 });
+  if (nodeContext?.chapterId === 'OUTSKIRTS' && pressureWave >= 2) {
+    next.push({ type: 'SHINOBI', count: Math.max(1, Math.floor(pressureWave / 2)), spread: 80 });
   }
   return next;
 }
 
-function finalizeSquads(squads, waveNum, nodeContext) {
-  return applyNodeVariantSquads(applyChapterSquads(squads, waveNum, nodeContext), waveNum, nodeContext);
+function finalizeSquads(squads, waveNum, pressureWave, nodeContext) {
+  return applyNodeVariantSquads(applyChapterSquads(squads, pressureWave, nodeContext), waveNum, pressureWave, nodeContext);
 }
 
 /**
@@ -181,7 +186,8 @@ export function tickWaveState(s, dt, metaRef) {
     }
   } else if (s.waveState === 'CLEANUP') {
     const regionDef = CAMPAIGN_MAP[s.currentRegion];
-    const maxWaves = regionDef?.waves ?? (metaRef.current.activeNodeWaves ?? 3);
+    const configuredWaves = regionDef?.waves ?? (metaRef.current.activeNodeWaves ?? 3);
+    const maxWaves = getPlayableWaveCount(metaRef.current.activeNodeType, configuredWaves);
     const isFinalWave = s.wave >= maxWaves;
     const threshold = isFinalWave ? 0 : Math.max(2, Math.floor(s.enemiesInWave * 0.20));
 

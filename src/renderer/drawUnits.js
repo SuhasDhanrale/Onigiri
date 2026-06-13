@@ -1,5 +1,6 @@
 import { COLORS } from '../config/colors.js';
 import { spriteRenderer } from './SpriteRenderer.js';
+import { drawChapterBossVisual, hasChapterBossVisual } from './drawBossVisuals.js';
 
 function getSpriteId(unit) {
   if (unit.name === 'Bamboo Barricade') return null;
@@ -150,6 +151,7 @@ function drawProceduralUnit(ctx, u) {
 export const drawUnitTopDown = (ctx, u) => {
   ctx.save(); 
   ctx.translate(u.x, u.y); 
+  const now = performance.now();
 
   if (u.stance === 'DEFEND' || u.stance === 'PATROL') {
       ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)'; 
@@ -203,6 +205,12 @@ export const drawUnitTopDown = (ctx, u) => {
       ctx.beginPath(); 
       ctx.arc(0, 0, Math.max(0.1, u.radius*1.5), 0, Math.PI*2); 
       ctx.fill(); 
+  }
+
+  if (u.isChapterBoss && hasChapterBossVisual(u.bossId)) {
+      drawChapterBossVisual(ctx, u, now / 1000);
+      ctx.restore();
+      return;
   }
   
   ctx.rotate(u.team === 'player' ? -Math.PI/2 : Math.PI/2);

@@ -140,6 +140,7 @@ function ensureVisibleBoss(s, metaRef, bossId) {
   spawnUnit(s, 'ONI', 'enemy', V_WIDTH / 2, 260, metaRef);
   const boss = s.units[s.units.length - 1];
   boss.name = def.name;
+  boss.bossId = bossId;
   boss.isChapterBoss = true;
   boss.isElite = true;
   boss.hp = def.hp;

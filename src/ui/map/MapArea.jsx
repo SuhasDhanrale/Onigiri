@@ -1,4 +1,5 @@
 import { CAMPAIGN_MAP } from '../../config/campaign.js';
+import { getEncounterPhaseCount } from '../../config/waves.js';
 
 const nodePositions = {
   RIVERLANDS: { cx: '30%', cy: '72%' },
@@ -72,8 +73,8 @@ export function MapArea({ meta, startCombat }) {
                    <span className="text-[#b84235]">{'💀'.repeat(region.threatLevel)}</span>
                 </div>
                 <div className="flex justify-between w-full mb-3 text-xs font-bold">
-                   <span>Waves:</span>
-                   <span>{region.waves}</span>
+                   <span>Phases:</span>
+                   <span>{getEncounterPhaseCount('boss', region.waves)}</span>
                 </div>
                 <div className="bg-[#b84235] text-[var(--color-ink)] text-[10px] font-black w-full text-center py-1.5 uppercase tracking-widest">
                     {region.reward}

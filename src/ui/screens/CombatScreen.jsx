@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { CAMPAIGN_MAP, isVisibleBossId } from '../../config/campaign.js';
 import { V_WIDTH, V_HEIGHT } from '../../config/constants.js';
+import { getEncounterPhaseCount, getPlayableWaveCount } from '../../config/waves.js';
 import { ResultScreens } from './ResultScreens.jsx';
 import { DemonCave } from '../components/DemonCave.jsx';
 
@@ -76,8 +77,13 @@ export function CombatScreen({
     waveStatusColor = "text-[#ff3b1f]";
   }
 
-  const maxWaves = meta.activeNodeWaves ?? CAMPAIGN_MAP[s.currentRegion]?.waves ?? 3;
   const isBoss = meta.activeNodeType === 'boss';
+  const configuredWaves = meta.activeNodeWaves ?? CAMPAIGN_MAP[s.currentRegion]?.waves ?? 3;
+  const playableWaves = getPlayableWaveCount(meta.activeNodeType, configuredWaves);
+  const totalPhases = getEncounterPhaseCount(meta.activeNodeType, configuredWaves);
+  const currentPhase = isBoss && s.waveState === 'BOSS_PHASE'
+    ? totalPhases
+    : Math.min(s.wave, totalPhases);
 
   return (
     <>
@@ -105,21 +111,23 @@ export function CombatScreen({
           <div className="flex w-[clamp(150px,22vw,210px)] max-w-full flex-col bg-[var(--color-parchment)]/85 px-2 py-1.5 border-2 border-[var(--color-ink-dark)]">
             <div className="flex justify-between items-end gap-2">
               <span className={`${waveStatusColor} min-w-0 truncate text-[8px] uppercase tracking-[0.16em] font-black sm:text-[9px]`}>{waveStatusText}</span>
-              <span className="shrink-0 text-[8px] uppercase font-black text-[#8b8574]">{Math.min(s.wave, maxWaves)}/{maxWaves}</span>
+              <span className="shrink-0 text-[8px] uppercase font-black text-[#8b8574]">{currentPhase}/{totalPhases}</span>
             </div>
             
               <div className="relative h-4 flex items-center mt-1">
                 {/* Progress Line */}
                 <div className="absolute left-1.5 right-3 h-[2px] bg-[#8b8574]/30" />
                 <div className="absolute left-1.5 h-[2px] bg-[#d4af37] transition-all duration-500" 
-                  style={{ width: `calc(${Math.min(100, ((s.wave - 1) / Math.max(1, maxWaves - 1)) * 100)}% - 12px)` }} 
+                  style={{ width: `calc(${Math.min(100, ((currentPhase - 1) / Math.max(1, totalPhases - 1)) * 100)}% - 12px)` }} 
                 />
               
               {/* Nodes */}
               <div className="w-full flex justify-between relative z-10 px-0.5 items-center">
-                {Array.from({ length: Math.max(0, maxWaves - 1) }).map((_, i) => {
-                  const isPast = (i + 1) < s.wave || s.gameState === 'REGION_VICTORY';
-                  const isCurrent = (i + 1) === s.wave && s.waveState !== 'BOSS_PHASE' && s.gameState !== 'REGION_VICTORY';
+                {Array.from({ length: Math.max(0, totalPhases - 1) }).map((_, i) => {
+                  const phase = i + 1;
+                  const isPlayableWave = phase <= playableWaves;
+                  const isPast = phase < currentPhase || s.gameState === 'REGION_VICTORY';
+                  const isCurrent = isPlayableWave && phase === currentPhase && s.waveState !== 'BOSS_PHASE' && s.gameState !== 'REGION_VICTORY';
                   return (
                     <div key={i} className={`h-1.5 w-1.5 rounded-full border transition-colors duration-300 relative bg-[#2a2826] sm:h-2 sm:w-2 ${
                       isPast ? 'border-[#d4af37] bg-[#d4af37]/50' : 
@@ -132,7 +140,7 @@ export function CombatScreen({
                 {/* End Destination */}
                 {(() => {
                   const isPast = s.gameState === 'REGION_VICTORY' || s.gameState === 'CAMPAIGN_OVER';
-                  const isCurrent = s.wave === maxWaves && !isPast;
+                  const isCurrent = currentPhase === totalPhases && !isPast;
                   
                   return (
                     <div className={`h-2.5 w-2.5 ml-1.5 rounded-sm rotate-45 border transition-all duration-300 bg-[#1b1918] flex items-center justify-center shrink-0 sm:h-3 sm:w-3 ${
