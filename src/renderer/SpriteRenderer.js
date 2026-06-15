@@ -1,11 +1,5 @@
 import { COLORS } from '../config/colors.js';
-
-const PUBLIC_BASE_URL = import.meta.env.BASE_URL || './';
-
-function getPublicAssetUrl(path) {
-  const base = PUBLIC_BASE_URL.endsWith('/') ? PUBLIC_BASE_URL : `${PUBLIC_BASE_URL}/`;
-  return `${base}${path.replace(/^\/+/, '')}`;
-}
+import { getPublicAssetUrl } from '../platforms/publicAssets.js';
 
 export class SpriteRenderer {
   constructor() {
@@ -15,8 +9,7 @@ export class SpriteRenderer {
   }
 
   async loadSprite(id, basePath) {
-    // Always force fresh load to catch JSON updates
-    const cacheBuster = `?t=${Date.now()}`;
+    const cacheBuster = import.meta.env.DEV ? `?t=${Date.now()}` : '';
     if (this.loading[id]) return null;
 
     this.loading[id] = true;

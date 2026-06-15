@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BookOpen, Check, ChevronLeft, X } from 'lucide-react';
+import { getPublicAssetUrl } from '../../platforms/publicAssets.js';
 
 const PANEL_W = 320;
 const PANEL_H_ESTIMATE = 250;
 const GAP = 16;
+const ONI_BG_URL = getPublicAssetUrl('assets/oni_bg.png');
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -137,7 +139,7 @@ function StepBody({ body }) {
 function MonologueOverlay({ step, onComplete, onSkip, onOpenBook }) {
   return (
     <div data-tutorial-ui="true" className="fixed inset-0 z-[420] flex items-center justify-center overflow-hidden bg-[#090807] text-[#dfd4ba]">
-      <div className="absolute inset-0 bg-cover bg-center opacity-35" style={{ backgroundImage: 'url(/assets/oni_bg.png)' }} />
+      <div className="absolute inset-0 bg-cover bg-center opacity-35" style={{ backgroundImage: `url(${ONI_BG_URL})` }} />
       <div className="absolute inset-0 bg-gradient-to-b from-[#090807]/95 via-[#1b1918]/85 to-[#090807]/95" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(184,66,53,0.18),_transparent_58%)]" />
 

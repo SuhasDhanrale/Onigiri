@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Check, ChevronLeft, ChevronRight, Lock, Play } from 'lucide-react';
 import { getCampaignChapters, getCurrentCampaignChapterId } from '../../config/campaign.js';
+import { getPublicAssetUrl } from '../../platforms/publicAssets.js';
 import { SoundManager } from '../../systems/SoundManager.js';
 
 const ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V'];
+const ONI_BG_URL = getPublicAssetUrl('assets/oni_bg.png');
 
 export function HomeScreen({ meta, onStartChapter, tutorial }) {
   const [view, setView] = useState('main');
@@ -32,7 +34,7 @@ export function HomeScreen({ meta, onStartChapter, tutorial }) {
     <div className="absolute inset-0 z-[300] overflow-hidden bg-[#1b1918] font-sans text-[#dfd4ba]">
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-55"
-        style={{ backgroundImage: 'url(/assets/oni_bg.png)' }}
+        style={{ backgroundImage: `url(${ONI_BG_URL})` }}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-[#1b1918] via-[#1b1918]/70 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-b from-[#1b1918]/85 via-transparent to-[#1b1918]/30" />
