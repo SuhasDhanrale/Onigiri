@@ -1,4 +1,5 @@
 import { V_WIDTH, WALL_Y } from '../config/constants.js';
+import { SPELL_COSTS, THUNDER_SHOWER } from '../config/spells.js';
 import { pushFx } from '../renderer/drawSumiFx.js';
 import { bus } from '../core/EventBus.js';
 import { EVENTS } from '../core/events.js';
@@ -51,31 +52,55 @@ export function tickDragonWaves(s, dt) {
   }
 }
 
+export function tickThunderShower(s, dt) {
+  if (!s.thunderImpacts) s.thunderImpacts = [];
+
+  for (let i = s.thunderImpacts.length - 1; i >= 0; i--) {
+    const impact = s.thunderImpacts[i];
+    impact.delay -= dt;
+    if (impact.delay > 0) continue;
+
+    if (impact.target?.hp > 0) {
+      impact.target.hp -= impact.damage;
+    }
+    s.thunderImpacts.splice(i, 1);
+  }
+}
+
 // --- Trigger functions (called via React callbacks, operate directly on s) ---
 
+function randomTargets(enemies, count) {
+  return [...enemies]
+    .sort(() => Math.random() - 0.5)
+    .slice(0, count);
+}
+
 export function triggerThunder(s, options = {}) {
-  const cost = options.free ? 0 : 150;
+  const cost = options.free ? 0 : SPELL_COSTS.THUNDER_SHOWER;
   if (s.command >= cost && s.gameState === 'COMBAT' && s.thunderCooldown <= 0) {
     s.command -= cost;
     bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
     s.thunderCooldown = 2.0 * (s.shopSpellCooldownMult ?? 1.0);  // spell_mastery
     const enemies = s.units.filter(u => u.team === 'enemy' && u.hp > 0);
-    const targets = enemies.sort((a, b) => b.hp - a.hp).slice(0, 3);
-    targets.forEach(t => {
-      t.hp -= 300;
-      s.lightnings.push({ x: t.x, y: t.y, life: 0.35 });
-      pushFx(s, { kind: 'lightning', layer: 'foreground', x: t.x, y: t.y, life: 0.55, maxLife: 0.55, branches: 5 });
-      pushFx(s, { kind: 'ground_star', layer: 'foreground', x: t.x, y: t.y, radius: 88, color: '#facc15', life: 0.45, maxLife: 0.45 });
-      pushFx(s, { kind: 'shockwave', layer: 'foreground', x: t.x, y: t.y, radius: 96, color: '#ffffff', life: 0.45, maxLife: 0.45 });
+    const targets = randomTargets(enemies, THUNDER_SHOWER.strikes);
+    if (!s.thunderImpacts) s.thunderImpacts = [];
+    targets.forEach((t, index) => {
+      const delay = THUNDER_SHOWER.strikeDelays[index] ?? 0;
+      s.thunderImpacts.push({ target: t, delay, damage: THUNDER_SHOWER.damage });
+      s.lightnings.push({ x: t.x, y: t.y, life: 0.42, delay });
+      pushFx(s, { kind: 'lightning', layer: 'foreground', x: t.x, y: t.y, delay, life: 0.68, maxLife: 0.68, branches: 6 });
+      pushFx(s, { kind: 'ground_star', layer: 'foreground', x: t.x, y: t.y, delay, radius: 94, color: '#facc15', life: 0.54, maxLife: 0.54 });
+      pushFx(s, { kind: 'shockwave', layer: 'foreground', x: t.x, y: t.y, delay, radius: 104, color: '#ffffff', life: 0.54, maxLife: 0.54 });
     });
     pushFx(s, { kind: 'screen_pulse', layer: 'background', color: '#facc15', life: 0.22, maxLife: 0.22 });
+    pushFx(s, { kind: 'screen_pulse', layer: 'background', delay: 1.15, color: '#facc15', life: 0.22, maxLife: 0.22 });
     s.screenShake = 0.4;
     bus.emit(EVENTS.SCREEN_SHAKE, { amount: s.screenShake });
   }
 }
 
 export function triggerFoxFire(s, options = {}) {
-  const cost = options.free ? 0 : 250;
+  const cost = options.free ? 0 : SPELL_COSTS.FOX_FIRE;
   if (s.command >= cost && s.gameState === 'COMBAT' && s.foxFireCooldown <= 0) {
     s.command -= cost;
     bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
@@ -87,8 +112,8 @@ export function triggerFoxFire(s, options = {}) {
 }
 
 export function triggerDragonWave(s) {
-  if (s.dragonUnlocked && s.command >= 600 && s.gameState === 'COMBAT' && s.dragonCooldown <= 0) {
-    s.command -= 600;
+  if (s.dragonUnlocked && s.command >= SPELL_COSTS.DRAGON_WAVE && s.gameState === 'COMBAT' && s.dragonCooldown <= 0) {
+    s.command -= SPELL_COSTS.DRAGON_WAVE;
     bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
     s.dragonCooldown = 15.0 * (s.shopSpellCooldownMult ?? 1.0);  // spell_mastery
     s.dragonWaves.push({ y: WALL_Y - 50, life: 2.0, maxLife: 2.0, seed: Math.random() * 100000 });

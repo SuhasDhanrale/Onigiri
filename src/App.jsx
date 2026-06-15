@@ -63,7 +63,7 @@ export default function App() {
 
   const state = useRef({
     command: 0, totalCommand: 0, wave: 1, fever: 0, feverActive: 0, screenShake: 0, conscriptCooldown: 0,
-    units: [], projectiles: [], explosions: [], floatingTexts: [], particles: [], slashTrails: [], lightnings: [], dragonWaves: [], foxFires: [], bossHazards: [], visualEffects: [],
+    units: [], projectiles: [], explosions: [], floatingTexts: [], particles: [], slashTrails: [], lightnings: [], thunderImpacts: [], dragonWaves: [], foxFires: [], bossHazards: [], visualEffects: [],
     isSlashing: false, lastSlashPos: null,
     focusedBuilding: null,
     barracks: { HATAMOTO: 0, YUMI: 0, CAVALRY: 0, HOROKU: 0 },
@@ -225,7 +225,7 @@ export default function App() {
     state.current = {
       ...state.current, 
       command: startCommand, totalCommand: startCommand, wave: 1, fever: 0, feverActive: 0, screenShake: 0, conscriptCooldown: 0,
-      units: [], projectiles: [], explosions: [], floatingTexts: [], particles: [], slashTrails: [], lightnings: [], dragonWaves: [], foxFires: [], bossHazards: [], visualEffects: [],
+      units: [], projectiles: [], explosions: [], floatingTexts: [], particles: [], slashTrails: [], lightnings: [], thunderImpacts: [], dragonWaves: [], foxFires: [], bossHazards: [], visualEffects: [],
       focusedBuilding: null,
       barracks: { 
         HATAMOTO: metaRef.current.unlockedBarracks?.includes('HATAMOTO') ? 1 : 0, 

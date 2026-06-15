@@ -13,7 +13,8 @@ export function drawBackgroundEffects(ctx, s) {
       .filter(fx => fx.layer !== 'foreground')
       .forEach(fx => drawVisualEffect(ctx, fx));
 
-    s.lightnings.forEach(l => { 
+    s.lightnings.forEach(l => {
+        if (l.delay > 0) return;
         ctx.strokeStyle = '#facc15'; ctx.lineWidth = l.life * 20; ctx.lineCap = 'round'; 
         ctx.beginPath(); ctx.moveTo(l.x + (Math.random()*40-20), -100); ctx.lineTo(l.x, l.y); ctx.stroke(); 
         ctx.strokeStyle = '#ffffff'; ctx.lineWidth = l.life * 10; ctx.stroke(); 

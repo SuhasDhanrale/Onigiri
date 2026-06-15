@@ -11,6 +11,8 @@ import { canAttackOrb } from './CaveSystem.js';
 const YUMI_EXPOSED_RANGE = 150;
 const YUMI_EXPOSED_DAMAGE_MULT = 0.6;
 const YUMI_EXPOSED_ATTACK_TIME_MULT = 1.75;
+const ASSASSIN_BARRICADE_SLOW_MULT = 0.5;
+const ASSASSIN_BARRICADE_SLOW_TIME = 5.0;
 
 function bumpShake(s, amount) {
   s.screenShake = Math.max(s.screenShake, amount);
@@ -61,8 +63,8 @@ export function tickUnits(s, dt, now, metaRef) {
     if (unit.team === 'player') {
       if (s.warDrumsActive > 0) uSpeed *= 1.5;
       uSpeed *= (metaRef.current.activeMoveSpeedMult ?? 1.0);  // SWIFT_FEET / FOX_SPEED blessing
-      if (unit.slowTimer > 0) uSpeed *= (unit.slowMult ?? 0.6);
     }
+    if (unit.slowTimer > 0) uSpeed *= (unit.slowMult ?? 0.6);
     if (unit.chargeTimer > 0) uSpeed *= 2.0;
     const atkSpeedMult = unit.team === 'player'
       ? (s.warDrumsActive > 0 ? 1.5 : 1.0) * (metaRef.current.activeAttackSpeedMult ?? 1.0)  // WAR_DRUMS blessing
@@ -121,9 +123,15 @@ export function tickUnits(s, dt, now, metaRef) {
           let targetScore = rawDistSq;
           if (unit.type === 'cavalry' && e.type === 'ranged') targetScore -= 250000;
           if (unit.type === 'assassin') {
-            if (e.name === 'Yumi Archer') targetScore -= 2000000;
-            else if (e.type === 'ranged' || e.type === 'siege' || e.type === 'support') targetScore -= 650000;
-            else if (e.type === 'friction') targetScore -= 250000;
+            if (unit.assassinFlankComplete) {
+              if (e.name === 'Yumi Archer') targetScore -= 2000000;
+              else if (e.type === 'ranged' || e.type === 'siege' || e.type === 'support') targetScore -= 650000;
+              else if (e.type === 'friction') targetScore -= 250000;
+            } else if (e.type === 'friction') {
+              targetScore -= 900000;
+            } else if (e.taunt || e.type === 'melee' || e.type === 'cavalry') {
+              targetScore -= 250000;
+            }
           }
           if (unit.type !== 'assassin' && e.taunt && targetScore < 40000) { target = e; closestSq = rawDistSq; break; }
           if (unit.type === 'ranged') {
@@ -227,15 +235,6 @@ export function tickUnits(s, dt, now, metaRef) {
         continue;
       }
 
-      if (unit.type === 'assassin' && target.name === 'Bamboo Barricade') {
-        unit.hp -= 1000; target.hp -= 1000; 
-        bumpShake(s, 0.55);
-        pushFx(s, { kind: 'impact_sparks', layer: 'foreground', x: target.x, y: target.y, radius: 72, color: COLORS.khaki, life: 0.35, maxLife: 0.35, rays: 12 });
-        pushFx(s, { kind: 'smoke_puff', layer: 'foreground', x: target.x, y: target.y, radius: 58, color: 'rgba(74, 59, 50, 0.55)', life: 0.7, maxLife: 0.7 });
-        addParticle(s, target.x, target.y, COLORS.khaki, 10, 300);
-        continue;
-      }
-
       if (unit.attackCooldown <= 0) {
         if (unit.type === 'boss' && Math.random() < 0.2) {
           unit.telegraphTimer = 0.8; unit.attackCooldown = unit.attackSpeed;
@@ -252,6 +251,12 @@ export function tickUnits(s, dt, now, metaRef) {
           if (unit.team === 'player' && s.combatStats) s.combatStats.damageDealt += unit.damage;
           unit.swingPhase = 1.0;
           emitMeleeImpact(s, unit, target, unit.type === 'boss' ? 0.34 : unit.type === 'cavalry' ? 0.26 : 0.14);
+          if (unit.type === 'assassin' && target.name === 'Bamboo Barricade' && target.team === 'player') {
+            unit.slowTimer = Math.max(unit.slowTimer ?? 0, ASSASSIN_BARRICADE_SLOW_TIME);
+            unit.slowMult = ASSASSIN_BARRICADE_SLOW_MULT;
+            s.floatingTexts.push({ x: unit.x, y: unit.y - 14, text: 'CRIPPLED', color: COLORS.khaki, life: 0.7, vy: -24 });
+            pushFx(s, { kind: 'smoke_puff', layer: 'foreground', x: target.x, y: target.y, radius: 52, color: 'rgba(74, 59, 50, 0.55)', life: 0.7, maxLife: 0.7 });
+          }
           if (target.name === 'Bamboo Barricade' && target.team === 'player' && metaRef.current.unlockedProvisions.includes('SPIKED_CALTROPS')) {
             unit.hp -= unit.damage * 0.5;
             s.floatingTexts.push({ x: unit.x, y: unit.y - 10, text: 'REFLECT', color: '#b84235', life: 0.5, vy: -30 });

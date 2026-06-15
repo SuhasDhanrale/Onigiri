@@ -3,7 +3,7 @@ import { recalculateGuards } from '../systems/GuardSystem.js';
 import { tickBarracks } from '../systems/BarracksSystem.js';
 import { tickInkLine, tickParticles, tickEffects } from '../systems/ParticleSystem.js';
 import { tickWaveState } from '../systems/WaveSystem.js';
-import { tickFoxFires, tickDragonWaves } from '../systems/SpellSystem.js';
+import { tickFoxFires, tickDragonWaves, tickThunderShower } from '../systems/SpellSystem.js';
 import { tickProjectiles } from '../systems/ProjectileSystem.js';
 import { tickUnits } from '../systems/CombatSystem.js';
 import { tickCave, tickMeleeCaveDamage } from '../systems/CaveSystem.js';
@@ -46,6 +46,7 @@ export function useGameLoop(state, fgCanvasRef, bgCanvasRef, metaRef, setUiTick)
       tickMeleeCaveDamage(s, dt);
       tickFoxFires(s, dt);
       tickDragonWaves(s, dt);
+      tickThunderShower(s, dt);
       tickProjectiles(s, dt);
       tickUnits(s, dt, now, metaRef);
 

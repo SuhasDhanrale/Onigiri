@@ -1,4 +1,4 @@
-import { WALL_Y } from '../../config/constants.js';
+import { SPELL_COSTS } from '../../config/spells.js';
 
 export function SpellShrine({ s, setUiTick, meta, setMeta, triggerThunder, triggerFoxFire, triggerDragonWave, unlockHero, tutorial, tutorialFreeSpellAvailable = false }) {
   const freeTutorialSpell = tutorialFreeSpellAvailable && s.gameState === 'COMBAT';
@@ -22,25 +22,25 @@ export function SpellShrine({ s, setUiTick, meta, setMeta, triggerThunder, trigg
       </div>
       
       <div className="grid grid-cols-4 gap-2">
-        {/* Thunder Strike */}
+        {/* Lightning Shower */}
         <button 
           onClick={() => {
             tutorial?.completeStep?.('combat_spell_crisis');
             triggerThunder();
           }} 
-          disabled={(!freeTutorialSpell && s.command < 150) || s.gameState !== 'COMBAT' || s.thunderCooldown > 0} 
+          disabled={(!freeTutorialSpell && s.command < SPELL_COSTS.THUNDER_SHOWER) || s.gameState !== 'COMBAT' || s.thunderCooldown > 0} 
           className="relative group aspect-square flex flex-col items-center justify-center transition-all border-2 bg-[var(--color-ink)] text-[#38bdf8] border-[#38bdf8] hover:bg-[#38bdf8] hover:text-[var(--color-ink-dark)] disabled:opacity-50 disabled:border-[var(--color-ink-dark)] disabled:text-[#8b8574]"
         >
           <span className="text-xl">⚡</span>
-          <span className="text-[7px] font-black mt-1">{freeTutorialSpell ? 'FREE' : '150 K'}</span>
+          <span className="text-[7px] font-black mt-1">{freeTutorialSpell ? 'FREE' : `${SPELL_COSTS.THUNDER_SHOWER} K`}</span>
           {s.thunderCooldown > 0 && (
             <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[7px] font-bold text-white text-center py-0.5">
               {Math.ceil(s.thunderCooldown)}s
             </div>
           )}
           <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-40 p-2 bg-[var(--color-ink-dark)] text-[var(--color-parchment)] text-[8px] font-bold text-center border-2 border-[#38bdf8] z-50 pointer-events-none shadow-xl">
-             <div className="uppercase text-[#38bdf8] mb-1">Thunder Strike</div>
-             {freeTutorialSpell ? 'Free tutorial cast. ' : ''}Vaporize the 3 highest-HP enemies.
+             <div className="uppercase text-[#38bdf8] mb-1">Lightning Shower</div>
+             {freeTutorialSpell ? 'Free tutorial cast. ' : ''}Bolts rain in three powerful waves.
           </div>
         </button>
 
@@ -50,11 +50,11 @@ export function SpellShrine({ s, setUiTick, meta, setMeta, triggerThunder, trigg
             tutorial?.completeStep?.('combat_spell_crisis');
             triggerFoxFire();
           }} 
-          disabled={(!freeTutorialSpell && s.command < 250) || s.gameState !== 'COMBAT' || s.foxFireCooldown > 0} 
+          disabled={(!freeTutorialSpell && s.command < SPELL_COSTS.FOX_FIRE) || s.gameState !== 'COMBAT' || s.foxFireCooldown > 0} 
           className="relative group aspect-square flex flex-col items-center justify-center transition-all border-2 bg-[var(--color-ink)] text-[#ea580c] border-[#ea580c] hover:bg-[#ea580c] hover:text-[var(--color-ink-dark)] disabled:opacity-50 disabled:border-[var(--color-ink-dark)] disabled:text-[#8b8574]"
         >
           <span className="text-xl">🔥</span>
-          <span className="text-[7px] font-black mt-1">{freeTutorialSpell ? 'FREE' : '250 K'}</span>
+          <span className="text-[7px] font-black mt-1">{freeTutorialSpell ? 'FREE' : `${SPELL_COSTS.FOX_FIRE} K`}</span>
           {s.foxFireCooldown > 0 && (
             <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[7px] font-bold text-white text-center py-0.5">
               {Math.ceil(s.foxFireCooldown)}s
@@ -72,11 +72,11 @@ export function SpellShrine({ s, setUiTick, meta, setMeta, triggerThunder, trigg
             tutorial?.completeStep?.('combat_spell_crisis');
             triggerDragonWave();
           }} 
-          disabled={s.command < 600 || s.gameState !== 'COMBAT' || s.dragonCooldown > 0 || !s.dragonUnlocked}
+          disabled={s.command < SPELL_COSTS.DRAGON_WAVE || s.gameState !== 'COMBAT' || s.dragonCooldown > 0 || !s.dragonUnlocked}
           className="relative group aspect-square flex flex-col items-center justify-center transition-all border-2 bg-[var(--color-ink)] text-[#d4af37] border-[#d4af37] hover:bg-[#d4af37] hover:text-[var(--color-ink-dark)] disabled:opacity-50 disabled:border-[var(--color-ink-dark)] disabled:text-[#8b8574]"
         >
           <span className="text-xl">🌊</span>
-          <span className="text-[7px] font-black mt-1">600 K</span>
+          <span className="text-[7px] font-black mt-1">{SPELL_COSTS.DRAGON_WAVE} K</span>
           {s.dragonCooldown > 0 && (
             <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[7px] font-bold text-white text-center py-0.5">
               {Math.ceil(s.dragonCooldown)}s

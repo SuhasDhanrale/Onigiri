@@ -9,6 +9,8 @@ const MELEE_FRONTLINE_Y = BATTLE_LINE_Y + 90;
 const RANGED_BACKLINE_Y = WALL_Y - 240;
 const SIEGE_BACKLINE_Y = WALL_Y - 190;
 const FORMATION_ROW_GAP = 34;
+const ASSASSIN_FLANK_COMMIT_Y = BATTLE_LINE_Y + 60;
+const ASSASSIN_FLANK_EDGE_TOLERANCE = 35;
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -76,10 +78,53 @@ function getAttackFormationY(unit, players) {
   return MELEE_FRONTLINE_Y + (row * FORMATION_ROW_GAP);
 }
 
+function getAssassinFlankEdge(unit) {
+  return (unit.hashOffset % 2 === 0) ? 50 : V_WIDTH - 50;
+}
+
+function hasCompletedAssassinFlank(unit) {
+  if (unit.assassinFlankComplete) return true;
+
+  const targetEdge = getAssassinFlankEdge(unit);
+  if (Math.abs(targetEdge - unit.x) <= ASSASSIN_FLANK_EDGE_TOLERANCE && unit.y >= ASSASSIN_FLANK_COMMIT_Y) {
+    unit.assassinFlankComplete = true;
+    return true;
+  }
+
+  return false;
+}
+
+function steerAssassinFlank(unit, uSpeed) {
+  const targetEdge = getAssassinFlankEdge(unit);
+  const dxEdge = targetEdge - unit.x;
+
+  if (Math.abs(dxEdge) > 20) {
+    return { vx: Math.sign(dxEdge) * uSpeed, vy: uSpeed * 0.6 };
+  }
+
+  return { vx: 0, vy: uSpeed };
+}
+
 export function calculateVelocity(unit, target, closestSq, s, now, uSpeed, enemies, players) {
     let vx = 0; let vy = 0;
 
     if (unit.stance_override === 'SCREENING') {
+      if (unit.type === 'assassin' && target) {
+        if (!hasCompletedAssassinFlank(unit)) {
+          return steerAssassinFlank(unit, uSpeed);
+        }
+
+        const navX = (unit.slotTargetX !== null) ? unit.slotTargetX : target.x;
+        const navY = (unit.slotTargetY !== null) ? unit.slotTargetY : target.y;
+        const dx = navX - unit.x;
+        const dy = navY - unit.y;
+        const dist = Math.max(0.1, Math.hypot(dx, dy));
+        return {
+          vx: (dx / dist) * uSpeed,
+          vy: Math.max(uSpeed * 0.2, (dy / dist) * uSpeed)
+        };
+      }
+
       const friendlyTeam = unit.team === 'player' ? players : enemies;
       let avgX = unit.x;
       let friendlyCount = 0;
@@ -175,16 +220,14 @@ export function calculateVelocity(unit, target, closestSq, s, now, uSpeed, enemi
       }
     } else if (unit.team === 'enemy') {
       if (unit.type === 'assassin') {
-        const targetEdge = (unit.hashOffset % 2 === 0) ? 50 : V_WIDTH - 50;
-        const dxEdge = targetEdge - unit.x;
-        if (target && closestSq < unit.aggroRadius * unit.aggroRadius) {
+        if (target && closestSq < unit.aggroRadius * unit.aggroRadius && hasCompletedAssassinFlank(unit)) {
           // Use slot coordinate if claimed; otherwise aim at target center
           const navX = (unit.slotTargetX !== null) ? unit.slotTargetX : target.x;
           const navY = (unit.slotTargetY !== null) ? unit.slotTargetY : target.y;
           const dx = navX - unit.x; const dy = navY - unit.y; const dist = Math.max(0.1, Math.hypot(dx, dy));
           vx = (dx / dist) * uSpeed; vy = Math.max(uSpeed * 0.2, (dy / dist) * uSpeed);
-        } else if (unit.y < WALL_Y - 250) {
-          if (Math.abs(dxEdge) > 20) { vx = Math.sign(dxEdge) * uSpeed; vy = uSpeed * 0.6; } else { vx = 0; vy = uSpeed; }
+        } else if (unit.y < WALL_Y - 250 || !unit.assassinFlankComplete) {
+          ({ vx, vy } = steerAssassinFlank(unit, uSpeed));
         } else {
           const alignSpeed = Math.sin((now / 400) + unit.hashOffset) * 10;
           vy = uSpeed; vx = alignSpeed;

@@ -446,6 +446,7 @@ export function drawBossHazardFx(ctx, hazard, now) {
 }
 
 export function drawVisualEffect(ctx, effect) {
+  if (effect.delay > 0) return;
   switch (effect.kind) {
     case 'summon_chakra': drawSummon(ctx, effect); break;
     case 'shockwave': drawShockwave(ctx, effect); break;

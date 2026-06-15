@@ -15,8 +15,13 @@ export function tickParticles(s, dt) {
     if (p.life <= 0) s.particles.splice(i, 1);
   }
   for (let i = s.lightnings.length - 1; i >= 0; i--) {
-    s.lightnings[i].life -= dt;
-    if (s.lightnings[i].life <= 0) s.lightnings.splice(i, 1);
+    const lightning = s.lightnings[i];
+    if (lightning.delay > 0) {
+      lightning.delay -= dt;
+      continue;
+    }
+    lightning.life -= dt;
+    if (lightning.life <= 0) s.lightnings.splice(i, 1);
   }
 }
 
@@ -29,6 +34,10 @@ export function tickEffects(s, dt) {
   if (!s.visualEffects) s.visualEffects = [];
   for (let i = s.visualEffects.length - 1; i >= 0; i--) {
     const fx = s.visualEffects[i];
+    if (fx.delay > 0) {
+      fx.delay -= dt;
+      continue;
+    }
     fx.life -= dt;
     if (fx.vx) fx.x += fx.vx * dt;
     if (fx.vy) fx.y += fx.vy * dt;

@@ -74,7 +74,7 @@ const STEPS = [
     stage: 'combat',
     label: 'Spells',
     title: 'Try A Free Spell',
-    body: 'Combat keeps moving. Your first tutorial spell is free: use Thunder for a few tough enemies, or Fox Fire when enemies crowd the gate approach.',
+    body: 'Combat keeps moving. Your first tutorial spell is free: use Lightning Shower for scattered enemies, or Fox Fire when enemies crowd the gate approach.',
     target: 'spell-shrine',
     placement: 'left',
   },
@@ -392,7 +392,7 @@ function CombatStage() {
           <div data-tutorial-target="spell-shrine" className="border-b-2 border-[#1b1918] p-4">
             <p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em]">Spell Shrine</p>
             <div className="grid grid-cols-3 gap-2">
-              {['Thunder', 'Fox Fire', 'Resolve'].map((spell) => (
+              {['Lightning', 'Fox Fire', 'Resolve'].map((spell) => (
                 <button key={spell} className="border-2 border-[#1b1918] bg-[#e8e0cc] px-2 py-3 text-[9px] font-black uppercase tracking-wider">
                   <Zap className="mx-auto mb-1 text-[#b84235]" size={16} />
                   {spell}

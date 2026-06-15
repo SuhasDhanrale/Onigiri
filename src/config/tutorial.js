@@ -65,7 +65,7 @@ export const TUTORIAL_STEPS = {
     id: 'combat_spell_crisis',
     label: 'Spells',
     title: 'Try A Free Spell',
-    body: 'Combat keeps moving. Your first tutorial spell is free: use Thunder for a few tough enemies, or Fox Fire when enemies crowd the gate approach.',
+    body: 'Combat keeps moving. Your first tutorial spell is free: use Lightning Shower for scattered enemies, or Fox Fire when enemies crowd the gate approach.',
     target: 'spell-shrine',
     placement: 'left',
   },
