@@ -660,6 +660,26 @@ export default function App() {
     };
   }, []);
 
+  // --- Audio: pause Web Audio while the browser tab/page is hidden ---
+  useEffect(() => {
+    const syncPageAudio = () => {
+      SoundManager.setPageHidden(document.hidden);
+    };
+    const pausePageAudio = () => {
+      SoundManager.setPageHidden(true);
+    };
+
+    syncPageAudio();
+    document.addEventListener('visibilitychange', syncPageAudio);
+    window.addEventListener('pagehide', pausePageAudio);
+    window.addEventListener('pageshow', syncPageAudio);
+    return () => {
+      document.removeEventListener('visibilitychange', syncPageAudio);
+      window.removeEventListener('pagehide', pausePageAudio);
+      window.removeEventListener('pageshow', syncPageAudio);
+    };
+  }, []);
+
   // --- Audio: switch the music loop with the screen (Track 7 menu / Track 8 battle) ---
   const audioGameState = state.current.gameState;
   useEffect(() => {
@@ -667,6 +687,8 @@ export default function App() {
       SoundManager.playMusicSlot('menu');
     } else if (audioGameState === 'COMBAT') {
       SoundManager.playMusicSlot('battle');
+    } else {
+      SoundManager.stopMusic();
     }
   }, [showHome, audioGameState]);
 

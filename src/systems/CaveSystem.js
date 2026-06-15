@@ -270,6 +270,7 @@ function tickGokiMines(s, dt) {
   pushFx(s, { kind: 'aura', layer: 'background', x: target.x, y: target.y, radius: 92, color: '#8b7355', life: 1.15, maxLife: 1.15, spin: 0.25 });
   s.floatingTexts.push({ x: target.x, y: target.y - 70, text: 'MINE', color: '#8b7355', life: 0.9, vy: -18 });
   s.cave.mineTimer = GOKI_MINE_INTERVAL;
+  SoundManager.playSfx('boss_mining_attack');
 }
 
 function tickKashaFireTrails(s, dt) {
@@ -298,7 +299,7 @@ function tickKashaFireTrails(s, dt) {
   pushFx(s, { kind: 'aura', layer: 'background', x: target.x, y: 640, radius: 150, color: '#ea580c', life: 1.0, maxLife: 1.0, spin: 0.8 });
   s.floatingTexts.push({ x: target.x, y: 300, text: 'FIRE TRAIL', color: '#ea580c', life: 1.0, vy: -18 });
   s.cave.fireTimer = KASHA_FIRE_INTERVAL;
-  SoundManager.playSfx('fire_burst');
+  SoundManager.playSfx('boss_swift_attack');
 }
 
 function detonateMudMine(s, hazard) {

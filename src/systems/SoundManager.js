@@ -38,6 +38,7 @@ class SoundManagerClass {
     this._stingerTimeout = null;
 
     this._lastSfxTime = {};
+    this.pageHidden = typeof document !== 'undefined' ? document.hidden : false;
   }
 
   // --- Ad-break muting (existing API, preserved for ad adapters) ---
@@ -84,10 +85,25 @@ class SoundManagerClass {
 
   /** Resume a suspended AudioContext — call on first user gesture (autoplay policy). */
   resume() {
+    if (this.pageHidden) return Promise.resolve();
     const ctx = this.ensureContext();
     if (!ctx) return Promise.resolve();
     if (ctx.state === 'suspended') return ctx.resume().catch(() => {});
     return Promise.resolve();
+  }
+
+  /** Suspend without creating a context; used when the page/tab is hidden. */
+  suspend() {
+    const ctx = this.ctx;
+    if (!ctx || ctx.state !== 'running') return Promise.resolve();
+    return ctx.suspend().catch(() => {});
+  }
+
+  setPageHidden(hidden) {
+    this.pageHidden = !!hidden;
+    if (this.pageHidden) return this.suspend();
+    if (!this.ctx) return Promise.resolve();
+    return this.resume();
   }
 
   // --- Volume / mute ---
@@ -199,6 +215,7 @@ class SoundManagerClass {
   // --- SFX ---
   /** Play a one-shot SFX by id from SFX_LIBRARY, rate-limited per id. */
   playSfx(id, opts = {}) {
+    if (this.pageHidden) return;
     const ctx = this.ensureContext();
     if (!ctx) return;
     const generator = SFX_LIBRARY[id];

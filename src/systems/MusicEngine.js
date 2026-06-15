@@ -374,12 +374,16 @@ export const MUSIC_SLOTS = {
  * loop iteration ahead of time via setTimeout (same pattern as MusicMock).
  * @returns {{ stop(): void }}
  */
+let __musicHandleSeq = 0;
+
 export function startTrackLoop(ctx, dest, track, { loop = true, startDelay = 0.05 } = {}) {
   const beatLen = 60 / track.bpm;
   const loopDuration = track.bars * 4 * beatLen;
   let nextLoopTime = ctx.currentTime + startDelay;
   let stopped = false;
   let timeoutId = null;
+  const __id = `${track.title?.split(':')[0] ?? 'trk'}#${++__musicHandleSeq}`;
+  console.log(`[MUSIC] startTrackLoop ${__id} (loop=${loop}) ctxState=${ctx.state} ctxTime=${ctx.currentTime.toFixed(2)}`);
   // Every iteration gets its own gain node so `stop()` can silence its notes —
   // individual oscillators/buffer sources are scheduled `loopDuration` seconds
   // ahead and can't be cancelled once started. While the AudioContext is still
