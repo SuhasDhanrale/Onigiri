@@ -7,6 +7,7 @@ import { UNIT_TYPES } from './config/units.js';
 import { BARRACKS_DEFS, BARRACKS_LAYOUT } from './config/barracks.js';
 import { getCost, getSquadCap } from './core/utils.js';
 import { CAVE_CONFIG } from './config/cave.js';
+import { WALL_LEVELS } from './config/walls.js';
 import { CAMPAIGN_CHAPTER_IDS, getBarracksUnlocksForChapterClear, getCampaignChapter, getChapterBossId, getChapterEnemyStatMultiplier } from './config/campaign.js';
 import { getEncounterPhaseCount } from './config/waves.js';
 
@@ -286,7 +287,13 @@ export default function App() {
         active: false,
         respawnTimer: undefined,
       } : null,
-      
+
+      wall: {
+        hp: WALL_LEVELS[metaRef.current.wallLevel ?? 0].maxHp,
+        maxHp: WALL_LEVELS[metaRef.current.wallLevel ?? 0].maxHp,
+        level: metaRef.current.wallLevel ?? 0,
+      },
+
       combatStats: {
         damageDealt: 0,
         enemiesSlain: { total: 0, types: {} },
@@ -574,10 +581,20 @@ export default function App() {
   }, [setMeta, metaRef]);
 
   const equipProvision = useCallback((pKey) => {
-    setMeta(prev => ({ 
-      ...prev, 
-      equippedItem: prev.equippedItem === pKey ? null : pKey 
+    setMeta(prev => ({
+      ...prev,
+      equippedItem: prev.equippedItem === pKey ? null : pKey
     }));
+  }, [setMeta]);
+
+  const upgradeWall = useCallback(() => {
+    setMeta(prev => {
+      const level = prev.wallLevel ?? 0;
+      const cost = WALL_LEVELS[level]?.upgradeCost;
+      // null cost = top tier (Castle); this also blocks upgrading past max.
+      if (cost == null || prev.honor < cost) return prev;
+      return { ...prev, honor: prev.honor - cost, wallLevel: level + 1 };
+    });
   }, [setMeta]);
 
   const resetDynasty = useCallback(() => {
@@ -816,6 +833,7 @@ export default function App() {
           setMapNodes={setMapNodes}
           unlockProvision={unlockProvision}
           equipProvision={equipProvision}
+          upgradeWall={upgradeWall}
           tutorial={tutorial}
         />
       )}

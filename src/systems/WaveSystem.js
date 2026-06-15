@@ -1,5 +1,6 @@
 import { ENEMY_COSTS, CAMPAIGN_MAP, isVisibleBossId } from '../config/campaign.js';
 import { getCompressedWavePressure, getPlayableWaveCount, getWaveCompressionMultiplier } from '../config/waves.js';
+import { V_WIDTH } from '../config/constants.js';
 import { spawnUnit } from './SpawnSystem.js';
 import { bus } from '../core/EventBus.js';
 import { EVENTS } from '../core/events.js';
@@ -159,6 +160,13 @@ export function tickWaveState(s, dt, metaRef) {
       });
       s.enemiesInWave = s.squadsToSpawn.reduce((sum, sq) => sum + sq.count, 0);
       s.waveTimer = 1.0;
+
+      // Boss nodes open with an oversized rebel "scout" wave (2x budget mult already
+      // doubles wave 1's count) — bannered so the player reads it as a telegraph.
+      if (s.wave === 1 && metaRef.current.activeNodeType === 'boss') {
+        s.floatingTexts.push({ x: V_WIDTH / 2, y: 200, text: 'ENEMY SCOUTS SIGHTED', color: '#b84235', life: 2.0, vy: -20 });
+      }
+
       bus.emit(EVENTS.WAVE_CHANGED, {
         wave: s.wave,
         waveState: s.waveState,

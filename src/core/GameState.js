@@ -1,5 +1,6 @@
 import { CAVE_CONFIG } from '../config/cave.js';
 import { getCampaignChapterNumber, getCurrentCampaignChapterId } from '../config/campaign.js';
+import { WALL_LEVELS } from '../config/walls.js';
 
 /**
  * Returns the initial game state object.
@@ -30,6 +31,11 @@ export function createInitialState() {
       radius: CAVE_CONFIG.orb.radius,
       active: true,
       respawnTimer: undefined,
+    },
+    wall: {
+      hp: WALL_LEVELS[0].maxHp,
+      maxHp: WALL_LEVELS[0].maxHp,
+      level: 0,
     },
     barracks:    { HATAMOTO: 0, YUMI: 0, CAVALRY: 0, HOROKU: 0 },
     troopLevel:  { HATAMOTO: 1, YUMI: 1, CAVALRY: 1, HOROKU: 1 },

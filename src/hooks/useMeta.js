@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { readStorageJson, writeStorageJson } from '../platforms/gameStorage.js';
+import { WALL_LEVELS } from '../config/walls.js';
 
 const META_STORAGE_KEY = 'onigiri_meta_v1';
 
@@ -10,7 +11,8 @@ const DEFAULT_META = {
     conqueredRegions: [],
     totalRuns: 0,
     unlockedBarracks: ['HATAMOTO', 'YUMI'],
-    focusMult: 1.2
+    focusMult: 1.2,
+    wallLevel: 0
 };
 
 function normalizeStringArray(value, fallback = []) {
@@ -31,6 +33,9 @@ function normalizeSavedMeta(value) {
     totalRuns: Number.isFinite(value.totalRuns) ? value.totalRuns : DEFAULT_META.totalRuns,
     unlockedBarracks: normalizeStringArray(value.unlockedBarracks, DEFAULT_META.unlockedBarracks),
     focusMult: Number.isFinite(value.focusMult) ? value.focusMult : DEFAULT_META.focusMult,
+    wallLevel: Number.isInteger(value.wallLevel)
+      ? Math.min(Math.max(value.wallLevel, 0), WALL_LEVELS.length - 1)
+      : DEFAULT_META.wallLevel,
   };
 }
 

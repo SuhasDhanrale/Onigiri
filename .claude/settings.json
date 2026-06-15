@@ -4,7 +4,8 @@
       "Bash(git branch *)",
       "Bash(git push *)",
       "Bash(git -C \"E:/WebGames/Onigiri/.kilo/worktrees/alder-airport\" status)",
-      "Bash(git log *)"
+      "Bash(git log *)",
+      "Bash(npm run *)"
     ]
   }
 }

@@ -334,9 +334,14 @@ export function tickUnits(s, dt, now, metaRef) {
     applySeparation(unit, vx, vy, dt, myTeam);
 
     if (unit.team === 'enemy' && unit.y + unit.radius >= WALL_Y) {
-      s.gameState = 'GAMEOVER';
-      bus.emit(EVENTS.GAME_STATE_CHANGED, { state: s.gameState });
-      SoundManager.playSfx('gameover_stinger');
+      unit.y = WALL_Y - unit.radius; // pin at the wall instead of clipping through
+      const dps = unit.damage / (unit.attackSpeed || 1);
+      s.wall.hp = Math.max(0, s.wall.hp - dps * dt);
+      if (s.wall.hp <= 0 && s.gameState === 'COMBAT') {
+        s.gameState = 'GAMEOVER';
+        bus.emit(EVENTS.GAME_STATE_CHANGED, { state: s.gameState });
+        SoundManager.playSfx('gameover_stinger');
+      }
     }
     if (unit.team === 'player' && unit.y < -300) unit.hp = 0;
   }

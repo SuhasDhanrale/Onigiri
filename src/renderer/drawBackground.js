@@ -3,6 +3,8 @@ import { COLORS } from '../config/colors.js';
 import { BARRACKS_DEFS, BARRACKS_LAYOUT } from '../config/barracks.js';
 import { UNIT_TYPES } from '../config/units.js';
 import { getSquadCap } from '../core/utils.js';
+import { drawWall, drawWallHpBar } from './drawWalls.js';
+import { drawBuildingArt } from './drawBuildings.js';
 
 export function drawBackground(ctx, s, now, metaRef) {
     const bgX = -3000;
@@ -71,17 +73,9 @@ export function drawBackground(ctx, s, now, metaRef) {
     ctx.fillStyle = `rgba(0, 0, 0, 0.06)`; 
     ctx.fillRect(bgX, WALL_Y, bgW, bgH); 
     
-    const gateL = V_WIDTH/2 - 120; 
-    const gateR = V_WIDTH/2 + 120; 
-    ctx.strokeStyle = COLORS.vermilion; 
-    ctx.lineWidth = s.feverActive > 0 ? 16 : 8 + (Math.sin(now / 150) * 4);
-    
-    ctx.beginPath(); ctx.moveTo(bgX, WALL_Y); ctx.lineTo(gateL, WALL_Y); ctx.stroke(); 
-    ctx.beginPath(); ctx.moveTo(gateR, WALL_Y); ctx.lineTo(bgX + bgW, WALL_Y); ctx.stroke();
-    ctx.fillStyle = COLORS.inkDark; 
-    ctx.fillRect(gateL - 15, WALL_Y - 50, 30, 80); 
-    ctx.fillRect(gateR - 15, WALL_Y - 50, 30, 80);
-    
+    drawWall(ctx, s, now);
+    drawWallHpBar(ctx, s, now);
+
     const isImperial = metaRef.current.equippedItem === 'IMPERIAL_BANNER';
     const bannerMult = isImperial ? 1.5 : 1.0;
 
@@ -107,27 +101,11 @@ export function drawBackground(ctx, s, now, metaRef) {
 
         if (level === 0) {
             ctx.globalAlpha = 0.3;
-            ctx.fillStyle = COLORS.inkDark; 
+            ctx.fillStyle = COLORS.inkDark;
             ctx.fillRect(-50, -50, 100, 100);
             ctx.globalAlpha = 1.0;
         } else {
-            if (key === 'HATAMOTO') { 
-                ctx.fillStyle = '#f2f0ea'; ctx.fillRect(-65, -75, 130, 95); 
-                ctx.fillStyle = COLORS.inkDark; ctx.fillRect(-75, 0, 150, 30); 
-                ctx.beginPath(); ctx.moveTo(-80, -75); ctx.lineTo(80, -75); ctx.lineTo(0, -130); ctx.fill(); 
-            } else if (key === 'YUMI') { 
-                ctx.fillStyle = COLORS.inkDark; ctx.beginPath(); ctx.moveTo(-80, -30); ctx.quadraticCurveTo(0, -80, 80, -30); ctx.lineTo(95, -20); ctx.lineTo(-95, -20); ctx.fill(); 
-                ctx.fillRect(-70, -20, 14, 55); ctx.fillRect(56, -20, 14, 55); 
-                ctx.fillStyle = COLORS.navy; ctx.fillRect(-60, -20, 120, 55); 
-            } else if (key === 'CAVALRY') { 
-                ctx.fillStyle = '#222'; ctx.fillRect(-85, -55, 170, 75); 
-                ctx.fillStyle = COLORS.khaki; ctx.beginPath(); ctx.moveTo(-95, -55); ctx.lineTo(95, -55); ctx.lineTo(85, -85); ctx.lineTo(-85, -85); ctx.fill(); 
-                ctx.fillStyle = COLORS.vermilion; ctx.beginPath(); ctx.ellipse(0, -20, 20, 12, Math.PI/4, 0, Math.PI*2); ctx.fill(); 
-            } else if (key === 'HOROKU') { 
-                ctx.fillStyle = COLORS.khaki; ctx.fillRect(-85, -65, 170, 85); 
-                ctx.fillStyle = COLORS.inkDark; ctx.beginPath(); ctx.moveTo(-95, -65); ctx.lineTo(95, -65); ctx.lineTo(75, -110); ctx.lineTo(-75, -110); ctx.fill(); 
-                ctx.fillStyle = COLORS.parchment; ctx.fillRect(-40, -30, 80, 50); 
-            }
+            drawBuildingArt(ctx, key);
         }
         ctx.restore();
         

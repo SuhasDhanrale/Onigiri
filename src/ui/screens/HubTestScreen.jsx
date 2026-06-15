@@ -7,6 +7,7 @@ import { PROVISIONS, PERMANENT_TECHS, HEIRLOOMS } from '../../config/provisions.
 import { SHOP_ITEMS } from '../../config/nodes.js';
 import { formatNodeRewardLines } from '../../systems/NodeRewardSystem.js';
 import { CURSES } from '../../config/curses.js';
+import { WALL_LEVELS } from '../../config/walls.js';
 import { BARRACKS_DEFS } from '../../config/barracks.js';
 import { UNIT_TYPES } from '../../config/units.js';
 import { getPlayableWaveCount } from '../../config/waves.js';
@@ -27,6 +28,7 @@ export function HubTestScreen({
   setMapNodes,
   unlockProvision,
   equipProvision,
+  upgradeWall,
   tutorial,
 }) {
   const [activeSidebarTab, setActiveSidebarTab] = useState('DOJO');
@@ -581,7 +583,7 @@ export function HubTestScreen({
                   </div>
 
                   {/* Techniques Section */}
-                  <div className="mb-4">
+                  <div className="mb-5">
                     <p className="text-[10px] font-bold text-[#8b1420] tracking-[0.2em] uppercase mb-2 px-1">Techniques</p>
                     <div className="grid grid-cols-3 gap-2">
                       {Object.entries(PROVISIONS)
@@ -604,6 +606,44 @@ export function HubTestScreen({
                           );
                         })}
                     </div>
+                  </div>
+
+                  {/* Fortifications Section */}
+                  <div className="mb-4">
+                    <p className="text-[10px] font-bold text-[#8b7355] tracking-[0.2em] uppercase mb-2 px-1">Fortifications</p>
+                    {(() => {
+                      const wallLevel = meta?.wallLevel ?? 0;
+                      const currentWall = WALL_LEVELS[wallLevel] ?? WALL_LEVELS[0];
+                      const nextWall = WALL_LEVELS[wallLevel + 1] ?? null;
+                      const canAfford = nextWall && meta?.honor >= currentWall.upgradeCost;
+                      return (
+                        <div className="border border-[#8b7355]/30 bg-[#1a1816]/50 p-3 flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-[0.1em] text-[#dfd4ba]">{currentWall.name}</p>
+                            <p className="text-[10px] text-[#8b8574] mt-1">Wall HP: {currentWall.maxHp}</p>
+                          </div>
+                          {nextWall ? (
+                            <button
+                              onClick={upgradeWall}
+                              disabled={!canAfford}
+                              className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors flex items-center gap-2 shrink-0 ${
+                                canAfford
+                                  ? 'bg-[#8b7355]/20 text-[#dfd4ba] border border-[#8b7355]/50 hover:bg-[#8b7355]/40 hover:border-[#8b7355]'
+                                  : 'bg-[#1a1816]/80 text-[#8b8574]/50 border border-[#8b8574]/20 cursor-not-allowed'
+                              }`}
+                            >
+                              <span>REINFORCE &rarr; {nextWall.name}</span>
+                              <span className="opacity-60">|</span>
+                              <span>{currentWall.upgradeCost} H</span>
+                            </button>
+                          ) : (
+                            <span className="text-xs uppercase font-bold px-4 py-2 border border-[#d4af37]/30 text-[#d4af37] shrink-0">
+                              MAX FORTIFICATION
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
 
