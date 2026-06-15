@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { TUTORIAL_STEP_ORDER, TUTORIAL_STEPS, TUTORIAL_STORAGE_KEY, getPreviousTutorialStep } from '../config/tutorial.js';
+import { readStorageJson, writeStorageJson } from '../platforms/gameStorage.js';
 
 const createInitialTutorialState = () => ({
   skipped: false,
@@ -11,23 +12,17 @@ const createInitialTutorialState = () => ({
 });
 
 function readStoredTutorial() {
-  if (typeof window === 'undefined') return createInitialTutorialState();
+  const parsed = readStorageJson(TUTORIAL_STORAGE_KEY, null);
+  if (!parsed || typeof parsed !== 'object') return createInitialTutorialState();
 
-  try {
-    const raw = window.localStorage.getItem(TUTORIAL_STORAGE_KEY);
-    if (!raw) return createInitialTutorialState();
-    const parsed = JSON.parse(raw);
-    return {
-      ...createInitialTutorialState(),
-      ...parsed,
-      activeStepId: null,
-      pausedStepId: null,
-      bookOpen: false,
-      completed: parsed?.completed ?? {},
-    };
-  } catch {
-    return createInitialTutorialState();
-  }
+  return {
+    ...createInitialTutorialState(),
+    ...parsed,
+    activeStepId: null,
+    pausedStepId: null,
+    bookOpen: false,
+    completed: parsed?.completed ?? {},
+  };
 }
 
 function canShowStep(stepId, state) {
@@ -44,12 +39,8 @@ export function useTutorial() {
   const [tutorial, setTutorial] = useState(readStoredTutorial);
 
   useEffect(() => {
-    try {
-      const { activeStepId, pausedStepId, bookOpen, ...persistable } = tutorial;
-      window.localStorage.setItem(TUTORIAL_STORAGE_KEY, JSON.stringify(persistable));
-    } catch {
-      // Tutorial persistence is helpful, not required.
-    }
+    const { activeStepId, pausedStepId, bookOpen, ...persistable } = tutorial;
+    writeStorageJson(TUTORIAL_STORAGE_KEY, persistable);
   }, [tutorial]);
 
   const activeStep = tutorial.activeStepId ? TUTORIAL_STEPS[tutorial.activeStepId] : null;

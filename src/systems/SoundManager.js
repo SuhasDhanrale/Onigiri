@@ -1,33 +1,22 @@
 import { MUSIC_TRACKS, MUSIC_SLOTS, startTrackLoop } from './MusicEngine.js';
 import { SFX_LIBRARY, SFX_MIN_INTERVAL, SFX_DEFAULT_INTERVAL } from './SfxEngine.js';
+import { readStorageJson, writeStorageJson } from '../platforms/gameStorage.js';
 
 const STORAGE_KEY = 'onigiri_audio_settings';
 
 const DEFAULT_SETTINGS = {
   muted: false,
   masterVolume: 1,
-  musicVolume: 0.6,
-  sfxVolume: 0.8,
+  musicVolume: 0.3,
+  sfxVolume: 0.7,
 };
 
 function loadSettings() {
-  if (typeof localStorage === 'undefined') return { ...DEFAULT_SETTINGS };
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...DEFAULT_SETTINGS };
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
-  } catch {
-    return { ...DEFAULT_SETTINGS };
-  }
+  return { ...DEFAULT_SETTINGS, ...readStorageJson(STORAGE_KEY, DEFAULT_SETTINGS) };
 }
 
 function saveSettings(settings) {
-  if (typeof localStorage === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  } catch {
-    // ignore (private mode / storage disabled)
-  }
+  writeStorageJson(STORAGE_KEY, settings);
 }
 
 function clamp01(value) {

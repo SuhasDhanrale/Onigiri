@@ -104,15 +104,21 @@ export default function App() {
       focusedBuilding: null,
       earnedHonor: 0
     };
-    // Reset conqueredRegions here so mount + resetDynasty both go through one path
-    setMeta(prev => ({ ...prev, conqueredRegions: [] }));
     setShowHome(true);
     setUiTick(t => t + 1);
-  }, [setMeta]);
+  }, []);
 
   useEffect(() => { 
     initRun(); 
   }, [initRun]);
+
+  useEffect(() => {
+    if (spriteRenderer.isLoaded()) return;
+
+    spriteRenderer.loadAllSprites().catch(err => {
+      console.warn('[Sprites] Failed to preload sprites:', err);
+    });
+  }, []);
 
   useEffect(() => {
     const s = state.current;

@@ -1,5 +1,12 @@
 import { COLORS } from '../config/colors.js';
 
+const PUBLIC_BASE_URL = import.meta.env.BASE_URL || './';
+
+function getPublicAssetUrl(path) {
+  const base = PUBLIC_BASE_URL.endsWith('/') ? PUBLIC_BASE_URL : `${PUBLIC_BASE_URL}/`;
+  return `${base}${path.replace(/^\/+/, '')}`;
+}
+
 export class SpriteRenderer {
   constructor() {
     this.sprites = {};
@@ -30,6 +37,8 @@ export class SpriteRenderer {
   async loadAllSprites() {
     // Clear cache to force reload of updated JSON files
     this.sprites = {};
+    const enemyBasePath = getPublicAssetUrl('assets/sprites/enemy/');
+    const playerBasePath = getPublicAssetUrl('assets/sprites/player/');
     
     const enemyIds = [
       'rebels/ikki-rebel',
@@ -47,8 +56,8 @@ export class SpriteRenderer {
       'champion'
     ];
     
-    const enemyPromises = enemyIds.map(id => this.loadSprite(id, '/assets/sprites/enemy/'));
-    const playerPromises = playerIds.map(id => this.loadSprite(id, '/assets/sprites/player/'));
+    const enemyPromises = enemyIds.map(id => this.loadSprite(id, enemyBasePath));
+    const playerPromises = playerIds.map(id => this.loadSprite(id, playerBasePath));
     
     const results = await Promise.all([...enemyPromises, ...playerPromises]);
     return results.filter(Boolean);
