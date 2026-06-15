@@ -3,7 +3,7 @@ import { COLORS } from '../config/colors.js';
 import { BARRACKS_DEFS, BARRACKS_LAYOUT } from '../config/barracks.js';
 import { UNIT_TYPES } from '../config/units.js';
 import { getSquadCap } from '../core/utils.js';
-import { drawWall, drawWallHpBar } from './drawWalls.js';
+import { drawWallHpBar } from './drawWalls.js';
 import { drawBuildingArt } from './drawBuildings.js';
 
 export function drawBackground(ctx, s, now, metaRef) {
@@ -70,10 +70,9 @@ export function drawBackground(ctx, s, now, metaRef) {
         ctx.restore();
     }
 
-    ctx.fillStyle = `rgba(0, 0, 0, 0.06)`; 
-    ctx.fillRect(bgX, WALL_Y, bgW, bgH); 
-    
-    drawWall(ctx, s, now);
+    ctx.fillStyle = `rgba(0, 0, 0, 0.06)`;
+    ctx.fillRect(bgX, WALL_Y, bgW, bgH);
+
     drawWallHpBar(ctx, s, now);
 
     const isImperial = metaRef.current.equippedItem === 'IMPERIAL_BANNER';

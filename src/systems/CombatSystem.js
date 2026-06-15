@@ -1,5 +1,5 @@
 import { COLORS } from '../config/colors.js';
-import { WALL_Y, V_WIDTH } from '../config/constants.js';
+import { WALL_FACE_Y, V_WIDTH } from '../config/constants.js';
 import { addParticle } from './SpawnSystem.js';
 import { pushFx } from '../renderer/drawSumiFx.js';
 import { calculateVelocity, applySeparation } from './MovementSystem.js';
@@ -333,8 +333,8 @@ export function tickUnits(s, dt, now, metaRef) {
     const myTeam = unit.team === 'player' ? players : enemies;
     applySeparation(unit, vx, vy, dt, myTeam);
 
-    if (unit.team === 'enemy' && unit.y + unit.radius >= WALL_Y) {
-      unit.y = WALL_Y - unit.radius; // pin at the wall instead of clipping through
+    if (unit.team === 'enemy' && unit.y + unit.radius >= WALL_FACE_Y) {
+      unit.y = WALL_FACE_Y; // pin centered on the wall; the wall renders on top of units here
       const dps = unit.damage / (unit.attackSpeed || 1);
       s.wall.hp = Math.max(0, s.wall.hp - dps * dt);
       if (s.wall.hp <= 0 && s.gameState === 'COMBAT') {

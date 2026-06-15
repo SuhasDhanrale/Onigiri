@@ -1,3 +1,5 @@
+import { SoundManager } from '../systems/SoundManager.js';
+
 const isCrazyGamesSdkOnly =
   import.meta.env.VITE_PLATFORM === 'crazygames' &&
   import.meta.env.VITE_CG_SDK_ONLY === 'true';
@@ -21,6 +23,8 @@ export async function bootCrazyGamesSdkOnly() {
   if (!isCrazyGamesSdkOnly) return false;
 
   try {
+    SoundManager.setMuted(false);
+
     const manager = await getAdManager();
     manager.reportLoadingStart();
     await manager.init();

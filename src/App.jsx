@@ -444,6 +444,15 @@ export default function App() {
     const bossId        = node.type === 'boss' ? getChapterBossId(chapter.id) : null;
     const combatNode    = bossId ? { ...node, bossId } : node;
 
+    // Boss prelude length + pressure is chapter-driven: the chapter's wave count is the
+    // single source of truth (capped to MAX_BOSS_PRELUDE_PHASES for length, compressed
+    // for pressure in WaveSystem). Non-boss nodes keep their own variant wave count.
+    // This retires the map boss node's hardcoded `waves: 6`, which previously made every
+    // chapter's boss fight scale identically regardless of threat.
+    const effectiveNodeWaves = node.type === 'boss'
+      ? (chapter.waves ?? node.waves ?? 3)
+      : (node.waves ?? 3);
+
     // 2. Inject multipliers + node context into metaRef so combat systems see them immediately
     setMeta(prev => ({
       ...prev,
@@ -464,7 +473,7 @@ export default function App() {
       activeChapterId:            chapter.id,
       activeChapterThreat:        chapter.threatLevel ?? 1,
       activeChapterEnemyStatMult: chapterEnemyStatMult,
-      activeNodeWaves:   node.waves   ?? 3,   // ← fixes WaveSystem Gap #9
+      activeNodeWaves:   effectiveNodeWaves,   // boss → chapter-scaled; else node variant
       activeSquadCapBonus: activeRun?.squadCapBonus ?? 0,
       activeBossId: bossId,
       // Carry garrison forward from run state (cleared in setRunState below)
@@ -478,7 +487,7 @@ export default function App() {
       currentNodeType:    node.type,
       currentNodeVariant: node.variant ?? null,
       currentNodeThreat:  node.threat  ?? 1,
-      currentNodeWaves:   node.waves   ?? 3,
+      currentNodeWaves:   effectiveNodeWaves,
       currentBossId:      bossId,
       pendingGarrison:    null,   // consumed — garrison spawns in startCombat
     }));

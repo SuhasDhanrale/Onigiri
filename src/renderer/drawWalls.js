@@ -1,4 +1,4 @@
-import { V_WIDTH, WALL_Y } from '../config/constants.js';
+import { V_WIDTH, WALL_Y, WALL_FACE_Y } from '../config/constants.js';
 import { WALL_LEVELS } from '../config/walls.js';
 import { drawPath, line, circle, rect } from './canvasShapes.js';
 
@@ -150,7 +150,7 @@ function drawCastleWall(ctx, y) {
 export function drawWall(ctx, s, _now) {
   const level = s.wall?.level ?? 0;
   const variant = WALL_LEVELS[level]?.id ?? WALL_LEVELS[0].id;
-  const y = WALL_Y - 40;
+  const y = WALL_FACE_Y;
 
   ctx.save();
   switch (variant) {

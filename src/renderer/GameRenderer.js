@@ -4,6 +4,7 @@ import { drawBackgroundEffects, drawForegroundEffects } from './drawEffects.js';
 import { drawUnitTopDown } from './drawUnits.js';
 import { drawCave } from './drawCave.js';
 import { drawCliffs } from './drawCliffs.js';
+import { drawWall } from './drawWalls.js';
 
 export const initRenderer = (canvas) => {
     canvas.width = V_WIDTH;
@@ -88,6 +89,11 @@ export const drawGame = (ctx, s, dt, now, metaRef) => {
         return a.y - b.y;
       })
       .forEach(u => drawUnitTopDown(ctx, u));
+
+    // Wall renders above units so enemies pinned at WALL_FACE_Y appear to be
+    // blocked by/hitting it, rather than standing in front of it.
+    drawWall(ctx, s, now);
+
     drawForegroundEffects(ctx, s);
 
     ctx.restore();
