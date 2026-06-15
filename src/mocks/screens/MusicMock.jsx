@@ -340,6 +340,53 @@ const tracks = {
         }
       }
     }
+  },
+  warBackground: {
+    title: 'TRACK 9: Distant Battlefield (War Background)',
+    bpm: 80,
+    bars: 16,
+    compose: (ctx, t0, beatLen, bars) => {
+      for (let bar = 0; bar < bars; bar++) {
+        const barTime = t0 + bar * 4 * beatLen;
+        
+        // Deep menacing taiko heartbeat (echoing war drums)
+        playTaiko(ctx, barTime, 1.5);
+        if (bar % 2 === 0) {
+          playTaiko(ctx, barTime + beatLen * 2.5, 0.6);
+          playTaiko(ctx, barTime + beatLen * 3, 0.8);
+        } else {
+          playTaiko(ctx, barTime + beatLen * 2, 1.0);
+          playTaiko(ctx, barTime + beatLen * 3.75, 1.2);
+        }
+
+        // Koto creating a tense, creeping atmosphere using traditional Miyako-bushi scale
+        // E3=52, F3=53, A3=57, B3=59
+        const tenseNotes = [52, 53, 57, 53, 52, 59, 57, 53];
+        for (let i = 0; i < 8; i++) {
+          playKoto(ctx, barTime + (i * 0.5) * beatLen, tenseNotes[i], 0.2, 0.4);
+        }
+
+        // Heavy Bass Koto drop on every downbeat for scale
+        playKoto(ctx, barTime, 40, 2.0, 0.7); // E2
+
+        // Shakuhachi melody enters on bar 4, weaving a melancholic war cry
+        if (bar >= 4) {
+          if (bar % 4 === 0) {
+            playShakuhachi(ctx, barTime, 64, beatLen * 2.5, 0.5); // E4
+            playShakuhachi(ctx, barTime + beatLen * 3, 65, beatLen * 1, 0.5); // F4
+          } else if (bar % 4 === 1) {
+            playShakuhachi(ctx, barTime, 69, beatLen * 2, 0.6); // A4
+            playShakuhachi(ctx, barTime + beatLen * 2, 71, beatLen * 2, 0.6); // B4
+          } else if (bar % 4 === 2) {
+            playShakuhachi(ctx, barTime, 72, beatLen * 3, 0.7); // C5 - Peak tension
+            playShakuhachi(ctx, barTime + beatLen * 3, 71, beatLen * 1, 0.6); // B4
+          } else if (bar % 4 === 3) {
+            // Long resolution back to E4
+            playShakuhachi(ctx, barTime, 64, beatLen * 4, 0.4);
+          }
+        }
+      }
+    }
   }
 };
 

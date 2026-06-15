@@ -1,6 +1,6 @@
 import { CAVE_CONFIG } from '../config/cave.js';
 import { V_WIDTH, WALL_Y } from '../config/constants.js';
-import { isVisibleBossId } from '../config/campaign.js';
+import { isVisibleBossId, getCampaignChapterIndex } from '../config/campaign.js';
 import { addParticle, spawnUnit } from './SpawnSystem.js';
 import { pushFx } from '../renderer/drawSumiFx.js';
 import { bus } from '../core/EventBus.js';
@@ -9,53 +9,60 @@ import { EVENTS } from '../core/events.js';
 const GOKI_MINE_INTERVAL = 6.5;
 const KASHA_FIRE_INTERVAL = 5.0;
 
+// Boss arrives as a "boss wave": it spawns alongside an escort, then reinforcement
+// waves keep pouring in so the player is never just trading blows with a lone boss.
+const BOSS_REINFORCE_INTERVAL = 11.0;
+const BOSS_REINFORCE_MAX_ENEMIES = 42; // skip a reinforcement tick if the field is already this crowded
+
+// Bosses must read as bosses: every radius is well above the regular ONI (55),
+// and HP is ~2x the previous values so they are a real damage check to bring down.
 const BOSS_DEFS = {
   goki: {
     name: 'Goki',
-    hp: 1500,
+    hp: 3000,
     damage: 32,
     speed: 20,
-    radius: 64,
+    radius: 80,
     color: '#8b7355',
     armor: '#1b1918',
     attackSpeed: 2.8,
   },
   kasha: {
     name: 'Kasha',
-    hp: 1150,
+    hp: 2300,
     damage: 26,
     speed: 46,
-    radius: 52,
+    radius: 76,
     color: '#b84235',
     armor: '#1b1918',
     attackSpeed: 1.5,
   },
   daitengu: {
     name: 'Daitengu',
-    hp: 1350,
+    hp: 2700,
     damage: 30,
     speed: 58,
-    radius: 56,
+    radius: 74,
     color: '#4a90e2',
     armor: '#1b1918',
     attackSpeed: 1.3,
   },
   yukionna: {
     name: 'Yuki-Onna',
-    hp: 1500,
+    hp: 3000,
     damage: 34,
     speed: 32,
-    radius: 58,
+    radius: 76,
     color: '#a0c4ff',
     armor: '#1b1918',
     attackSpeed: 1.8,
   },
   otakemaru: {
     name: 'Otakemaru',
-    hp: 1900,
+    hp: 3800,
     damage: 42,
     speed: 36,
-    radius: 66,
+    radius: 88,
     color: '#9b59b6',
     armor: '#1b1918',
     attackSpeed: 1.6,
@@ -127,12 +134,55 @@ export function tickCave(s, dt, metaRef) {
 function tickVisibleBossPhase(s, dt, metaRef, bossId) {
   ensureVisibleBoss(s, metaRef, bossId);
   tickBossHazards(s, dt, metaRef);
+  tickBossReinforcements(s, dt, metaRef);
 
   const aliveBoss = s.units.some(u => u.team === 'enemy' && u.isChapterBoss && u.hp > 0);
   if (s.chapterBossSpawned && !aliveBoss) {
     s.gameState = 'REGION_VICTORY';
     bus.emit(EVENTS.GAME_STATE_CHANGED, { state: s.gameState });
   }
+}
+
+/** Spawns a cluster of `count` enemies of `type` streaming in from the top, wave-style. */
+function spawnEnemyCluster(s, metaRef, type, count, spread) {
+  if (count <= 0) return;
+  const centerX = 220 + Math.random() * (V_WIDTH - 440);
+  for (let i = 0; i < count; i++) {
+    const x = clamp(centerX + (Math.random() - 0.5) * spread, 70, V_WIDTH - 70);
+    const y = -50 + (Math.random() - 0.5) * 90;
+    spawnUnit(s, type, 'enemy', x, y, metaRef);
+  }
+}
+
+/** The escort that storms in together with the boss so its arrival is a wave, not a duel. */
+function spawnBossEscort(s, metaRef) {
+  const tier = getCampaignChapterIndex(metaRef.current?.activeChapterId) ?? 0; // 0-based chapter
+  spawnEnemyCluster(s, metaRef, 'REBEL', 10 + tier * 2, 520);
+  spawnEnemyCluster(s, metaRef, 'SHINOBI', 2 + tier, 360);
+  if (tier >= 2) spawnEnemyCluster(s, metaRef, 'TENGU', 4, 420);
+}
+
+/** Periodic reinforcement waves during the boss fight to keep the pressure on. */
+function tickBossReinforcements(s, dt, metaRef) {
+  if (!s.chapterBossSpawned) return;
+  if (s.cave.reinforceTimer === undefined) s.cave.reinforceTimer = BOSS_REINFORCE_INTERVAL;
+
+  s.cave.reinforceTimer -= dt;
+  if (s.cave.reinforceTimer > 0) return;
+  s.cave.reinforceTimer = BOSS_REINFORCE_INTERVAL;
+
+  // Don't pile reinforcements on top of an already-overwhelmed field.
+  const aliveEnemies = s.units.reduce((n, u) => (u.team === 'enemy' && u.hp > 0 ? n + 1 : n), 0);
+  if (aliveEnemies >= BOSS_REINFORCE_MAX_ENEMIES) return;
+
+  const tier = getCampaignChapterIndex(metaRef.current?.activeChapterId) ?? 0;
+  spawnEnemyCluster(s, metaRef, 'REBEL', 5 + tier, 360);
+  if (Math.random() > 0.5) spawnEnemyCluster(s, metaRef, 'SHINOBI', 2, 220);
+  if (tier >= 2 && Math.random() > 0.5) spawnEnemyCluster(s, metaRef, 'TENGU', 3, 320);
+
+  addParticle(s, s.cave.x, s.cave.y, '#b84235', 10, 280);
+  s.screenShake = Math.max(s.screenShake, 0.18);
+  bus.emit(EVENTS.SCREEN_SHAKE, { amount: s.screenShake });
 }
 
 function ensureVisibleBoss(s, metaRef, bossId) {
@@ -160,6 +210,10 @@ function ensureVisibleBoss(s, metaRef, bossId) {
   s.floatingTexts.push({ x: boss.x, y: boss.y - 100, text: `${def.name.toUpperCase()} APPEARS`, color: '#d4af37', life: 2.0, vy: -25 });
   s.screenShake = Math.max(s.screenShake, 0.65);
   bus.emit(EVENTS.SCREEN_SHAKE, { amount: s.screenShake });
+
+  // The boss never arrives alone — its escort storms the field with it.
+  spawnBossEscort(s, metaRef);
+  s.cave.reinforceTimer = BOSS_REINFORCE_INTERVAL;
 }
 
 function tickBossHazards(s, dt, metaRef) {
