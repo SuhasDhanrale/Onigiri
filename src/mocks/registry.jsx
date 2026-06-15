@@ -11,6 +11,7 @@ import { MusicMock } from './screens/MusicMock.jsx';
 import { EffectsMock } from './screens/EffectsMock.jsx';
 import { MapUXMock } from './screens/MapUXMock.jsx';
 import { TutorialOnboardingMock, TutorialOnboardingControls } from './screens/TutorialOnboardingMock.jsx';
+import { SfxMock } from './screens/SfxMock.jsx';
 
 export const mockScreens = [
   {
@@ -81,5 +82,11 @@ export const mockScreens = [
     title: 'Map UX Redesign',
     description: 'Experimenting with a cleaner map UI constraint to 900x500.',
     component: MapUXMock,
+  },
+  {
+    id: 'sfx_mock',
+    title: 'SFX Redesign',
+    description: 'Experimenting with more realistic, Japanese-style synthesized sound effects.',
+    component: SfxMock,
   },
 ];

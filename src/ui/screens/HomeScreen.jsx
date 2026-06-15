@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Check, ChevronLeft, ChevronRight, Lock, Play } from 'lucide-react';
 import { getCampaignChapters, getCurrentCampaignChapterId } from '../../config/campaign.js';
+import { SoundManager } from '../../systems/SoundManager.js';
 
 const ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V'];
 
@@ -15,12 +16,14 @@ export function HomeScreen({ meta, onStartChapter, tutorial }) {
 
   const startCurrentChapter = () => {
     tutorial?.completeStep?.('home_start');
+    SoundManager.playSfx('chapter_select');
     if (currentChapter) onStartChapter(currentChapter.id);
   };
 
   const handleChapterClick = (chapter) => {
     if (chapter.status === 'current') {
       tutorial?.completeStep?.('home_start');
+      SoundManager.playSfx('chapter_select');
       onStartChapter(chapter.id);
     }
   };
@@ -45,7 +48,7 @@ export function HomeScreen({ meta, onStartChapter, tutorial }) {
         <div className="relative h-[430px] max-w-[760px]">
           <div className={`absolute bottom-0 left-0 flex flex-col gap-6 transition-all duration-500 ease-out ${view === 'chapters' ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
             <button
-              onClick={() => setView('chapters')}
+              onClick={() => { SoundManager.playSfx('ui_click'); setView('chapters'); }}
               className="group flex w-fit items-center gap-3 text-left text-xl font-black tracking-widest text-[#dfd4ba]/75 transition-colors hover:text-white"
             >
               CHAPTER SELECT
@@ -72,7 +75,7 @@ export function HomeScreen({ meta, onStartChapter, tutorial }) {
           <div className={`absolute inset-0 flex flex-col transition-all duration-500 ease-out ${view === 'chapters' ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none translate-y-12 opacity-0'}`}>
             <div className="mb-6 flex items-center gap-4 border-b border-[#dfd4ba]/20 pb-5">
               <button
-                onClick={() => setView('main')}
+                onClick={() => { SoundManager.playSfx('ui_click'); setView('main'); }}
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#dfd4ba]/10 text-[#dfd4ba] transition-colors hover:bg-[#dfd4ba]/20 hover:text-white"
                 aria-label="Back to main menu"
               >

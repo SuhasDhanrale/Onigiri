@@ -1,11 +1,16 @@
+import { SoundManager } from '../../systems/SoundManager.js';
+
 export function TacticalCommand({ s, triggerWarDrums, triggerHarvest, triggerResolve }) {
+  const playHover = () => SoundManager.playSfx('ui_hover');
+
   return (
     <div>
       <h3 className="text-[var(--color-ink-dark)] font-black text-[10px] uppercase tracking-[0.2em] border-b-2 border-[var(--color-ink-dark)] pb-1 mb-2">Tactical Command</h3>
       <div className="flex flex-col gap-1.5">
-        <button 
-          onClick={triggerWarDrums} 
-          disabled={s.command < 200 || s.gameState !== 'COMBAT'} 
+        <button
+          onClick={triggerWarDrums}
+          onMouseEnter={playHover}
+          disabled={s.command < 200 || s.gameState !== 'COMBAT'}
           className="relative group w-full flex justify-between items-baseline px-3 py-1.5 transition-all border-2 bg-[#e8e0cc] border-[var(--color-ink-dark)] text-[var(--color-ink-dark)] hover:bg-[var(--color-ink-light)] hover:text-[var(--color-parchment)] disabled:opacity-50 disabled:bg-[#cfc4af] disabled:text-[var(--color-khaki)] disabled:border-[#8b8574]"
         >
           <span className="text-[9px] font-bold tracking-widest uppercase">
@@ -17,9 +22,10 @@ export function TacticalCommand({ s, triggerWarDrums, triggerHarvest, triggerRes
           </div>
         </button>
 
-        <button 
-          onClick={triggerHarvest} 
-          disabled={s.command < 300 || s.gameState !== 'COMBAT'} 
+        <button
+          onClick={triggerHarvest}
+          onMouseEnter={playHover}
+          disabled={s.command < 300 || s.gameState !== 'COMBAT'}
           className="relative group w-full flex justify-between items-baseline px-3 py-1.5 transition-all border-2 bg-[#e8e0cc] border-[var(--color-ink-dark)] text-[var(--color-ink-dark)] hover:bg-[var(--color-ink-light)] hover:text-[var(--color-parchment)] disabled:opacity-50 disabled:bg-[#cfc4af] disabled:text-[var(--color-khaki)] disabled:border-[#8b8574]"
         >
           <span className="text-[9px] font-bold tracking-widest uppercase">
@@ -31,9 +37,10 @@ export function TacticalCommand({ s, triggerWarDrums, triggerHarvest, triggerRes
           </div>
         </button>
 
-        <button 
-          onClick={triggerResolve} 
-          disabled={s.command < 150 || s.gameState !== 'COMBAT'} 
+        <button
+          onClick={triggerResolve}
+          onMouseEnter={playHover}
+          disabled={s.command < 150 || s.gameState !== 'COMBAT'}
           className="relative group w-full flex justify-between items-baseline px-3 py-1.5 transition-all border-2 bg-[#e8e0cc] border-[var(--color-ink-dark)] text-[var(--color-ink-dark)] hover:bg-[var(--color-ink-light)] hover:text-[var(--color-parchment)] disabled:opacity-50 disabled:bg-[#cfc4af] disabled:text-[var(--color-khaki)] disabled:border-[#8b8574]"
         >
           <span className="text-[9px] font-bold tracking-widest uppercase">

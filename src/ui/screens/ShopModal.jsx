@@ -1,5 +1,6 @@
 import React from 'react';
 import { SHOP_ITEMS } from '../../config/nodes.js';
+import { SoundManager } from '../../systems/SoundManager.js';
 
 /**
  * ShopModal — overlay on HubTestScreen for shop nodes.
@@ -15,7 +16,7 @@ export function ShopModal({ inventory, runState, lockableBarracks = [], onPurcha
   return (
     <div
       className="absolute inset-0 z-[300] flex items-center justify-center bg-black/75 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === e.currentTarget) onLeave(); }}
+      onClick={(e) => { if (e.target === e.currentTarget) { SoundManager.playSfx('screen_transition'); onLeave(); } }}
     >
       <div className="w-[580px] bg-[#0a0908] border border-[#4a5d23]/50 shadow-[0_0_80px_rgba(0,0,0,0.95)] flex flex-col animate-[fade-in_0.2s_ease-out]">
 
@@ -82,7 +83,7 @@ export function ShopModal({ inventory, runState, lockableBarracks = [], onPurcha
                   </span>
                   <button
                     disabled={!canAfford || alreadyOwned || noCurses || noUnits}
-                    onClick={() => onPurchase(entry.id, displayPrice)}
+                    onClick={() => { SoundManager.playSfx('purchase_success'); onPurchase(entry.id, displayPrice); }}
                     className={`px-4 py-1 text-[9px] font-black uppercase tracking-widest border transition-all
                       ${alreadyOwned
                         ? 'border-[#8b8574]/20 text-[#8b8574] cursor-not-allowed'
@@ -102,7 +103,7 @@ export function ShopModal({ inventory, runState, lockableBarracks = [], onPurcha
         {/* Leave */}
         <div className="px-8 pb-6">
           <button
-            onClick={onLeave}
+            onClick={() => { SoundManager.playSfx('screen_transition'); onLeave(); }}
             className="w-full py-3 border border-[#8b8574]/30 text-xs font-black uppercase tracking-[0.3em] text-[#8b8574] hover:text-[#dfd4ba] hover:border-[#8b8574] transition-all"
           >
             Leave

@@ -3,6 +3,7 @@ import { SPELL_COSTS, THUNDER_SHOWER } from '../config/spells.js';
 import { pushFx } from '../renderer/drawSumiFx.js';
 import { bus } from '../core/EventBus.js';
 import { EVENTS } from '../core/events.js';
+import { SoundManager } from './SoundManager.js';
 
 /**
  * Ticks fox fire zones — damages enemies inside and spawns fire particles.
@@ -14,12 +15,15 @@ export function tickFoxFires(s, dt) {
   for (let i = s.foxFires.length - 1; i >= 0; i--) {
     const ff = s.foxFires[i];
     ff.life -= dt;
+    let burning = false;
     enemies.forEach(e => {
       if (e.y > ff.yTop && e.y < ff.yBottom) {
         e.hp -= 30 * dt;
         e.burn = 0.5;
+        burning = true;
       }
     });
+    if (burning) SoundManager.playSfx('foxfire_burn');
     if (Math.random() < dt * 40) {
       s.particles.push({
         x: Math.random() * 1200, y: ff.yBottom - Math.random() * 200,
@@ -42,12 +46,15 @@ export function tickDragonWaves(s, dt) {
     const w = s.dragonWaves[i];
     w.life -= dt;
     w.y -= dt * 600;
+    let hitAny = false;
     enemies.forEach(e => {
       if (Math.abs(e.y - w.y) < 120) {
         e.hp -= 200 * dt;
         e.y -= dt * 450;
+        hitAny = true;
       }
     });
+    if (hitAny) SoundManager.playSfx('dragonwave_impact');
     if (w.life <= 0) s.dragonWaves.splice(i, 1);
   }
 }
@@ -63,6 +70,7 @@ export function tickThunderShower(s, dt) {
     if (impact.target?.hp > 0) {
       impact.target.hp -= impact.damage;
     }
+    SoundManager.playSfx('lightning_strike');
     s.thunderImpacts.splice(i, 1);
   }
 }
@@ -80,6 +88,7 @@ export function triggerThunder(s, options = {}) {
   if (s.command >= cost && s.gameState === 'COMBAT' && s.thunderCooldown <= 0) {
     s.command -= cost;
     bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
+    SoundManager.playSfx('thunder_cast');
     s.thunderCooldown = 2.0 * (s.shopSpellCooldownMult ?? 1.0);  // spell_mastery
     const enemies = s.units.filter(u => u.team === 'enemy' && u.hp > 0);
     const targets = randomTargets(enemies, THUNDER_SHOWER.strikes);
@@ -104,6 +113,7 @@ export function triggerFoxFire(s, options = {}) {
   if (s.command >= cost && s.gameState === 'COMBAT' && s.foxFireCooldown <= 0) {
     s.command -= cost;
     bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
+    SoundManager.playSfx('foxfire_cast');
     s.foxFireCooldown = 10.0 * (s.shopSpellCooldownMult ?? 1.0);  // spell_mastery
     s.foxFires.push({ yTop: 1000, yBottom: 1200, life: 8.0, maxLife: 8.0, seed: Math.random() * 100000 });
     pushFx(s, { kind: 'fox_wall', layer: 'background', yTop: 1000, yBottom: 1200, life: 8.0, maxLife: 8.0 });
@@ -115,6 +125,7 @@ export function triggerDragonWave(s) {
   if (s.dragonUnlocked && s.command >= SPELL_COSTS.DRAGON_WAVE && s.gameState === 'COMBAT' && s.dragonCooldown <= 0) {
     s.command -= SPELL_COSTS.DRAGON_WAVE;
     bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
+    SoundManager.playSfx('dragonwave_cast');
     s.dragonCooldown = 15.0 * (s.shopSpellCooldownMult ?? 1.0);  // spell_mastery
     s.dragonWaves.push({ y: WALL_Y - 50, life: 2.0, maxLife: 2.0, seed: Math.random() * 100000 });
     pushFx(s, { kind: 'dragon_crest', layer: 'background', y: WALL_Y - 50, life: 2.0, maxLife: 2.0, vy: -600 });
@@ -128,6 +139,7 @@ export function triggerWarDrums(s) {
   if (s.command >= 200 && s.gameState === 'COMBAT') {
     s.command -= 200;
     bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
+    SoundManager.playSfx('wardrums_activate');
     s.warDrumsActive = 5.0;
     pushFx(s, { kind: 'aura', layer: 'foreground', x: V_WIDTH / 2, y: WALL_Y - 220, radius: 190, color: '#d4af37', life: 1.2, maxLife: 1.2, spin: 0.45 });
     pushFx(s, { kind: 'shockwave', layer: 'foreground', x: V_WIDTH / 2, y: WALL_Y - 220, radius: 220, color: '#d4af37', life: 0.55, maxLife: 0.55 });
@@ -138,6 +150,7 @@ export function triggerHarvest(s) {
   if (s.command >= 300 && s.gameState === 'COMBAT') {
     s.command -= 300;
     bus.emit(EVENTS.COMMAND_CHANGED, { command: s.command });
+    SoundManager.playSfx('harvest_activate');
     s.harvestActive = 10.0;
     pushFx(s, { kind: 'aura', layer: 'foreground', x: V_WIDTH / 2, y: WALL_Y - 250, radius: 170, color: '#4a5d23', life: 1.4, maxLife: 1.4, spin: -0.35 });
     pushFx(s, { kind: 'screen_pulse', layer: 'background', color: '#4a5d23', life: 0.25, maxLife: 0.25 });
@@ -157,6 +170,7 @@ export function triggerResolve(s) {
       }
     });
     if (healedAny) {
+      SoundManager.playSfx('resolve_heal');
       pushFx(s, { kind: 'aura', layer: 'foreground', x: V_WIDTH / 2, y: WALL_Y - 180, radius: 160, color: '#4a5d23', life: 0.95, maxLife: 0.95, spin: 0.3 });
       pushFx(s, { kind: 'shockwave', layer: 'foreground', x: V_WIDTH / 2, y: WALL_Y - 180, radius: 180, color: '#dfd4ba', life: 0.5, maxLife: 0.5 });
       s.screenShake = 0.3;

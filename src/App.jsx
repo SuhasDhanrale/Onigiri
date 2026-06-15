@@ -24,6 +24,9 @@ import { generateMap, applyNodeCompletion } from './systems/MapGenerator.js';
 import { computeBlessingMultipliers, computeCurseMultipliers, tickCurses, getCurseHonorMult } from './systems/EventSystem.js';
 import { computeShopModifiers } from './systems/ShopSystem.js';
 import { applyNodeRewardToRunState, makeNodeFromRun, resolveNodeVictoryReward, summarizeResolvedReward } from './systems/NodeRewardSystem.js';
+import { SoundManager } from './systems/SoundManager.js';
+import { bus } from './core/EventBus.js';
+import { EVENTS } from './core/events.js';
 
 // --- Phase 5: Hook & Input imports ---
 import { useMeta } from './hooks/useMeta.js';
@@ -377,6 +380,7 @@ export default function App() {
       if (isCampaignComplete) {
         state.current.gameState = 'CAMPAIGN_OVER';
         setShowHome(false);
+        SoundManager.playSfx('campaign_victory_fanfare');
       } else {
         state.current.gameState = 'MAP_SCREEN';
         setShowHome(true);
@@ -498,7 +502,10 @@ export default function App() {
       s.command -= cost;
       s.barracks[bKey] = 1;
       s.timers[bKey] = maxTime;
+      SoundManager.playSfx('barracks_build');
       setUiTick(t => t + 1);
+    } else {
+      SoundManager.playSfx('purchase_deny');
     }
   }, []);
 
@@ -507,7 +514,10 @@ export default function App() {
     if (s.command >= cost && s.gameState === 'COMBAT') {
       s.command -= cost;
       s.troopLevel[bKey]++;
+      SoundManager.playSfx('level_up');
       setUiTick(t => t + 1);
+    } else {
+      SoundManager.playSfx('purchase_deny');
     }
   }, []);
 
@@ -516,7 +526,10 @@ export default function App() {
     if (s.command >= cost && s.gameState === 'COMBAT') {
       s.command -= cost;
       s.barracks[bKey]++;
+      SoundManager.playSfx('level_up');
       setUiTick(t => t + 1);
+    } else {
+      SoundManager.playSfx('purchase_deny');
     }
   }, []);
 
@@ -525,7 +538,10 @@ export default function App() {
     if (s.command >= cost && s.gameState === 'COMBAT') {
       s.command -= cost;
       s.autoUnlocked[bKey] = true;
+      SoundManager.playSfx('purchase_success');
       setUiTick(t => t + 1);
+    } else {
+      SoundManager.playSfx('purchase_deny');
     }
   }, []);
 
@@ -534,7 +550,10 @@ export default function App() {
     if (s.command >= cost && s.gameState === 'COMBAT') {
       s.command -= cost;
       s.heroUnlocked = true;
+      SoundManager.playSfx('hero_unlock');
       setUiTick(t => t + 1);
+    } else {
+      SoundManager.playSfx('purchase_deny');
     }
   }, []);
 
@@ -616,6 +635,51 @@ export default function App() {
 
   // Hook up Event Bus
   useGameEvents(setUiTick);
+
+  // --- Audio: unlock the AudioContext on the first user gesture (autoplay policy) ---
+  useEffect(() => {
+    const unlock = () => {
+      SoundManager.resume();
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+      window.removeEventListener('touchstart', unlock);
+    };
+    window.addEventListener('pointerdown', unlock);
+    window.addEventListener('keydown', unlock);
+    window.addEventListener('touchstart', unlock);
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+      window.removeEventListener('touchstart', unlock);
+    };
+  }, []);
+
+  // --- Audio: switch the music loop with the screen (Track 7 menu / Track 8 battle) ---
+  const audioGameState = state.current.gameState;
+  useEffect(() => {
+    if (showHome || audioGameState === 'MAP_SCREEN') {
+      SoundManager.playMusicSlot('menu');
+    } else if (audioGameState === 'COMBAT') {
+      SoundManager.playMusicSlot('battle');
+    }
+  }, [showHome, audioGameState]);
+
+  // --- Audio: per-wave alert SFX, plus Track 9 takeover for the chapter boss ---
+  useEffect(() => {
+    const handleWaveChanged = (payload) => {
+      if (state.current.gameState !== 'COMBAT') return;
+      if (payload?.waveState === 'SPAWNING') {
+        // Per-wave "enemy comes" alert SFX (distinct from the music tracks).
+        SoundManager.playSfx('enemy_alert');
+      } else if (payload?.waveState === 'BOSS_PHASE') {
+        // Final boss of the chapter — Track 9 (Distant Battlefield) takes over
+        // the loop, replacing Track 8 for the duration of the boss fight.
+        SoundManager.playMusicSlot('chapterBoss');
+      }
+    };
+    bus.on(EVENTS.WAVE_CHANGED, handleWaveChanged);
+    return () => bus.off(EVENTS.WAVE_CHANGED, handleWaveChanged);
+  }, []);
 
   // Hook up Input Handlers
   const { handlePointerDown, handlePointerMove, handlePointerUp } = useMemo(() => 

@@ -14,6 +14,7 @@ import { EventModal } from './EventModal.jsx';
 import { ShopModal } from './ShopModal.jsx';
 import { RestModal } from './RestModal.jsx';
 import { SumiResultScreen } from './SumiResultScreen.jsx';
+import { SoundManager } from '../../systems/SoundManager.js';
 
 export function HubTestScreen({
   meta,
@@ -81,6 +82,7 @@ export function HubTestScreen({
   const handleNodeClick = (node) => {
     if (node.status === 'available') {
       tutorial?.completeStep?.('map_select_node');
+      SoundManager.playSfx('node_select');
       setSelectedNode(node);
       tutorial?.requestStep?.('node_detail');
     }
@@ -106,6 +108,7 @@ export function HubTestScreen({
     if (!selectedNode || selectedNode.status !== 'available') return;
     const node = selectedNode;
     tutorial?.completeStep?.('node_detail');
+    SoundManager.playSfx('screen_transition');
 
     if (node.type === 'combat' || node.type === 'elite' || node.type === 'boss') {
       // Navigate to combat

@@ -3,6 +3,7 @@ import { getCompressedWavePressure, getPlayableWaveCount, getWaveCompressionMult
 import { spawnUnit } from './SpawnSystem.js';
 import { bus } from '../core/EventBus.js';
 import { EVENTS } from '../core/events.js';
+import { SoundManager } from './SoundManager.js';
 
 /**
  * Generates a list of enemy squads for a given wave number.
@@ -210,6 +211,7 @@ export function tickWaveState(s, dt, metaRef) {
         } else {
           s.gameState = 'REGION_VICTORY';
           bus.emit(EVENTS.GAME_STATE_CHANGED, { state: s.gameState });
+          SoundManager.playSfx('region_victory_fanfare');
         }
       } else {
         const isReformation = s.wave % 3 === 0;

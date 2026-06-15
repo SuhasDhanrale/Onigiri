@@ -3,6 +3,7 @@ import { COLORS } from '../config/colors.js';
 import { pushFx } from '../renderer/drawSumiFx.js';
 import { bus } from '../core/EventBus.js';
 import { EVENTS } from '../core/events.js';
+import { SoundManager } from './SoundManager.js';
 
 /**
  * Processes all dead units (hp <= 0): grants command, honor, particles.
@@ -26,10 +27,12 @@ export function processDeaths(s, metaRef) {
           pushFx(s, { kind: 'shockwave', layer: 'foreground', x: u.x, y: u.y, radius: u.radius * 3.2, color: u.color || '#b84235', life: 1.1, maxLife: 1.1 });
           pushFx(s, { kind: 'ink_burst', layer: 'foreground', x: u.x, y: u.y, radius: u.radius * 3.0, color: '#1b1918', life: 1.1, maxLife: 1.1, rays: 22 });
           pushFx(s, { kind: 'screen_pulse', layer: 'background', x: u.x, y: u.y, color: u.color || '#b84235', life: 0.6, maxLife: 0.6 });
+          SoundManager.playSfx('boss_death');
         } else {
           const deathRadius = u.isElite ? u.radius * 2.2 : u.radius * 1.8;
           pushFx(s, { kind: 'smoke_puff', layer: 'foreground', x: u.x, y: u.y, radius: deathRadius, color: 'rgba(27, 25, 24, 0.5)', life: u.isElite ? 0.85 : 0.55, maxLife: u.isElite ? 0.85 : 0.55, puffs: u.isElite ? 8 : 5 });
           pushFx(s, { kind: 'ink_burst', layer: 'foreground', x: u.x, y: u.y, radius: deathRadius, color: '#1b1918', life: 0.35, maxLife: 0.35, rays: u.isElite ? 12 : 7 });
+          SoundManager.playSfx(u.isElite ? 'elite_death' : 'unit_death');
         }
 
         const isBloodKatana = metaRef.current.equippedItem === 'BLOOD_KATANA';
@@ -70,6 +73,7 @@ export function processDeaths(s, metaRef) {
 
       if (u.team === 'player') {
         pushFx(s, { kind: 'smoke_puff', layer: 'foreground', x: u.x, y: u.y, radius: u.radius * 1.8, color: 'rgba(139, 133, 116, 0.42)', life: 0.65, maxLife: 0.65, puffs: 5 });
+        SoundManager.playSfx('unit_death');
       }
 
       addParticle(s, u.x, u.y, COLORS.ink, 12);

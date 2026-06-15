@@ -3,6 +3,7 @@ import { damageOrb } from './CaveSystem.js';
 import { pushFx } from '../renderer/drawSumiFx.js';
 import { bus } from '../core/EventBus.js';
 import { EVENTS } from '../core/events.js';
+import { SoundManager } from './SoundManager.js';
 
 function bumpShake(s, amount) {
   s.screenShake = Math.max(s.screenShake, amount);
@@ -32,6 +33,7 @@ export function tickProjectiles(s, dt) {
         
         if (p.isOrbAttack && s.orb && s.orb.active) {
           damageOrb(s, p.damage);
+          SoundManager.playSfx('orb_hit');
         } else {
           s.units.forEach(u => {
             if (u.team !== p.team && u.type !== 'flying' && Math.hypot(u.x - p.x, u.y - p.y) < 120) {
@@ -46,6 +48,7 @@ export function tickProjectiles(s, dt) {
               }
             }
           });
+          SoundManager.playSfx('siege_impact');
         }
         s.projectiles.splice(i, 1);
       }
@@ -61,6 +64,7 @@ export function tickProjectiles(s, dt) {
           pushFx(s, { kind: 'impact_sparks', layer: 'foreground', x: s.orb.x, y: s.orb.y, radius: 54, color: '#b84235', life: 0.28, maxLife: 0.28, rays: 8 });
           pushFx(s, { kind: 'shockwave', layer: 'foreground', x: s.orb.x, y: s.orb.y, radius: 70, color: '#dfd4ba', life: 0.26, maxLife: 0.26 });
           hit = true;
+          SoundManager.playSfx('orb_hit');
         }
       } else {
         for (let j = 0; j < s.units.length; j++) {
@@ -85,6 +89,7 @@ export function tickProjectiles(s, dt) {
             if (p.isFlaming) {
               pushFx(s, { kind: 'smoke_puff', layer: 'foreground', x: p.x, y: p.y, radius: 36, color: 'rgba(234, 88, 12, 0.28)', life: 0.5, maxLife: 0.5, puffs: 4 });
             }
+            SoundManager.playSfx(p.isFlaming ? 'arrow_impact_fire' : 'arrow_impact');
             if (!p.pierce) hit = true;
             if (hit) break;
           }

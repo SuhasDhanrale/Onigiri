@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BLESSINGS } from '../../config/blessings.js';
+import { SoundManager } from '../../systems/SoundManager.js';
 
 /**
  * RestModal — overlay on HubTestScreen for rest nodes.
@@ -21,11 +22,14 @@ export function RestModal({ options, blessingChoices, runState, onChoice, onLeav
     if (optionId === 'REMOVE_CURSE') {
       if (!hasCurses) return;
       const curseId = selectedCurse ?? runState?.curses?.[0]?.id ?? null;
+      SoundManager.playSfx('purchase_success');
       onChoice('REMOVE_CURSE', { curseId });
     } else if (optionId === 'BLESSING') {
       if (!selectedBlessing) return;
+      SoundManager.playSfx('purchase_success');
       onChoice('BLESSING', { blessingId: selectedBlessing });
     } else if (optionId === 'RECRUIT_CAP') {
+      SoundManager.playSfx('purchase_success');
       onChoice('RECRUIT_CAP', { size: garrisonSize });
     }
   };
@@ -33,7 +37,7 @@ export function RestModal({ options, blessingChoices, runState, onChoice, onLeav
   return (
     <div
       className="absolute inset-0 z-[300] flex items-center justify-center bg-black/75 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === e.currentTarget) onLeave(); }}
+      onClick={(e) => { if (e.target === e.currentTarget) { SoundManager.playSfx('screen_transition'); onLeave(); } }}
     >
       <div className="w-[560px] bg-[#0a0908] border border-[#2b3d60]/50 shadow-[0_0_80px_rgba(0,0,0,0.95)] flex flex-col animate-[fade-in_0.2s_ease-out]">
 
@@ -78,7 +82,7 @@ export function RestModal({ options, blessingChoices, runState, onChoice, onLeav
                       return (
                         <button
                           key={bId}
-                          onClick={() => setSelectedBlessing(bId)}
+                          onClick={() => { SoundManager.playSfx('ui_click'); setSelectedBlessing(bId); }}
                           className={`flex-1 p-3 border text-left transition-all
                             ${selectedBlessing === bId
                               ? 'border-[#d4af37] bg-[#d4af37]/10'
@@ -103,7 +107,7 @@ export function RestModal({ options, blessingChoices, runState, onChoice, onLeav
                     {runState.curses.map(c => (
                       <button
                         key={c.id}
-                        onClick={() => setSelectedCurse(c.id)}
+                        onClick={() => { SoundManager.playSfx('ui_click'); setSelectedCurse(c.id); }}
                         className={`px-3 py-1 border text-[9px] font-bold uppercase tracking-widest transition-all
                           ${selectedCurse === c.id
                             ? 'border-[#b84235] bg-[#b84235]/10 text-[#b84235]'
@@ -122,7 +126,7 @@ export function RestModal({ options, blessingChoices, runState, onChoice, onLeav
                     {['small', 'medium', 'large'].map(size => (
                       <button
                         key={size}
-                        onClick={() => setGarrisonSize(size)}
+                        onClick={() => { SoundManager.playSfx('ui_click'); setGarrisonSize(size); }}
                         className={`px-4 py-1 border text-[9px] font-bold uppercase tracking-widest transition-all
                           ${garrisonSize === size
                             ? 'border-[#d4af37] bg-[#d4af37]/10 text-[#d4af37]'
@@ -154,7 +158,7 @@ export function RestModal({ options, blessingChoices, runState, onChoice, onLeav
         {/* Leave */}
         <div className="px-8 pb-6">
           <button
-            onClick={onLeave}
+            onClick={() => { SoundManager.playSfx('screen_transition'); onLeave(); }}
             className="w-full py-3 border border-[#8b8574]/30 text-xs font-black uppercase tracking-[0.3em] text-[#8b8574] hover:text-[#dfd4ba] hover:border-[#8b8574] transition-all"
           >
             Move On

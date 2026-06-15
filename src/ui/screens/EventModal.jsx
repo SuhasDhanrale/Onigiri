@@ -1,4 +1,5 @@
 import React from 'react';
+import { SoundManager } from '../../systems/SoundManager.js';
 
 /**
  * EventModal — overlay on HubTestScreen for event nodes.
@@ -14,7 +15,7 @@ export function EventModal({ event, runState, onChoice, onClose }) {
   return (
     <div
       className="absolute inset-0 z-[300] flex items-center justify-center bg-black/75 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => { if (e.target === e.currentTarget) { SoundManager.playSfx('screen_transition'); onClose(); } }}
     >
       <div className="w-[540px] max-h-[85vh] bg-[#0a0908] border border-[#d4af37]/40 shadow-[0_0_80px_rgba(0,0,0,0.95)] flex flex-col overflow-hidden animate-[fade-in_0.2s_ease-out]">
 
@@ -29,7 +30,7 @@ export function EventModal({ event, runState, onChoice, onClose }) {
             </h2>
           </div>
           <button
-            onClick={onClose}
+            onClick={() => { SoundManager.playSfx('screen_transition'); onClose(); }}
             className="w-8 h-8 flex items-center justify-center border border-[#8b8574]/30 text-[#8b8574] hover:text-[#dfd4ba] hover:border-[#8b8574] transition-colors text-sm"
           >
             ✕
@@ -52,7 +53,7 @@ export function EventModal({ event, runState, onChoice, onClose }) {
             return (
               <button
                 key={choice.id}
-                onClick={() => onChoice(choice.id)}
+                onClick={() => { SoundManager.playSfx('ui_click'); onChoice(choice.id); }}
                 className={`w-full text-left px-5 py-3 border transition-all group
                   ${isCombatRisk
                     ? 'border-[#b84235]/50 bg-[#1a0f0e] hover:border-[#b84235] hover:bg-[#b84235]/10'

@@ -1,19 +1,22 @@
 import { SPELL_COSTS } from '../../config/spells.js';
+import { SoundManager } from '../../systems/SoundManager.js';
 
 export function SpellShrine({ s, setUiTick, meta, setMeta, triggerThunder, triggerFoxFire, triggerDragonWave, unlockHero, tutorial, tutorialFreeSpellAvailable = false }) {
   const freeTutorialSpell = tutorialFreeSpellAvailable && s.gameState === 'COMBAT';
+  const playHover = () => SoundManager.playSfx('ui_hover');
 
   return (
     <div className="w-full">
       <div className="flex justify-between items-center border-b-2 border-[var(--color-ink-dark)] pb-1 mb-2">
         <h3 className="text-[var(--color-ink-dark)] font-black text-[9px] uppercase tracking-[0.2em]">The Onmyoji Shrine</h3>
         {!s.heroUnlocked && (
-          <button 
+          <button
             onClick={() => {
               tutorial?.completeStep?.('combat_spell_crisis');
               unlockHero(500);
-            }} 
-            disabled={s.command < 500 || s.gameState !== 'COMBAT'} 
+            }}
+            onMouseEnter={playHover}
+            disabled={s.command < 500 || s.gameState !== 'COMBAT'}
             className="text-[8px] font-black uppercase border border-[#d4af37] bg-[#d4af37] text-[var(--color-ink-dark)] hover:bg-[var(--color-ink-dark)] hover:text-[#d4af37] px-1.5 py-0.5 disabled:opacity-50 transition-colors"
           >
             Unlock Hero (500K)
@@ -23,12 +26,13 @@ export function SpellShrine({ s, setUiTick, meta, setMeta, triggerThunder, trigg
       
       <div className="grid grid-cols-4 gap-2">
         {/* Lightning Shower */}
-        <button 
+        <button
           onClick={() => {
             tutorial?.completeStep?.('combat_spell_crisis');
             triggerThunder();
-          }} 
-          disabled={(!freeTutorialSpell && s.command < SPELL_COSTS.THUNDER_SHOWER) || s.gameState !== 'COMBAT' || s.thunderCooldown > 0} 
+          }}
+          onMouseEnter={playHover}
+          disabled={(!freeTutorialSpell && s.command < SPELL_COSTS.THUNDER_SHOWER) || s.gameState !== 'COMBAT' || s.thunderCooldown > 0}
           className="relative group aspect-square flex flex-col items-center justify-center transition-all border-2 bg-[var(--color-ink)] text-[#38bdf8] border-[#38bdf8] hover:bg-[#38bdf8] hover:text-[var(--color-ink-dark)] disabled:opacity-50 disabled:border-[var(--color-ink-dark)] disabled:text-[#8b8574]"
         >
           <span className="text-xl">⚡</span>
@@ -45,12 +49,13 @@ export function SpellShrine({ s, setUiTick, meta, setMeta, triggerThunder, trigg
         </button>
 
         {/* Fox Fire */}
-        <button 
+        <button
           onClick={() => {
             tutorial?.completeStep?.('combat_spell_crisis');
             triggerFoxFire();
-          }} 
-          disabled={(!freeTutorialSpell && s.command < SPELL_COSTS.FOX_FIRE) || s.gameState !== 'COMBAT' || s.foxFireCooldown > 0} 
+          }}
+          onMouseEnter={playHover}
+          disabled={(!freeTutorialSpell && s.command < SPELL_COSTS.FOX_FIRE) || s.gameState !== 'COMBAT' || s.foxFireCooldown > 0}
           className="relative group aspect-square flex flex-col items-center justify-center transition-all border-2 bg-[var(--color-ink)] text-[#ea580c] border-[#ea580c] hover:bg-[#ea580c] hover:text-[var(--color-ink-dark)] disabled:opacity-50 disabled:border-[var(--color-ink-dark)] disabled:text-[#8b8574]"
         >
           <span className="text-xl">🔥</span>
@@ -67,11 +72,12 @@ export function SpellShrine({ s, setUiTick, meta, setMeta, triggerThunder, trigg
         </button>
 
         {/* Dragon Wave */}
-        <button 
+        <button
           onClick={() => {
             tutorial?.completeStep?.('combat_spell_crisis');
             triggerDragonWave();
-          }} 
+          }}
+          onMouseEnter={playHover}
           disabled={s.command < SPELL_COSTS.DRAGON_WAVE || s.gameState !== 'COMBAT' || s.dragonCooldown > 0 || !s.dragonUnlocked}
           className="relative group aspect-square flex flex-col items-center justify-center transition-all border-2 bg-[var(--color-ink)] text-[#d4af37] border-[#d4af37] hover:bg-[#d4af37] hover:text-[var(--color-ink-dark)] disabled:opacity-50 disabled:border-[var(--color-ink-dark)] disabled:text-[#8b8574]"
         >

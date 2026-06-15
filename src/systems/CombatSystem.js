@@ -7,6 +7,7 @@ import { bus } from '../core/EventBus.js';
 import { EVENTS } from '../core/events.js';
 import { claimSlot, releaseSlot, calculateSlotPosition, shouldBypassSlotClaiming } from './SlotManager.js';
 import { canAttackOrb } from './CaveSystem.js';
+import { SoundManager } from './SoundManager.js';
 
 const YUMI_EXPOSED_RANGE = 150;
 const YUMI_EXPOSED_DAMAGE_MULT = 0.6;
@@ -28,6 +29,7 @@ function emitMeleeImpact(s, unit, target, amount = 0.16) {
   pushFx(s, { kind: 'slash_arc', layer: 'foreground', x, y, radius: unit.radius + target.radius + 36, rotation: angle, color, life: 0.22, maxLife: 0.22 });
   pushFx(s, { kind: 'impact_sparks', layer: 'foreground', x: target.x, y: target.y, radius: 42, color: isPlayerHit ? '#d4af37' : '#dfd4ba', life: 0.28, maxLife: 0.28, rays: 7 });
   bumpShake(s, amount);
+  SoundManager.playSfx('sword_hit');
 }
 
 /**
@@ -86,6 +88,7 @@ export function tickUnits(s, dt, now, metaRef) {
         s.explosions.push({ x: unit.x, y: unit.y, r: unit.range, life: 0.6, color: COLORS.vermilion });
         pushFx(s, { kind: 'shockwave', layer: 'foreground', x: unit.x, y: unit.y, radius: unit.range, color: COLORS.vermilion, life: 0.55, maxLife: 0.55 });
         players.forEach(p => { if (Math.hypot(p.x - unit.x, p.y - unit.y) < unit.range) { p.hp -= unit.damage * 2; p.y += 100; } });
+        SoundManager.playSfx('siege_impact');
       }
       continue;
     }
@@ -232,40 +235,48 @@ export function tickUnits(s, dt, now, metaRef) {
         unit.hp = 0;
         pushFx(s, { kind: 'impact_sparks', layer: 'foreground', x: target.x, y: target.y, radius: 36, color: '#8b8574', life: 0.22, maxLife: 0.22, rays: 6 });
         addParticle(s, unit.x, unit.y, COLORS.ink, 5);
+        SoundManager.playSfx('ikki_kamikaze');
         continue;
       }
 
       if (unit.attackCooldown <= 0) {
         if (unit.type === 'boss' && Math.random() < 0.2) {
           unit.telegraphTimer = 0.8; unit.attackCooldown = unit.attackSpeed;
+          SoundManager.playSfx('boss_telegraph');
         } else if (unit.type === 'ranged') {
           const angle = Math.atan2(target.y - unit.y, target.x - unit.x);
           const damage = isExposedYumi ? unit.damage * YUMI_EXPOSED_DAMAGE_MULT : unit.damage;
           const isFlaming = !isExposedYumi && unit.team === 'player' && unit.name === 'Yumi Archer' && metaRef.current.unlockedProvisions.includes('FLAMING_ARROWS') && Math.random() < 0.25;
           s.projectiles.push({ x: unit.x, y: unit.y, vx: Math.cos(angle) * 1200, vy: Math.sin(angle) * 1200, damage, team: unit.team, pierce: unit.pierce && !isExposedYumi, isFlaming });
           expectedHpMap.set(target.id, (expectedHpMap.get(target.id) ?? target.hp) - damage);
+          SoundManager.playSfx('arrow_release');
         } else if (unit.type === 'siege') {
           s.projectiles.push({ type: 'lob', startX: unit.x, startY: unit.y, targetX: target.x, targetY: target.y, progress: 0, travelTime: 1.2, damage: unit.damage, team: unit.team, z: 0 });
+          SoundManager.playSfx('siege_launch');
           } else {
           target.hp -= unit.damage;
           if (unit.team === 'player' && s.combatStats) s.combatStats.damageDealt += unit.damage;
           unit.swingPhase = 1.0;
+          SoundManager.playSfx('sword_swing');
           emitMeleeImpact(s, unit, target, unit.type === 'boss' ? 0.34 : unit.type === 'cavalry' ? 0.26 : 0.14);
           if (unit.type === 'assassin' && target.name === 'Bamboo Barricade' && target.team === 'player') {
             unit.slowTimer = Math.max(unit.slowTimer ?? 0, ASSASSIN_BARRICADE_SLOW_TIME);
             unit.slowMult = ASSASSIN_BARRICADE_SLOW_MULT;
             s.floatingTexts.push({ x: unit.x, y: unit.y - 14, text: 'CRIPPLED', color: COLORS.khaki, life: 0.7, vy: -24 });
             pushFx(s, { kind: 'smoke_puff', layer: 'foreground', x: target.x, y: target.y, radius: 52, color: 'rgba(74, 59, 50, 0.55)', life: 0.7, maxLife: 0.7 });
+            SoundManager.playSfx('parry_cripple');
           }
           if (target.name === 'Bamboo Barricade' && target.team === 'player' && metaRef.current.unlockedProvisions.includes('SPIKED_CALTROPS')) {
             unit.hp -= unit.damage * 0.5;
             s.floatingTexts.push({ x: unit.x, y: unit.y - 10, text: 'REFLECT', color: '#b84235', life: 0.5, vy: -30 });
             pushFx(s, { kind: 'impact_sparks', layer: 'foreground', x: unit.x, y: unit.y, radius: 46, color: '#dfd4ba', life: 0.28, maxLife: 0.28, rays: 9 });
+            SoundManager.playSfx('reflect_hit');
           }
           if (unit.type === 'cavalry') {
-            if (target.type === 'shield' || target.type === 'boss') { 
+            if (target.type === 'shield' || target.type === 'boss') {
               pushFx(s, { kind: 'shockwave', layer: 'foreground', x: target.x, y: target.y, radius: 60, color: '#dfd4ba', life: 0.3, maxLife: 0.3 });
               bumpShake(s, 0.18);
+              SoundManager.playSfx('shield_block');
             }
             else {
               const shoveDir = unit.team === 'player' ? -1 : 1;
@@ -274,6 +285,7 @@ export function tickUnits(s, dt, now, metaRef) {
               pushFx(s, { kind: 'shockwave', layer: 'foreground', x: target.x, y: target.y, radius: unit.chargeTimer > 0 ? 96 : 62, color: '#dfd4ba', life: 0.32, maxLife: 0.32 });
               bumpShake(s, unit.chargeTimer > 0 ? 0.5 : 0.24);
               addParticle(s, target.x, target.y, '#dfd4ba', 5);
+              SoundManager.playSfx('cavalry_charge_impact');
             }
           }
         }
@@ -318,9 +330,10 @@ export function tickUnits(s, dt, now, metaRef) {
     const myTeam = unit.team === 'player' ? players : enemies;
     applySeparation(unit, vx, vy, dt, myTeam);
 
-    if (unit.team === 'enemy' && unit.y + unit.radius >= WALL_Y) { 
-      s.gameState = 'GAMEOVER'; 
+    if (unit.team === 'enemy' && unit.y + unit.radius >= WALL_Y) {
+      s.gameState = 'GAMEOVER';
       bus.emit(EVENTS.GAME_STATE_CHANGED, { state: s.gameState });
+      SoundManager.playSfx('gameover_stinger');
     }
     if (unit.team === 'player' && unit.y < -300) unit.hp = 0;
   }

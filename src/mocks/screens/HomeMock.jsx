@@ -4,6 +4,14 @@ import { Play, Map, ChevronRight, Lock, ChevronLeft } from 'lucide-react';
 export const HomeMock = () => {
   const [view, setView] = useState('main'); // 'main' | 'chapters'
   const [navigated, setNavigated] = useState(null);
+  const [bgIndex, setBgIndex] = useState(0);
+  
+  const bgs = [
+    '/assets/oni_bg.png',
+    '/assets/kids_ink_battlefield.png',
+    '/assets/kids_ink_shrine.png',
+    '/assets/kids_ink_cliff.png'
+  ];
 
   if (navigated) {
     return (
@@ -27,8 +35,8 @@ export const HomeMock = () => {
     <div className="relative h-full w-full overflow-hidden bg-[#1b1918] font-sans text-[#dfd4ba]">
       {/* Background Image */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-50 transition-opacity duration-1000"
-        style={{ backgroundImage: 'url(/assets/oni_bg.png)' }}
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-50 transition-all duration-1000"
+        style={{ backgroundImage: `url(${bgs[bgIndex]})` }}
       />
       
       {/* Vignette / Wash */}
@@ -37,6 +45,34 @@ export const HomeMock = () => {
 
       {/* Main Content */}
       <div className="relative z-10 flex h-full flex-col p-10">
+        
+        {/* Testing Controls - Background Toggle */}
+        <div className="absolute top-4 right-4 z-50 flex gap-2">
+          <button 
+            onClick={() => setBgIndex(0)}
+            className={`px-3 py-1 text-xs font-bold rounded border transition-colors ${bgIndex === 0 ? 'bg-[#b84235] border-[#b84235] text-white' : 'bg-black/50 border-white/10 text-[#dfd4ba]/70 hover:bg-black/80 hover:text-white'}`}
+          >
+            Dark Default
+          </button>
+          <button 
+            onClick={() => setBgIndex(1)}
+            className={`px-3 py-1 text-xs font-bold rounded border transition-colors ${bgIndex === 1 ? 'bg-[#b84235] border-[#b84235] text-white' : 'bg-black/50 border-white/10 text-[#dfd4ba]/70 hover:bg-black/80 hover:text-white'}`}
+          >
+            Ink Battlefield
+          </button>
+          <button 
+            onClick={() => setBgIndex(2)}
+            className={`px-3 py-1 text-xs font-bold rounded border transition-colors ${bgIndex === 2 ? 'bg-[#b84235] border-[#b84235] text-white' : 'bg-black/50 border-white/10 text-[#dfd4ba]/70 hover:bg-black/80 hover:text-white'}`}
+          >
+            Ink Shrine
+          </button>
+          <button 
+            onClick={() => setBgIndex(3)}
+            className={`px-3 py-1 text-xs font-bold rounded border transition-colors ${bgIndex === 3 ? 'bg-[#b84235] border-[#b84235] text-white' : 'bg-black/50 border-white/10 text-[#dfd4ba]/70 hover:bg-black/80 hover:text-white'}`}
+          >
+            Ink Cliff
+          </button>
+        </div>
         
         {/* Title Area - Fades out slightly when in chapter select to give focus */}
         <div className={`flex-1 transition-all duration-500 ease-out ${view === 'chapters' ? '-translate-y-4 opacity-0' : 'translate-y-0 opacity-100'}`}>

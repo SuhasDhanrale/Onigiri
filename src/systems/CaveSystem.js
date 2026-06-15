@@ -5,6 +5,7 @@ import { addParticle, spawnUnit } from './SpawnSystem.js';
 import { pushFx } from '../renderer/drawSumiFx.js';
 import { bus } from '../core/EventBus.js';
 import { EVENTS } from '../core/events.js';
+import { SoundManager } from './SoundManager.js';
 
 const GOKI_MINE_INTERVAL = 6.5;
 const KASHA_FIRE_INTERVAL = 5.0;
@@ -81,6 +82,7 @@ export function tickCave(s, dt, metaRef) {
   if (s.cave.hp <= 0) {
     s.gameState = 'REGION_VICTORY';
     bus.emit(EVENTS.GAME_STATE_CHANGED, { state: s.gameState });
+    SoundManager.playSfx('region_victory_fanfare');
     return;
   }
 
@@ -140,6 +142,7 @@ function tickVisibleBossPhase(s, dt, metaRef, bossId) {
   if (s.chapterBossSpawned && !aliveBoss) {
     s.gameState = 'REGION_VICTORY';
     bus.emit(EVENTS.GAME_STATE_CHANGED, { state: s.gameState });
+    SoundManager.playSfx('region_victory_fanfare');
   }
 }
 
@@ -183,6 +186,7 @@ function tickBossReinforcements(s, dt, metaRef) {
   addParticle(s, s.cave.x, s.cave.y, '#b84235', 10, 280);
   s.screenShake = Math.max(s.screenShake, 0.18);
   bus.emit(EVENTS.SCREEN_SHAKE, { amount: s.screenShake });
+  SoundManager.playSfx('reinforcement_horn');
 }
 
 function ensureVisibleBoss(s, metaRef, bossId) {
@@ -210,6 +214,7 @@ function ensureVisibleBoss(s, metaRef, bossId) {
   s.floatingTexts.push({ x: boss.x, y: boss.y - 100, text: `${def.name.toUpperCase()} APPEARS`, color: '#d4af37', life: 2.0, vy: -25 });
   s.screenShake = Math.max(s.screenShake, 0.65);
   bus.emit(EVENTS.SCREEN_SHAKE, { amount: s.screenShake });
+  SoundManager.playSfx('boss_appear');
 
   // The boss never arrives alone — its escort storms the field with it.
   spawnBossEscort(s, metaRef);
@@ -293,6 +298,7 @@ function tickKashaFireTrails(s, dt) {
   pushFx(s, { kind: 'aura', layer: 'background', x: target.x, y: 640, radius: 150, color: '#ea580c', life: 1.0, maxLife: 1.0, spin: 0.8 });
   s.floatingTexts.push({ x: target.x, y: 300, text: 'FIRE TRAIL', color: '#ea580c', life: 1.0, vy: -18 });
   s.cave.fireTimer = KASHA_FIRE_INTERVAL;
+  SoundManager.playSfx('fire_burst');
 }
 
 function detonateMudMine(s, hazard) {
@@ -315,6 +321,7 @@ function detonateMudMine(s, hazard) {
 
   s.screenShake = Math.max(s.screenShake, 0.25);
   bus.emit(EVENTS.SCREEN_SHAKE, { amount: s.screenShake });
+  SoundManager.playSfx('mine_explode');
 }
 
 function applyFireZoneDamage(s, hazard, dt) {
