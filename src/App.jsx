@@ -680,15 +680,13 @@ export default function App() {
     };
   }, []);
 
-  // --- Audio: switch the music loop with the screen (Track 7 menu / Track 8 battle) ---
+  // --- Audio: switch the music loop with the screen (main / waves / boss takeover) ---
   const audioGameState = state.current.gameState;
   useEffect(() => {
-    if (showHome || audioGameState === 'MAP_SCREEN') {
-      SoundManager.playMusicSlot('menu');
-    } else if (audioGameState === 'COMBAT') {
+    if (!showHome && audioGameState === 'COMBAT') {
       SoundManager.playMusicSlot('battle');
     } else {
-      SoundManager.stopMusic();
+      SoundManager.playMusicSlot('menu');
     }
   }, [showHome, audioGameState]);
 

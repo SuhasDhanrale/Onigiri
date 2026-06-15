@@ -1,14 +1,26 @@
 import { MUSIC_TRACKS, MUSIC_SLOTS, startTrackLoop } from './MusicEngine.js';
 import { SFX_LIBRARY, SFX_MIN_INTERVAL, SFX_DEFAULT_INTERVAL } from './SfxEngine.js';
 import { readStorageJson, writeStorageJson } from '../platforms/gameStorage.js';
+import { getPublicAssetUrl } from '../platforms/publicAssets.js';
 
 const STORAGE_KEY = 'onigiri_audio_settings';
+
+const MUSIC_FILE_SLOTS = {
+  menu: encodeURI(getPublicAssetUrl('assets/music/Main.mp3')),
+  battle: encodeURI(getPublicAssetUrl('assets/music/waves 02.mp3')),
+  chapterBoss: encodeURI(getPublicAssetUrl('assets/music/Boss 02.mp3')),
+};
+
+const SFX_FILE_LIBRARY = {
+  region_victory_fanfare: encodeURI(getPublicAssetUrl('assets/sfx/warwon.mp3')),
+  campaign_victory_fanfare: encodeURI(getPublicAssetUrl('assets/sfx/warwon.mp3')),
+};
 
 const DEFAULT_SETTINGS = {
   muted: false,
   masterVolume: 1,
-  musicVolume: 0.3,
-  sfxVolume: 0.7,
+  musicVolume: 0.4,
+  sfxVolume: 0.5,
 };
 
 function loadSettings() {
@@ -34,10 +46,12 @@ class SoundManagerClass {
     this.sfxGain = null;
 
     this.currentMusic = null;
+    this.currentMusicAudio = null;
     this.currentMusicId = null;
     this._stingerTimeout = null;
 
     this._lastSfxTime = {};
+    this._activeFileSfx = new Set();
     this.pageHidden = typeof document !== 'undefined' ? document.hidden : false;
   }
 
@@ -87,13 +101,16 @@ class SoundManagerClass {
   resume() {
     if (this.pageHidden) return Promise.resolve();
     const ctx = this.ensureContext();
-    if (!ctx) return Promise.resolve();
-    if (ctx.state === 'suspended') return ctx.resume().catch(() => {});
-    return Promise.resolve();
+    const contextResume = ctx?.state === 'suspended'
+      ? ctx.resume().catch(() => {})
+      : Promise.resolve();
+    return Promise.all([contextResume, this._resumeMusicAudio()]).then(() => {});
   }
 
   /** Suspend without creating a context; used when the page/tab is hidden. */
   suspend() {
+    this.currentMusicAudio?.pause();
+    this._activeFileSfx.forEach((audio) => audio.pause());
     const ctx = this.ctx;
     if (!ctx || ctx.state !== 'running') return Promise.resolve();
     return ctx.suspend().catch(() => {});
@@ -102,16 +119,21 @@ class SoundManagerClass {
   setPageHidden(hidden) {
     this.pageHidden = !!hidden;
     if (this.pageHidden) return this.suspend();
-    if (!this.ctx) return Promise.resolve();
-    return this.resume();
+    const contextResume = this.ctx?.state === 'suspended'
+      ? this.ctx.resume().catch(() => {})
+      : Promise.resolve();
+    return Promise.all([contextResume, this._resumeMusicAudio()]).then(() => {});
   }
 
   // --- Volume / mute ---
   _applyVolumes() {
-    if (!this.ctx || !this.masterGain) return;
-    const now = this.ctx.currentTime;
     const muted = this.settings.muted || this.externalMuted;
     const master = muted ? 0 : this.settings.masterVolume;
+    this._syncMusicAudioVolume();
+    this._activeFileSfx.forEach((audio) => this._syncFileSfxVolume(audio));
+
+    if (!this.ctx || !this.masterGain) return;
+    const now = this.ctx.currentTime;
 
     this.masterGain.gain.setTargetAtTime(master, now, 0.01);
     this.musicGain.gain.setTargetAtTime(this.settings.musicVolume, now, 0.01);
@@ -147,6 +169,43 @@ class SoundManagerClass {
   }
 
   // --- Music ---
+  _syncMusicAudioVolume() {
+    if (!this.currentMusicAudio) return;
+    this.currentMusicAudio.volume = clamp01(this.settings.masterVolume * this.settings.musicVolume);
+    this.currentMusicAudio.muted = this.settings.muted || this.externalMuted;
+  }
+
+  _syncFileSfxVolume(audio) {
+    audio.volume = clamp01(this.settings.masterVolume * this.settings.sfxVolume);
+    audio.muted = this.settings.muted || this.externalMuted;
+  }
+
+  _resumeMusicAudio() {
+    if (this.pageHidden || !this.currentMusicAudio) return Promise.resolve();
+    this._syncMusicAudioVolume();
+    return this.currentMusicAudio.play().catch(() => {});
+  }
+
+  _startFileMusic(slot, url) {
+    const musicId = `file:${slot}`;
+    if (this.currentMusicId === musicId && this.currentMusicAudio) {
+      this._resumeMusicAudio();
+      return this.currentMusicAudio;
+    }
+
+    this.stopMusic();
+    if (typeof Audio === 'undefined') return null;
+
+    const audio = new Audio(url);
+    audio.loop = true;
+    audio.preload = 'auto';
+    this.currentMusicAudio = audio;
+    this.currentMusicId = musicId;
+    this._syncMusicAudioVolume();
+    this._resumeMusicAudio();
+    return audio;
+  }
+
   /** Shared setup for playMusic/playStinger: swap in a new track and start its loop. */
   _startTrack(trackId, { loop }) {
     const ctx = this.ensureContext();
@@ -170,6 +229,12 @@ class SoundManagerClass {
 
   /** Play the track mapped to a role in MUSIC_SLOTS (e.g. 'menu', 'battle', 'chapterBoss'). */
   playMusicSlot(slot) {
+    const fileUrl = MUSIC_FILE_SLOTS[slot];
+    if (fileUrl) {
+      this._startFileMusic(slot, fileUrl);
+      return;
+    }
+
     const trackId = MUSIC_SLOTS[slot];
     if (trackId) this.playMusic(trackId);
   }
@@ -198,6 +263,12 @@ class SoundManagerClass {
 
   stopMusic() {
     this._clearStinger();
+    if (this.currentMusicAudio) {
+      this.currentMusicAudio.pause();
+      this.currentMusicAudio.currentTime = 0;
+      this.currentMusicAudio = null;
+      this.currentMusicId = null;
+    }
     if (this.currentMusic) {
       this.currentMusic.stop();
       this.currentMusic = null;
@@ -213,9 +284,37 @@ class SoundManagerClass {
   }
 
   // --- SFX ---
+  _playFileSfx(url) {
+    if (this.pageHidden || typeof Audio === 'undefined') return;
+    const audio = new Audio(url);
+    audio.preload = 'auto';
+    this._syncFileSfxVolume(audio);
+
+    const cleanup = () => {
+      this._activeFileSfx.delete(audio);
+      audio.removeEventListener('ended', cleanup);
+      audio.removeEventListener('error', cleanup);
+    };
+    audio.addEventListener('ended', cleanup);
+    audio.addEventListener('error', cleanup);
+    this._activeFileSfx.add(audio);
+    audio.play().catch(cleanup);
+  }
+
   /** Play a one-shot SFX by id from SFX_LIBRARY, rate-limited per id. */
   playSfx(id, opts = {}) {
     if (this.pageHidden) return;
+    const fileUrl = SFX_FILE_LIBRARY[id];
+    if (fileUrl) {
+      const nowMs = performance.now() / 1000;
+      const minInterval = SFX_MIN_INTERVAL[id] ?? SFX_DEFAULT_INTERVAL;
+      const last = this._lastSfxTime[id] ?? -Infinity;
+      if (nowMs - last < minInterval) return;
+      this._lastSfxTime[id] = nowMs;
+      this._playFileSfx(fileUrl);
+      return;
+    }
+
     const ctx = this.ensureContext();
     if (!ctx) return;
     const generator = SFX_LIBRARY[id];
