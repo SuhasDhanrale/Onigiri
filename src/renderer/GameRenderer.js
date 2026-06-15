@@ -3,6 +3,7 @@ import { drawBackground } from './drawBackground.js';
 import { drawBackgroundEffects, drawForegroundEffects } from './drawEffects.js';
 import { drawUnitTopDown } from './drawUnits.js';
 import { drawCave } from './drawCave.js';
+import { drawCliffs } from './drawCliffs.js';
 
 export const initRenderer = (canvas) => {
     canvas.width = V_WIDTH;
@@ -33,6 +34,10 @@ export const drawGame = (ctx, s, dt, now, metaRef) => {
 
     ctx.translate(offsetX, offsetY);
     ctx.scale(scale, scale);
+
+    // Distant rock walls framing the arena — furthest-back layer, behind every
+    // effect/unit so nothing on the battlefield (or the wave ink-line) gets hidden.
+    drawCliffs(ctx);
 
     const bgX = -3000;
     const bgW = V_WIDTH + 6000;

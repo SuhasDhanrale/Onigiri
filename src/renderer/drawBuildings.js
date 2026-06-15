@@ -4,6 +4,11 @@ import { drawPath, line, circle, rect } from './canvasShapes.js';
 // on the flank Arrow Tower slots (at WALL_Y - 70, above the wall).
 const ART_Y_OFFSET = -40;
 
+// Overall building scale (1 = mock size). 0.75 = 25% smaller.
+const ART_SCALE = 0.75;
+// Local ground line the art sits on — scaling pivots here so buildings stay seated.
+const ART_GROUND_Y = 110;
+
 // Banner pole + flag + kanji glyph, shared by all four buildings.
 // dir: -1 (flag/text extend left of the pole) or +1 (extend right).
 function drawBanner(ctx, x, y, dir, flagColor, kanji, textColor = '#fff') {
@@ -84,6 +89,10 @@ function drawPowderMillDojo(ctx) {
 export function drawBuildingArt(ctx, key) {
   ctx.save();
   ctx.translate(0, ART_Y_OFFSET);
+  // Scale about the ground line so the (smaller) building stays seated at the same spot.
+  ctx.translate(0, ART_GROUND_Y);
+  ctx.scale(ART_SCALE, ART_SCALE);
+  ctx.translate(0, -ART_GROUND_Y);
   switch (key) {
     case 'HATAMOTO': drawSwordDojo(ctx); break;
     case 'YUMI':     drawBowDojo(ctx); break;

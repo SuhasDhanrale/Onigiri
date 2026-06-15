@@ -41,18 +41,18 @@ export function drawBackground(ctx, s, now, metaRef) {
         washGrad.addColorStop(0.8, 'rgba(184, 66, 53, 0.05)');
         washGrad.addColorStop(1, 'rgba(184, 66, 53, 0)');
         ctx.fillStyle = washGrad;
-        ctx.fillRect(bgX, 0, bgW, s.inkLineY + 150);
-        
+        ctx.fillRect(0, 0, V_WIDTH, s.inkLineY + 150);
+
         for (let i = 0; i < 3; i++) {
-            if (i === 0) ctx.fillStyle = 'rgba(184, 66, 53, 0.15)'; 
-            else if (i === 1) ctx.fillStyle = 'rgba(27, 25, 24, 0.10)'; 
-            else ctx.fillStyle = 'rgba(27, 25, 24, 0.12)'; 
-            
-            ctx.beginPath(); 
-            ctx.moveTo(bgX, 0); 
-            ctx.lineTo(bgX, s.inkLineY);
-            
-            for (let x = bgX; x <= bgX + bgW; x += 40) {
+            if (i === 0) ctx.fillStyle = 'rgba(184, 66, 53, 0.15)';
+            else if (i === 1) ctx.fillStyle = 'rgba(27, 25, 24, 0.10)';
+            else ctx.fillStyle = 'rgba(27, 25, 24, 0.12)';
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, s.inkLineY);
+
+            for (let x = 0; x <= V_WIDTH; x += 40) {
                 let noise = Math.sin(x * 0.02 + now / (1000 + i * 200)) * (25 + i * 10); 
                 noise += Math.sin(x * 0.08 - now / (600 + i * 150)) * (8 + i * 3); 
                 
@@ -64,7 +64,7 @@ export function drawBackground(ctx, s, now, metaRef) {
                 
                 ctx.lineTo(x, s.inkLineY + noise + tendrilDrop - (i * 25) + dangerPulse);
             }
-            ctx.lineTo(bgX + bgW, 0); 
+            ctx.lineTo(V_WIDTH, 0);
             ctx.fill();
         }
         ctx.restore();
