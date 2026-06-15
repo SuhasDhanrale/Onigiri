@@ -88,6 +88,15 @@ export const TUTORIAL_BOOK_SECTIONS = [
     ],
   },
   {
+    title: 'Dojo Powers',
+    rows: [
+      ['Rule', 'Dojo techniques are passive. Once unlocked, they activate automatically in combat.'],
+      ['Flaming Arrows', 'Yumi Archers sometimes ignite enemies. Watch for IGNITE.'],
+      ['Takeda Charge', 'Cavalry enter battle with a short charge burst. Watch for CHARGE.'],
+      ['Spiked Caltrops', 'Barricades hurt enemies that strike them. Watch for SPIKES.'],
+    ],
+  },
+  {
     title: 'Map Nodes',
     rows: [
       ['Combat', 'Standard battles that pay Command and Honor.'],

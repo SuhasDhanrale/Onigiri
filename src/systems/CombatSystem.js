@@ -248,6 +248,9 @@ export function tickUnits(s, dt, now, metaRef) {
           const damage = isExposedYumi ? unit.damage * YUMI_EXPOSED_DAMAGE_MULT : unit.damage;
           const isFlaming = !isExposedYumi && unit.team === 'player' && unit.name === 'Yumi Archer' && metaRef.current.unlockedProvisions.includes('FLAMING_ARROWS') && Math.random() < 0.25;
           s.projectiles.push({ x: unit.x, y: unit.y, vx: Math.cos(angle) * 1200, vy: Math.sin(angle) * 1200, damage, team: unit.team, pierce: unit.pierce && !isExposedYumi, isFlaming });
+          if (isFlaming) {
+            s.floatingTexts.push({ x: unit.x, y: unit.y - 18, text: 'IGNITE', color: '#ea580c', life: 0.55, vy: -24 });
+          }
           expectedHpMap.set(target.id, (expectedHpMap.get(target.id) ?? target.hp) - damage);
           SoundManager.playSfx('arrow_release');
         } else if (unit.type === 'siege') {
@@ -268,7 +271,7 @@ export function tickUnits(s, dt, now, metaRef) {
           }
           if (target.name === 'Bamboo Barricade' && target.team === 'player' && metaRef.current.unlockedProvisions.includes('SPIKED_CALTROPS')) {
             unit.hp -= unit.damage * 0.5;
-            s.floatingTexts.push({ x: unit.x, y: unit.y - 10, text: 'REFLECT', color: '#b84235', life: 0.5, vy: -30 });
+            s.floatingTexts.push({ x: unit.x, y: unit.y - 10, text: 'SPIKES', color: '#b84235', life: 0.5, vy: -30 });
             pushFx(s, { kind: 'impact_sparks', layer: 'foreground', x: unit.x, y: unit.y, radius: 46, color: '#dfd4ba', life: 0.28, maxLife: 0.28, rays: 9 });
             SoundManager.playSfx('reflect_hit');
           }

@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { CAMPAIGN_MAP, isVisibleBossId } from '../../config/campaign.js';
 import { V_WIDTH, V_HEIGHT } from '../../config/constants.js';
 import { getEncounterPhaseCount, getPlayableWaveCount } from '../../config/waves.js';
+import { PERMANENT_TECHS } from '../../config/provisions.js';
 import { ResultScreens } from './ResultScreens.jsx';
 import { DemonCave } from '../components/DemonCave.jsx';
 
@@ -84,6 +85,10 @@ export function CombatScreen({
   const currentPhase = isBoss && s.waveState === 'BOSS_PHASE'
     ? totalPhases
     : Math.min(s.wave, totalPhases);
+  const activeDojoTechs = Object.entries(PERMANENT_TECHS)
+    .filter(([key]) => meta?.unlockedProvisions?.includes(key))
+    .map(([key, tech]) => ({ id: key, name: tech.name, icon: tech.icon }));
+  const showDojoReady = s.waveState === 'PRE_WAVE' && activeDojoTechs.length > 0;
 
   return (
     <>
@@ -162,6 +167,24 @@ export function CombatScreen({
                 })()}
               </div>
             </div>
+            {showDojoReady && (
+              <div className="mt-1 flex items-center justify-between gap-2 border-t border-[#8b8574]/20 pt-1">
+                <span className="shrink-0 text-[7px] font-black uppercase tracking-[0.14em] text-[#8b1420] sm:text-[8px]">
+                  Dojo Ready
+                </span>
+                <div className="flex min-w-0 items-center justify-end gap-1">
+                  {activeDojoTechs.map((tech) => (
+                    <span
+                      key={tech.id}
+                      title={tech.name}
+                      className="flex h-4 min-w-4 items-center justify-center border border-[#8b1420]/25 bg-[#1a1816]/15 px-1 text-[9px] leading-none"
+                    >
+                      {tech.icon}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Cave HP indicator */}

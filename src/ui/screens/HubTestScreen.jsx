@@ -332,6 +332,16 @@ export function HubTestScreen({
   }, [meta?.unlockedProvisions]);
 
   // ─── SVG connection lines ──────────────────────────────────────────────────
+  const activeDojoTechs = useMemo(() => (
+    Object.entries(PERMANENT_TECHS)
+      .filter(([key]) => meta?.unlockedProvisions?.includes(key))
+      .map(([key, prov]) => ({
+        id: key,
+        name: prov.name,
+        icon: prov.icon,
+      }))
+  ), [meta?.unlockedProvisions]);
+
   const getSvgLines = () => {
     const lines = [];
     mapNodes.forEach(node => {
@@ -482,14 +492,15 @@ export function HubTestScreen({
             {activeSidebarTab === 'DOJO' && (
               <div className="flex-1 flex flex-col animate-[fade-in_0.3s_ease-out] overflow-hidden">
                 <div className="mb-4 text-center shrink-0">
-                  <p className="text-[9px] font-bold text-[#d4af37] tracking-[0.3em] mt-2 uppercase">Provisions</p>
-                  <div className="w-12 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37]/50 to-transparent mx-auto mt-4" />
+                  <p className="text-[9px] font-bold text-[#d4af37] tracking-[0.3em] mt-2 uppercase">The Dojo</p>
+                  <p className="text-[7px] text-[#8b8574] uppercase tracking-[0.2em] mt-1">Unlock Permanent Upgrades</p>
+                  <div className="w-12 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37]/50 to-transparent mx-auto mt-3" />
                 </div>
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
                   {/* Items Section */}
                   <div className="mb-5">
-                    <p className="text-[8px] font-bold text-[#b84235] tracking-[0.2em] uppercase mb-2 px-1">Equipment</p>
+                    <p className="text-[10px] font-bold text-[#b84235] tracking-[0.2em] uppercase mb-2 px-1">Equipment</p>
                     <div className="grid grid-cols-3 gap-2">
                       {Object.entries(PROVISIONS)
                         .filter(([, p]) => p.type === 'item')
@@ -504,13 +515,13 @@ export function HubTestScreen({
                                   ? 'border border-[#d4af37] bg-[#d4af37]/10 shadow-[0_0_10px_rgba(212,175,55,0.2)]'
                                   : isUnlocked
                                     ? 'border border-[#8b8574]/30 bg-[#1a1816]/50 hover:border-[#d4af37]/50 cursor-pointer'
-                                    : 'border border-[#8b8574]/10 bg-[#0a0908]/30 opacity-50'
+                                    : 'border border-[#8b8574]/30 bg-[#1a1816]/60 opacity-80 cursor-pointer hover:border-[#8b8574]/50'
                                 }`}
                               onClick={() => setHoveredTech(key)}
                             >
                               {isEquipped && <div className="absolute inset-0 bg-[#d4af37]/5 blur-md pointer-events-none" />}
-                              <span className={`text-xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-40'}`}>{prov.icon}</span>
-                              <span className="text-[7px] font-bold uppercase text-center tracking-[0.05em] text-[#dfd4ba]/70 leading-tight">{prov.name}</span>
+                              <span className={`text-2xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-70'}`}>{prov.icon}</span>
+                              <span className="text-[10px] font-bold uppercase text-center tracking-[0.05em] text-[#dfd4ba] leading-tight">{prov.name}</span>
                             </button>
                           );
                         })}
@@ -519,7 +530,7 @@ export function HubTestScreen({
 
                   {/* Starting Bonuses Section */}
                   <div className="mb-5">
-                    <p className="text-[8px] font-bold text-[#4a5d23] tracking-[0.2em] uppercase mb-2 px-1">Starting Bonuses</p>
+                    <p className="text-[10px] font-bold text-[#4a5d23] tracking-[0.2em] uppercase mb-2 px-1">Starting Bonuses</p>
                     <div className="grid grid-cols-3 gap-2">
                       {Object.entries(PROVISIONS)
                         .filter(([, p]) => p.type === 'starting_bonus')
@@ -531,12 +542,12 @@ export function HubTestScreen({
                               className={`aspect-square flex flex-col items-center justify-center relative p-2 transition-all duration-200
                                 ${isUnlocked
                                   ? 'border border-[#4a5d23]/50 bg-[#1a2816]/50 hover:border-[#4a5d23]'
-                                  : 'border border-[#8b8574]/10 bg-[#0a0908]/30 opacity-50 cursor-pointer'
+                                  : 'border border-[#8b8574]/30 bg-[#1a1816]/60 opacity-80 cursor-pointer hover:border-[#8b8574]/50'
                                 }`}
                               onClick={() => setHoveredTech(key)}
                             >
-                              <span className={`text-xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-40'}`}>{prov.icon}</span>
-                              <span className="text-[7px] font-bold uppercase text-center tracking-[0.05em] text-[#dfd4ba]/70 leading-tight">{prov.name}</span>
+                              <span className={`text-2xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-70'}`}>{prov.icon}</span>
+                              <span className="text-[10px] font-bold uppercase text-center tracking-[0.05em] text-[#dfd4ba] leading-tight">{prov.name}</span>
                             </button>
                           );
                         })}
@@ -545,7 +556,7 @@ export function HubTestScreen({
 
                   {/* Tower Upgrades Section */}
                   <div className="mb-5">
-                    <p className="text-[8px] font-bold text-[#2b3d60] tracking-[0.2em] uppercase mb-2 px-1">Tower Upgrades</p>
+                    <p className="text-[10px] font-bold text-[#2b3d60] tracking-[0.2em] uppercase mb-2 px-1">Tower Upgrades</p>
                     <div className="grid grid-cols-3 gap-2">
                       {Object.entries(PROVISIONS)
                         .filter(([, p]) => p.type === 'tower_upgrade')
@@ -557,12 +568,12 @@ export function HubTestScreen({
                               className={`aspect-square flex flex-col items-center justify-center relative p-2 transition-all duration-200
                                 ${isUnlocked
                                   ? 'border border-[#2b3d60]/50 bg-[#1a2233]/50 hover:border-[#2b3d60]'
-                                  : 'border border-[#8b8574]/10 bg-[#0a0908]/30 opacity-50 cursor-pointer'
+                                  : 'border border-[#8b8574]/30 bg-[#1a1816]/60 opacity-80 cursor-pointer hover:border-[#8b8574]/50'
                                 }`}
                               onClick={() => setHoveredTech(key)}
                             >
-                              <span className={`text-xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-40'}`}>{prov.icon}</span>
-                              <span className="text-[7px] font-bold uppercase text-center tracking-[0.05em] text-[#dfd4ba]/70 leading-tight">{prov.name}</span>
+                              <span className={`text-2xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-70'}`}>{prov.icon}</span>
+                              <span className="text-[10px] font-bold uppercase text-center tracking-[0.05em] text-[#dfd4ba] leading-tight">{prov.name}</span>
                             </button>
                           );
                         })}
@@ -571,7 +582,7 @@ export function HubTestScreen({
 
                   {/* Techniques Section */}
                   <div className="mb-4">
-                    <p className="text-[8px] font-bold text-[#8b1420] tracking-[0.2em] uppercase mb-2 px-1">Techniques</p>
+                    <p className="text-[10px] font-bold text-[#8b1420] tracking-[0.2em] uppercase mb-2 px-1">Techniques</p>
                     <div className="grid grid-cols-3 gap-2">
                       {Object.entries(PROVISIONS)
                         .filter(([, p]) => p.type === 'technique')
@@ -583,12 +594,12 @@ export function HubTestScreen({
                               className={`aspect-square flex flex-col items-center justify-center relative p-2 transition-all duration-200
                                 ${isUnlocked
                                   ? 'border border-[#8b1420]/50 bg-[#281616]/50 hover:border-[#8b1420]'
-                                  : 'border border-[#8b8574]/10 bg-[#0a0908]/30 opacity-50 cursor-pointer'
+                                  : 'border border-[#8b8574]/30 bg-[#1a1816]/60 opacity-80 cursor-pointer hover:border-[#8b8574]/50'
                                 }`}
                               onClick={() => setHoveredTech(key)}
                             >
-                              <span className={`text-xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-40'}`}>{prov.icon}</span>
-                              <span className="text-[7px] font-bold uppercase text-center tracking-[0.05em] text-[#dfd4ba]/70 leading-tight">{prov.name}</span>
+                              <span className={`text-2xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-70'}`}>{prov.icon}</span>
+                              <span className="text-[10px] font-bold uppercase text-center tracking-[0.05em] text-[#dfd4ba] leading-tight">{prov.name}</span>
                             </button>
                           );
                         })}
@@ -601,23 +612,40 @@ export function HubTestScreen({
                   {hoveredTech && PROVISIONS[hoveredTech] ? (
                     <div className="animate-[fade-in_0.2s_ease-out]">
                       <div className="flex justify-between items-center mb-2">
-                        <h4 className="font-black tracking-[0.1em] uppercase text-xs text-[#d4af37] flex items-center gap-2">
-                          <span>{PROVISIONS[hoveredTech].icon}</span>
-                          {PROVISIONS[hoveredTech].name}
-                        </h4>
-                        <span className={`text-[8px] uppercase font-bold px-2 py-0.5 border ${meta?.unlockedProvisions?.includes(hoveredTech)
-                          ? 'border-[#d4af37]/30 text-[#d4af37]'
-                          : 'border-[#8b8574]/30 text-[#8b8574]'
-                          }`}>
-                          {meta?.unlockedProvisions?.includes(hoveredTech) ? 'UNLOCKED' : `${PROVISIONS[hoveredTech].cost} H`}
-                        </span>
+                        <div className="flex-1 pr-4">
+                          <h4 className="font-black tracking-[0.1em] uppercase text-sm text-[#d4af37] flex items-center gap-2 mb-1">
+                            <span className="text-lg">{PROVISIONS[hoveredTech].icon}</span>
+                            {PROVISIONS[hoveredTech].name}
+                          </h4>
+                          <p className="text-xs font-sans leading-relaxed text-[#dfd4ba]/80">{PROVISIONS[hoveredTech].desc}</p>
+                        </div>
+                        <div className="flex flex-col items-end shrink-0">
+                          {meta?.unlockedProvisions?.includes(hoveredTech) ? (
+                            <span className="text-xs uppercase font-bold px-4 py-2 border border-[#d4af37]/30 text-[#d4af37]">
+                              UNLOCKED
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => unlockProvision(hoveredTech, PROVISIONS[hoveredTech].cost)}
+                              disabled={meta?.honor < PROVISIONS[hoveredTech].cost}
+                              className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors flex items-center gap-2 ${
+                                meta?.honor >= PROVISIONS[hoveredTech].cost
+                                  ? 'bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/50 hover:bg-[#d4af37]/40 hover:border-[#d4af37]'
+                                  : 'bg-[#1a1816]/80 text-[#8b8574]/50 border border-[#8b8574]/20 cursor-not-allowed'
+                              }`}
+                            >
+                              <span>BUY</span>
+                              <span className="opacity-60">|</span>
+                              <span>{PROVISIONS[hoveredTech].cost} H</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-xs font-sans leading-relaxed text-[#dfd4ba]/70">{PROVISIONS[hoveredTech].desc}</p>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center opacity-30 my-2">
-                      <div className="w-1 h-1 rounded-full bg-[#d4af37] mb-2 animate-ping" />
-                      <p className="text-[9px] font-bold uppercase tracking-[0.3em]">Hover provision</p>
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#d4af37] mb-2 animate-ping" />
+                      <p className="text-[10px] font-bold uppercase tracking-[0.3em]">Hover provision</p>
                     </div>
                   )}
                 </div>
@@ -627,8 +655,9 @@ export function HubTestScreen({
             {activeSidebarTab === 'SHRINE' && (
               <div className="flex-1 flex flex-col animate-[fade-in_0.3s_ease-out]">
                 <div className="mb-6 text-center shrink-0">
-                  <p className="text-[9px] font-bold text-[#d4af37] tracking-[0.3em] mt-2 uppercase">Ancestral Vault</p>
-                  <div className="w-12 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37]/50 to-transparent mx-auto mt-4" />
+                  <p className="text-[9px] font-bold text-[#d4af37] tracking-[0.3em] mt-2 uppercase">The Shrine</p>
+                  <p className="text-[7px] text-[#8b8574] uppercase tracking-[0.2em] mt-1">Equip Active Items</p>
+                  <div className="w-12 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37]/50 to-transparent mx-auto mt-3" />
                 </div>
 
                 <div className="flex-1 flex flex-col gap-6 mt-2 relative z-10 overflow-hidden">
@@ -639,9 +668,9 @@ export function HubTestScreen({
                         {heirlooms.find(h => h.id === meta?.equippedItem)?.icon || '❓'}
                       </div>
                       <div className="flex flex-col flex-1 overflow-hidden">
-                        <span className="text-[8px] text-[#8b8574] font-bold tracking-[0.3em] uppercase mb-1">Equipped</span>
-                        <span className="text-[#d4af37] font-black tracking-widest uppercase text-[10px] mb-1 truncate">{heirlooms.find(h => h.id === meta?.equippedItem)?.name || 'None'}</span>
-                        <span className="text-[10px] text-[#dfd4ba]/60 font-sans leading-tight line-clamp-2">{heirlooms.find(h => h.id === meta?.equippedItem)?.desc}</span>
+                        <span className="text-[10px] text-[#8b8574] font-bold tracking-[0.3em] uppercase mb-1">Equipped</span>
+                        <span className="text-[#d4af37] font-black tracking-widest uppercase text-xs mb-1 truncate">{heirlooms.find(h => h.id === meta?.equippedItem)?.name || 'None'}</span>
+                        <span className="text-xs text-[#dfd4ba]/80 font-sans leading-tight line-clamp-2">{heirlooms.find(h => h.id === meta?.equippedItem)?.desc}</span>
                       </div>
                     </div>
                   </div>
@@ -675,8 +704,8 @@ export function HubTestScreen({
                             }`}
                         >
                           {isActive && <div className="absolute inset-0 bg-[#d4af37]/5 blur-md pointer-events-none" />}
-                          <span className={`text-2xl mb-2 drop-shadow-md ${isEmpty || isLocked ? 'opacity-20 text-[#8b8574]' : ''}`}>{item.icon || '⬛'}</span>
-                          <span className="text-[8px] font-bold uppercase text-center tracking-[0.1em] text-[#dfd4ba]/80 leading-tight w-full truncate px-1">
+                          <span className={`text-3xl mb-2 drop-shadow-md ${isEmpty || isLocked ? 'opacity-20 text-[#8b8574]' : ''}`}>{item.icon || '⬛'}</span>
+                          <span className="text-[10px] font-bold uppercase text-center tracking-[0.05em] text-[#dfd4ba] leading-tight w-full truncate px-1">
                             {item.name}
                           </span>
                         </button>
@@ -862,6 +891,29 @@ export function HubTestScreen({
                     )}
                   </div>
                 </div>
+                {(selectedNode.type === 'combat' || selectedNode.type === 'elite' || selectedNode.type === 'boss') && (
+                  <div className="flex justify-between items-center gap-3 border-t border-[#8b8574]/10 pt-3 text-xs font-bold uppercase tracking-[0.2em]">
+                    <span className="text-[#8b8574] flex items-center gap-2"><span>â›©ï¸</span> Dojo</span>
+                    {activeDojoTechs.length > 0 ? (
+                      <div className="flex min-w-0 flex-wrap justify-end gap-1">
+                        <span className="mr-1 text-[9px] font-black tracking-widest text-[#d4af37]">
+                          {activeDojoTechs.length} Active
+                        </span>
+                        {activeDojoTechs.map((tech) => (
+                          <span
+                            key={tech.id}
+                            title={tech.name}
+                            className="flex h-5 min-w-5 items-center justify-center border border-[#8b1420]/35 bg-[#8b1420]/10 px-1 text-[11px] leading-none text-[#dfd4ba]"
+                          >
+                            {tech.icon}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-[9px] text-[#8b8574]">No active techniques</span>
+                    )}
+                  </div>
+                )}
               </div>
 
               <button

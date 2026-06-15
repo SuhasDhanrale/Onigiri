@@ -45,15 +45,75 @@ function drawProceduralUnit(ctx, u) {
       ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI*2); ctx.fill();
   }
   else if (u.name === 'Arrow Tower') {
-      const r = u.radius;
-      ctx.fillStyle = '#6b5d3f';
-      ctx.fillRect(-r * 0.7, -r * 1.6, r * 1.4, r * 2.4);
-      ctx.strokeStyle = COLORS.inkDark; ctx.lineWidth = 3;
-      ctx.strokeRect(-r * 0.7, -r * 1.6, r * 1.4, r * 2.4);
-      ctx.fillStyle = COLORS.inkDark;
-      ctx.beginPath(); ctx.moveTo(-r * 0.9, -r * 1.6); ctx.lineTo(r * 0.9, -r * 1.6); ctx.lineTo(0, -r * 2.4); ctx.fill();
-      ctx.fillStyle = COLORS.parchment;
-      ctx.fillRect(-r * 0.18, -r * 1.1, r * 0.36, r * 0.7);
+      ctx.save();
+      // Counter-rotate so the tower stands vertically regardless of unit team orientation
+      ctx.rotate(u.team === 'player' ? Math.PI/2 : -Math.PI/2);
+
+      const r = u.radius * 1.3; // Make it significantly bigger
+      
+      // Draw Legs
+      ctx.strokeStyle = '#3d2b1f';
+      ctx.lineWidth = 4;
+      ctx.lineJoin = 'miter';
+      ctx.beginPath();
+      // Left leg
+      ctx.moveTo(-r*0.6, r*0.6); ctx.lineTo(-r*0.4, -r*1.2);
+      // Right leg
+      ctx.moveTo(r*0.6, r*0.6); ctx.lineTo(r*0.4, -r*1.2);
+      // Cross braces
+      ctx.moveTo(-r*0.5, -r*0.2); ctx.lineTo(r*0.45, -r*0.8);
+      ctx.moveTo(r*0.5, -r*0.2); ctx.lineTo(-r*0.45, -r*0.8);
+      ctx.moveTo(-r*0.55, r*0.4); ctx.lineTo(r*0.5, -r*0.1);
+      ctx.moveTo(r*0.55, r*0.4); ctx.lineTo(-r*0.5, -r*0.1);
+      ctx.stroke();
+
+      // Platform Base
+      ctx.fillStyle = '#4a3b2c';
+      ctx.fillRect(-r*0.9, -r*1.4, r*1.8, r*0.2);
+      ctx.strokeRect(-r*0.9, -r*1.4, r*1.8, r*0.2);
+
+      // Cabin / Walls
+      ctx.fillStyle = '#e8dcc4'; // Plaster color
+      ctx.fillRect(-r*0.7, -r*2.6, r*1.4, r*1.2);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#3d2b1f';
+      ctx.strokeRect(-r*0.7, -r*2.6, r*1.4, r*1.2);
+
+      // Wooden beams on cabin
+      ctx.beginPath();
+      ctx.moveTo(-r*0.7, -r*2.0); ctx.lineTo(r*0.7, -r*2.0);
+      ctx.moveTo(0, -r*2.6); ctx.lineTo(0, -r*1.4);
+      ctx.stroke();
+
+      // Archery Slits (Windows)
+      ctx.fillStyle = '#1a1816';
+      ctx.fillRect(-r*0.4, -r*2.3, r*0.2, r*0.6);
+      ctx.fillRect(r*0.2, -r*2.3, r*0.2, r*0.6);
+
+      // Roof (Japanese style)
+      ctx.fillStyle = '#8b2e2e'; // Crimson roof
+      ctx.beginPath();
+      ctx.moveTo(-r*1.1, -r*2.6);
+      ctx.lineTo(r*1.1, -r*2.6);
+      ctx.quadraticCurveTo(r*0.5, -r*3.4, 0, -r*3.6);
+      ctx.quadraticCurveTo(-r*0.5, -r*3.4, -r*1.1, -r*2.6);
+      ctx.fill();
+      
+      // Roof outline
+      ctx.strokeStyle = '#1a1816';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Top Finial
+      ctx.fillStyle = '#d4af37'; // Gold
+      ctx.beginPath();
+      ctx.arc(0, -r*3.7, r*0.15, 0, Math.PI*2);
+      ctx.fill();
+      ctx.stroke();
+      
+      ctx.restore();
+      // Restore line width for subsequent drawing just in case
+      ctx.lineWidth = 3;
   }
   else if (u.name === 'Ikki Rebel') {
       ctx.strokeStyle = `rgba(27, 25, 24, 0.5)`; 

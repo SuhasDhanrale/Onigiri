@@ -120,4 +120,7 @@ export function spawnUnit(s, typeKey, team, customX = null, customY = null, meta
 
   const spawnedUnit = s.units[s.units.length - 1];
   initSlotArray(spawnedUnit);
+  if (chargeTimer > 0) {
+    s.floatingTexts.push({ x: spawnedUnit.x, y: spawnedUnit.y - 18, text: 'CHARGE', color: '#dfd4ba', life: 0.65, vy: -24 });
+  }
 }
