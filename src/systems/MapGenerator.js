@@ -28,6 +28,21 @@ function pickRandom(arr, rng) {
   return arr[Math.floor(rng() * arr.length)];
 }
 
+// Tier → allowed threat window for combat/elite variants. Gives every map the
+// same early→late difficulty ramp and stops the same chapter from rolling an
+// all-easy or all-brutal layout (variant threats were previously picked
+// uniformly across the whole pool, ignoring how deep the node sits).
+const COMBAT_THREAT_BY_TIER = { 1: [1, 1], 2: [1, 2], 3: [2, 3], 4: [3, 3] };
+const ELITE_THREAT_BY_TIER  = { 2: [4, 4], 3: [4, 5], 4: [5, 5] };
+
+// Keys of `variants` whose threat falls inside [min, max]. Never returns empty:
+// falls back to the full key list if a band somehow matches nothing.
+function variantsInBand(variants, band) {
+  const [min, max] = band;
+  const keys = Object.keys(variants).filter(k => variants[k].threat >= min && variants[k].threat <= max);
+  return keys.length > 0 ? keys : Object.keys(variants);
+}
+
 function canConnectNodes(source, target) {
   if (source.tierId === 0) return true;
   return !(source.type === 'event' && target.type === 'event');
@@ -54,7 +69,7 @@ function makeNodeId(tier, index) {
 function assignVariant(node, rng) {
   switch (node.type) {
     case 'combat': {
-      const keys = Object.keys(COMBAT_VARIANTS);
+      const keys = variantsInBand(COMBAT_VARIANTS, COMBAT_THREAT_BY_TIER[node.tierId] ?? [1, 3]);
       const variantKey = pickRandom(keys, rng);
       const v = COMBAT_VARIANTS[variantKey];
       node.variant = variantKey;
@@ -65,7 +80,7 @@ function assignVariant(node, rng) {
       break;
     }
     case 'elite': {
-      const keys = Object.keys(ELITE_VARIANTS);
+      const keys = variantsInBand(ELITE_VARIANTS, ELITE_THREAT_BY_TIER[node.tierId] ?? [4, 5]);
       const variantKey = pickRandom(keys, rng);
       const v = ELITE_VARIANTS[variantKey];
       node.variant = variantKey;

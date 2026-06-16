@@ -15,27 +15,32 @@ import { SoundManager } from './SoundManager.js';
  */
 export function generateWave(waveNum, nodeContext = null) {
   const pressureWave = getCompressedWavePressure(waveNum, nodeContext?.nodeType, nodeContext?.nodeWaves);
+  // Threat (the "skull" rating) raises the *composition* pressure: a high-skull node skips the
+  // trivial rebel openers and fields tougher enemy types (tengu/onmyoji/oni) earlier. Budget
+  // (raw quantity) scales separately via getNodeBudgetMultiplier, so threat makes a wave both
+  // bigger AND nastier — without reaching boss pacing (boss nodes get no threat bonus).
+  const compPressure = pressureWave + getThreatPressureBonus(nodeContext);
   const compressionMult = getWaveCompressionMultiplier(nodeContext?.nodeType, nodeContext?.nodeWaves);
   const budgetMult = getNodeBudgetMultiplier(nodeContext) * compressionMult;
   let budget = Math.floor((40 + (pressureWave * 45) + Math.floor(Math.pow(pressureWave, 1.3) * 5)) * budgetMult);
   const squads = [];
 
-  if (pressureWave === 1) {
+  if (compPressure === 1) {
     squads.push({ type: 'REBEL', count: scaleCount(4, budgetMult), spread: 80 });
     return finalizeSquads(squads, waveNum, pressureWave, nodeContext);
   }
-  if (pressureWave === 2) {
+  if (compPressure === 2) {
     squads.push({ type: 'REBEL', count: scaleCount(12, budgetMult), spread: 150 });
     return finalizeSquads(squads, waveNum, pressureWave, nodeContext);
   }
-  if (pressureWave === 3) {
+  if (compPressure === 3) {
     squads.push({ type: 'REBEL', count: scaleCount(12, budgetMult), spread: 120 });
     squads.push({ type: 'SHINOBI', count: scaleCount(2, budgetMult), spread: 60 });
     return finalizeSquads(squads, waveNum, pressureWave, nodeContext);
   }
 
-  if (pressureWave % 5 === 0) {
-    const oniCount = Math.floor(pressureWave / 5);
+  if (compPressure % 5 === 0) {
+    const oniCount = Math.floor(compPressure / 5);
     squads.push({ type: 'ONI', count: oniCount, spread: 100 });
     budget -= ENEMY_COSTS.ONI * oniCount;
   }
@@ -43,11 +48,11 @@ export function generateWave(waveNum, nodeContext = null) {
   while (budget >= ENEMY_COSTS.REBEL) {
     const r = Math.random();
     let squad;
-    if (pressureWave >= 3 && r > 0.7 && budget >= ENEMY_COSTS.TENGU * 4) {
+    if (compPressure >= 3 && r > 0.7 && budget >= ENEMY_COSTS.TENGU * 4) {
       squad = { type: 'TENGU', count: 4 + Math.floor(Math.random() * 3) };
-    } else if (pressureWave >= 4 && r > 0.85 && budget >= ENEMY_COSTS.ONMYOJI) {
+    } else if (compPressure >= 4 && r > 0.85 && budget >= ENEMY_COSTS.ONMYOJI) {
       squad = { type: 'ONMYOJI', count: 1 + Math.floor(Math.random() * 2) };
-    } else if (pressureWave >= 2 && r > 0.45 && r <= 0.7 && budget >= ENEMY_COSTS.SHINOBI * 2) {
+    } else if (compPressure >= 2 && r > 0.45 && r <= 0.7 && budget >= ENEMY_COSTS.SHINOBI * 2) {
       squad = { type: 'SHINOBI', count: 2 + Math.floor(Math.random() * 2) };
     } else if (budget >= ENEMY_COSTS.REBEL * 5) {
       squad = { type: 'REBEL', count: 5 + Math.floor(Math.random() * 10) };
@@ -70,13 +75,22 @@ export function generateWave(waveNum, nodeContext = null) {
 function getNodeBudgetMultiplier(nodeContext) {
   if (!nodeContext) return 1.0;
   if (nodeContext.nodeType === 'boss') return 2.0;
-  if (nodeContext.nodeType === 'elite') {
-    return Math.max(1.0, 1 + (((nodeContext.nodeThreat ?? 4) - 3) * 0.25));
-  }
-  if (nodeContext.nodeType === 'combat') {
-    return Math.max(1.0, 1 + (((nodeContext.nodeThreat ?? 1) - 1) * 0.15));
+  if (nodeContext.nodeType === 'combat' || nodeContext.nodeType === 'elite') {
+    // Raw enemy quantity scales with the node's threat ("skull") rating: each tier above 1
+    // adds 25% more budget, so a 5-skull elite fields ~2x the force of a 1-skull skirmish.
+    return Math.max(1.0, 1 + (((nodeContext.nodeThreat ?? 1) - 1) * 0.25));
   }
   return 1.0;
+}
+
+// Threat-driven composition boost. Returns extra "pressure" added on top of the wave's
+// natural pressure so higher-skull nodes unlock tougher enemy types (and skip trivial
+// openers) earlier. Capped at +3 and disabled for boss nodes so elites stay below boss feel.
+//   threat 1-2 -> +0   |   threat 3 -> +1   |   threat 4 -> +2   |   threat 5 -> +3
+function getThreatPressureBonus(nodeContext) {
+  if (!nodeContext || nodeContext.nodeType === 'boss') return 0;
+  const threat = nodeContext.nodeThreat ?? 1;
+  return Math.min(3, Math.max(0, threat - 2));
 }
 
 function scaleCount(count, multiplier) {

@@ -12,12 +12,12 @@ export const COMBAT_VARIANTS = {
 };
 
 export const ELITE_VARIANTS = {
-  tengu_master:   { id: 'tengu_master',   name: 'Tengu Master',     threat: 4, guarantee: { honor: 25 },          waves: 3, special: 'dodge_50_arrows' },
-  oni_warlord:    { id: 'oni_warlord',    name: 'Oni Warlord',      threat: 5, guarantee: { honor: 40 },          waves: 3, special: 'rage_mode' },
-  shinobi_squad:  { id: 'shinobi_squad',  name: 'Shinobi Squad',    threat: 4, guarantee: { squad_cap: 1 },        waves: 2, special: 'target_buildings' },
-  onmyoji_ritual: { id: 'onmyoji_ritual', name: 'Onmyoji Ritual',   threat: 5, guarantee: { honor: 30 },          waves: 4, special: 'summon_reinforcements' },
-  yamabushi:      { id: 'yamabushi',      name: 'Yamabushi Monk',   threat: 4, guarantee: { blessing_choice: 1 }, waves: 3, special: 'self_heal' },
-  ronin_duel:     { id: 'ronin_duel',     name: 'Masterless Ronin', threat: 4, guarantee: { honor: 30 },          waves: 1, special: 'duel_challenge' },
+  tengu_master:   { id: 'tengu_master',   name: 'Tengu Master',     threat: 4, guarantee: { honor: 25 },          waves: 4, special: 'dodge_50_arrows' },
+  oni_warlord:    { id: 'oni_warlord',    name: 'Oni Warlord',      threat: 5, guarantee: { honor: 40 },          waves: 5, special: 'rage_mode' },
+  shinobi_squad:  { id: 'shinobi_squad',  name: 'Shinobi Squad',    threat: 4, guarantee: { squad_cap: 1 },        waves: 4, special: 'target_buildings' },
+  onmyoji_ritual: { id: 'onmyoji_ritual', name: 'Onmyoji Ritual',   threat: 5, guarantee: { honor: 30 },          waves: 5, special: 'summon_reinforcements' },
+  yamabushi:      { id: 'yamabushi',      name: 'Yamabushi Monk',   threat: 4, guarantee: { blessing_choice: 1 }, waves: 4, special: 'self_heal' },
+  ronin_duel:     { id: 'ronin_duel',     name: 'Masterless Ronin', threat: 4, guarantee: { honor: 30 },          waves: 3, special: 'duel_challenge' },
 };
 
 export const NODE_POOL = {

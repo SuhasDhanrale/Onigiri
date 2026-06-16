@@ -143,19 +143,25 @@ export function drawBackground(ctx, s, now, metaRef) {
     TOWER_SLOTS.forEach((slot) => {
         const occupied = s.units.some(u => u.name === 'Arrow Tower' && u.team === 'player' && u.hp > 0 && Math.hypot(u.x - slot.x, u.y - slot.y) < 50);
         if (occupied) return;
+        const canAfford = s.command >= TOWER_COST;
         ctx.save();
         ctx.translate(slot.x, slot.y);
-        ctx.setLineDash([6, 6]);
+
+        // Light dotted badge — just the tower symbol and cost, no heavy fill
+        ctx.setLineDash([10, 10]);
         ctx.strokeStyle = 'rgba(212, 175, 55, 0.6)';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(-26, -40, 52, 60);
+        ctx.lineWidth = 4;
+        ctx.strokeRect(-60, -88, 120, 140);
         ctx.setLineDash([]);
-        ctx.fillStyle = 'rgba(212, 175, 55, 0.85)';
-        ctx.font = 'bold 20px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText('🏹', 0, -10);
-        ctx.fillStyle = COLORS.inkDark;
-        ctx.font = 'bold 11px serif';
-        ctx.fillText(`BUILD ${TOWER_COST}K`, 0, 35);
+
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        // Tower symbol
+        ctx.font = 'bold 56px serif';
+        ctx.fillText('🏹', 0, -28);
+        // Cost — gold normally, red when unaffordable
+        ctx.fillStyle = canAfford ? 'rgba(212, 175, 55, 0.95)' : '#b84235';
+        ctx.font = 'bold 30px serif';
+        ctx.fillText(`${TOWER_COST}K`, 0, 26);
         ctx.restore();
     });
 }

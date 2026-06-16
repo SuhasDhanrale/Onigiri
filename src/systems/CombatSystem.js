@@ -14,6 +14,10 @@ const YUMI_EXPOSED_DAMAGE_MULT = 0.6;
 const YUMI_EXPOSED_ATTACK_TIME_MULT = 1.75;
 const ASSASSIN_BARRICADE_SLOW_MULT = 0.5;
 const ASSASSIN_BARRICADE_SLOW_TIME = 5.0;
+// Onmyoji enrage: flat bonus damage granted to an ally, delivered via a chain whip.
+const RAGE_DAMAGE_BONUS = 8;
+const RAGE_DURATION = 5.0;
+const RAGE_CHAIN_DURATION = 0.45;
 
 function bumpShake(s, amount) {
   s.screenShake = Math.max(s.screenShake, amount);
@@ -60,6 +64,7 @@ export function tickUnits(s, dt, now, metaRef) {
     if (unit.lifeSpan !== undefined) { unit.lifeSpan -= dt; if (unit.lifeSpan <= 0) { unit.hp = 0; unit.noReward = true; } }
     if (unit.burn > 0) { unit.burn -= dt; unit.hp -= 10 * dt; }
     if (unit.slowTimer > 0) unit.slowTimer -= dt;
+    if (unit.rageTimer > 0) { unit.rageTimer -= dt; if (unit.rageTimer <= 0) unit.rageBonus = 0; }
 
     let uSpeed = unit.speed;
     if (unit.team === 'player') {
@@ -72,12 +77,42 @@ export function tickUnits(s, dt, now, metaRef) {
       ? (s.warDrumsActive > 0 ? 1.5 : 1.0) * (metaRef.current.activeAttackSpeedMult ?? 1.0)  // WAR_DRUMS blessing
       : 1.0;
 
-    // Support healing
-    if (unit.type === 'support' && unit.attackCooldown <= 0) {
+    // Effective attack damage, including any active enrage bonus from an Onmyoji chain.
+    const dmg = unit.damage + (unit.rageTimer > 0 ? (unit.rageBonus || 0) : 0);
+
+    // Onmyoji enrage chain — extends out to an ally and retracts; the flat damage buff
+    // lands at the apex (fully extended). Animated every frame, independent of cooldown.
+    if (unit.chain) {
+      unit.chain.t += dt;
+      const tgt = s.units.find(u => u.id === unit.chain.targetId);
+      if (tgt && tgt.hp > 0) { unit.chain.tx = tgt.x; unit.chain.ty = tgt.y; }
+      if (!unit.chain.applied && unit.chain.t >= unit.chain.dur * 0.5) {
+        unit.chain.applied = true;
+        if (tgt && tgt.hp > 0 && tgt.team === unit.team) {
+          tgt.rageBonus = RAGE_DAMAGE_BONUS;
+          tgt.rageTimer = RAGE_DURATION;
+          pushFx(s, { kind: 'impact_sparks', layer: 'foreground', x: tgt.x, y: tgt.y, radius: 38, color: COLORS.vermilion, life: 0.3, maxLife: 0.3, rays: 8 });
+          SoundManager.playSfx('wardrums_activate');
+        }
+      }
+      if (unit.chain.t >= unit.chain.dur) unit.chain = null;
+    }
+
+    // Onmyoji: pick the nearest un-enraged ally in range and whip a chain to it.
+    if (unit.type === 'support' && unit.attackCooldown <= 0 && !unit.chain) {
       const allies = unit.team === 'enemy' ? enemies : players;
-      let healed = false;
-      allies.forEach(a => { if (a.id !== unit.id && Math.hypot(a.x - unit.x, a.y - unit.y) < unit.range) { a.hp = Math.min(a.maxHp, a.hp + 5); healed = true; } });
-      if (healed) { s.explosions.push({ x: unit.x, y: unit.y, r: unit.range, life: 0.5, color: COLORS.jade }); unit.attackCooldown = unit.attackSpeed / atkSpeedMult; }
+      let best = null, bestD = Infinity;
+      for (let k = 0; k < allies.length; k++) {
+        const a = allies[k];
+        if (a.id === unit.id || a.type === 'support' || a.rageTimer > 0) continue;
+        const d = Math.hypot(a.x - unit.x, a.y - unit.y);
+        if (d < unit.range && d < bestD) { bestD = d; best = a; }
+      }
+      if (best) {
+        unit.chain = { targetId: best.id, tx: best.x, ty: best.y, t: 0, dur: RAGE_CHAIN_DURATION, applied: false };
+        unit.swingPhase = 1.0;
+        unit.attackCooldown = unit.attackSpeed / atkSpeedMult;
+      }
     }
 
     // Boss telegraph
@@ -231,7 +266,7 @@ export function tickUnits(s, dt, now, metaRef) {
     const isEngaged = target && slotDistSq <= engageDist * engageDist && unit.type !== 'support';
     if (isEngaged) {
       if (unit.name === 'Ikki Rebel') {
-        target.hp -= unit.damage;
+        target.hp -= dmg;
         unit.hp = 0;
         pushFx(s, { kind: 'impact_sparks', layer: 'foreground', x: target.x, y: target.y, radius: 36, color: '#8b8574', life: 0.22, maxLife: 0.22, rays: 6 });
         addParticle(s, unit.x, unit.y, COLORS.ink, 5);
@@ -245,7 +280,7 @@ export function tickUnits(s, dt, now, metaRef) {
           SoundManager.playSfx('boss_telegraph');
         } else if (unit.type === 'ranged') {
           const angle = Math.atan2(target.y - unit.y, target.x - unit.x);
-          const damage = isExposedYumi ? unit.damage * YUMI_EXPOSED_DAMAGE_MULT : unit.damage;
+          const damage = isExposedYumi ? unit.damage * YUMI_EXPOSED_DAMAGE_MULT : dmg;
           const isFlaming = !isExposedYumi && unit.team === 'player' && unit.name === 'Yumi Archer' && metaRef.current.unlockedProvisions.includes('FLAMING_ARROWS') && Math.random() < 0.25;
           s.projectiles.push({ x: unit.x, y: unit.y, vx: Math.cos(angle) * 1200, vy: Math.sin(angle) * 1200, damage, team: unit.team, pierce: unit.pierce && !isExposedYumi, isFlaming });
           if (isFlaming) {
@@ -254,11 +289,11 @@ export function tickUnits(s, dt, now, metaRef) {
           expectedHpMap.set(target.id, (expectedHpMap.get(target.id) ?? target.hp) - damage);
           SoundManager.playSfx('arrow_release');
         } else if (unit.type === 'siege') {
-          s.projectiles.push({ type: 'lob', startX: unit.x, startY: unit.y, targetX: target.x, targetY: target.y, progress: 0, travelTime: 1.2, damage: unit.damage, team: unit.team, z: 0 });
+          s.projectiles.push({ type: 'lob', startX: unit.x, startY: unit.y, targetX: target.x, targetY: target.y, progress: 0, travelTime: 1.2, damage: dmg, team: unit.team, z: 0 });
           SoundManager.playSfx('siege_launch');
           } else {
-          target.hp -= unit.damage;
-          if (unit.team === 'player' && s.combatStats) s.combatStats.damageDealt += unit.damage;
+          target.hp -= dmg;
+          if (unit.team === 'player' && s.combatStats) s.combatStats.damageDealt += dmg;
           unit.swingPhase = 1.0;
           SoundManager.playSfx('sword_swing');
           emitMeleeImpact(s, unit, target, unit.type === 'boss' ? 0.34 : unit.type === 'cavalry' ? 0.26 : 0.14);
@@ -335,7 +370,7 @@ export function tickUnits(s, dt, now, metaRef) {
 
     if (unit.team === 'enemy' && unit.y + unit.radius >= WALL_FACE_Y) {
       unit.y = WALL_FACE_Y; // pin centered on the wall; the wall renders on top of units here
-      const dps = unit.damage / (unit.attackSpeed || 1);
+      const dps = dmg / (unit.attackSpeed || 1);
       s.wall.hp = Math.max(0, s.wall.hp - dps * dt);
       if (s.wall.hp <= 0 && s.gameState === 'COMBAT') {
         s.gameState = 'GAMEOVER';

@@ -619,27 +619,27 @@ export function HubTestScreen({
                       const nextWall = WALL_LEVELS[wallLevel + 1] ?? null;
                       const canAfford = nextWall && meta?.honor >= currentWall.upgradeCost;
                       return (
-                        <div className="border border-[#8b7355]/30 bg-[#1a1816]/50 p-3 flex items-center justify-between gap-3">
-                          <div>
-                            <p className="text-xs font-black uppercase tracking-[0.1em] text-[#dfd4ba]">{currentWall.name}</p>
-                            <p className="text-[10px] text-[#8b8574] mt-1">Wall HP: {currentWall.maxHp}</p>
+                        <div className="border border-[#8b7355]/30 bg-[#1a1816]/50 p-3">
+                          <div className="flex items-baseline justify-between gap-2 mb-2">
+                            <p className="text-xs font-black uppercase tracking-[0.1em] text-[#dfd4ba] truncate">{currentWall.name}</p>
+                            <p className="text-[10px] text-[#8b8574] shrink-0">Wall HP: {currentWall.maxHp}</p>
                           </div>
                           {nextWall ? (
                             <button
                               onClick={upgradeWall}
                               disabled={!canAfford}
-                              className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors flex items-center gap-2 shrink-0 ${
+                              className={`w-full px-3 py-2 text-[11px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 ${
                                 canAfford
                                   ? 'bg-[#8b7355]/20 text-[#dfd4ba] border border-[#8b7355]/50 hover:bg-[#8b7355]/40 hover:border-[#8b7355]'
                                   : 'bg-[#1a1816]/80 text-[#8b8574]/50 border border-[#8b8574]/20 cursor-not-allowed'
                               }`}
                             >
-                              <span>REINFORCE &rarr; {nextWall.name}</span>
-                              <span className="opacity-60">|</span>
-                              <span>{currentWall.upgradeCost} H</span>
+                              <span className="truncate">REINFORCE &rarr; {nextWall.name}</span>
+                              <span className="opacity-60 shrink-0">|</span>
+                              <span className="shrink-0">{currentWall.upgradeCost} H</span>
                             </button>
                           ) : (
-                            <span className="text-xs uppercase font-bold px-4 py-2 border border-[#d4af37]/30 text-[#d4af37] shrink-0">
+                            <span className="block w-full text-center text-xs uppercase font-bold py-2 border border-[#d4af37]/30 text-[#d4af37]">
                               MAX FORTIFICATION
                             </span>
                           )}

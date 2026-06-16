@@ -85,5 +85,5 @@ export const ENEMY_COSTS = {
   TENGU:   8,
   ONMYOJI: 20,
   SHINOBI: 18,
-  ONI:     150
+  ONI:     70
 };

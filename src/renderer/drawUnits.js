@@ -260,11 +260,43 @@ export const drawUnitTopDown = (ctx, u) => {
       ctx.arc(0, 0, Math.max(0.1, u.range * fillRatio), 0, Math.PI*2); 
       ctx.fill(); 
   }
-  if (u.burn > 0) { 
-      ctx.fillStyle = 'rgba(234, 88, 12, 0.3)'; 
-      ctx.beginPath(); 
-      ctx.arc(0, 0, Math.max(0.1, u.radius*1.5), 0, Math.PI*2); 
-      ctx.fill(); 
+  if (u.burn > 0) {
+      ctx.fillStyle = 'rgba(234, 88, 12, 0.3)';
+      ctx.beginPath();
+      ctx.arc(0, 0, Math.max(0.1, u.radius*1.5), 0, Math.PI*2);
+      ctx.fill();
+  }
+
+  // Enraged (Onmyoji buff) — pulsing vermilion glow so the boosted unit reads at a glance
+  if (u.rageTimer > 0) {
+      const pulse = 0.5 + 0.5 * Math.sin(now / 90);
+      ctx.strokeStyle = `rgba(184, 66, 53, ${0.45 + 0.35 * pulse})`;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, 0, Math.max(0.1, u.radius + 5 + pulse * 3), 0, Math.PI*2);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(184, 66, 53, 0.12)';
+      ctx.fill();
+  }
+
+  // Onmyoji chain whip — segmented chain that reaches toward the target ally and retracts
+  if (u.chain) {
+      const p = Math.min(1, u.chain.t / u.chain.dur);
+      const reach = 1 - Math.abs(p - 0.5) * 2; // 0 → 1 → 0 across the swing
+      const dx = (u.chain.tx - u.x) * reach;
+      const dy = (u.chain.ty - u.y) * reach;
+      const links = 8;
+      ctx.strokeStyle = '#6b6256';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(dx, dy); ctx.stroke();
+      ctx.fillStyle = COLORS.vermilion;
+      for (let li = 1; li <= links; li++) {
+          const f = li / links;
+          ctx.beginPath(); ctx.arc(dx * f, dy * f, 3, 0, Math.PI*2); ctx.fill();
+      }
+      // Charm at the chain's tip
+      ctx.fillStyle = COLORS.parchment;
+      ctx.beginPath(); ctx.arc(dx, dy, 5, 0, Math.PI*2); ctx.fill();
   }
 
   if (u.isChapterBoss && hasChapterBossVisual(u.bossId)) {

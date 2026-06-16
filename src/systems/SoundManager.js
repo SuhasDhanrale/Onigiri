@@ -19,8 +19,8 @@ const SFX_FILE_LIBRARY = {
 const DEFAULT_SETTINGS = {
   muted: false,
   masterVolume: 1,
-  musicVolume: 0.4,
-  sfxVolume: 0.5,
+  musicVolume: 0.7,
+  sfxVolume: 0.8,
 };
 
 function loadSettings() {
