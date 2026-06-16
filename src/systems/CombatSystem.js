@@ -372,6 +372,8 @@ export function tickUnits(s, dt, now, metaRef) {
       unit.y = WALL_FACE_Y; // pin centered on the wall; the wall renders on top of units here
       const dps = dmg / (unit.attackSpeed || 1);
       s.wall.hp = Math.max(0, s.wall.hp - dps * dt);
+      s.wall.lastHit = now; // for the HP bar: only show it while under attack
+
       if (s.wall.hp <= 0 && s.gameState === 'COMBAT') {
         s.gameState = 'GAMEOVER';
         bus.emit(EVENTS.GAME_STATE_CHANGED, { state: s.gameState });

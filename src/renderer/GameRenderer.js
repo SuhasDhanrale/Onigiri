@@ -4,7 +4,7 @@ import { drawBackgroundEffects, drawForegroundEffects } from './drawEffects.js';
 import { drawUnitTopDown } from './drawUnits.js';
 import { drawCave } from './drawCave.js';
 import { drawCliffs } from './drawCliffs.js';
-import { drawWall } from './drawWalls.js';
+import { drawWall, drawWallHpBar } from './drawWalls.js';
 
 export const initRenderer = (canvas) => {
     canvas.width = V_WIDTH;
@@ -95,6 +95,10 @@ export const drawGame = (ctx, s, dt, now, metaRef) => {
     drawWall(ctx, s, now);
 
     drawForegroundEffects(ctx, s);
+
+    // Wall HP bar is a HUD header — draw last so nothing in the combat field
+    // overlaps it (it lives at the top-center, clear of the battle).
+    drawWallHpBar(ctx, s, now);
 
     ctx.restore();
 };

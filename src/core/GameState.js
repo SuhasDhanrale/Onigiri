@@ -36,6 +36,7 @@ export function createInitialState() {
       hp: WALL_LEVELS[0].maxHp,
       maxHp: WALL_LEVELS[0].maxHp,
       level: 0,
+      lastHit: -Infinity, // timestamp of last enemy hit; HP bar shows only while under attack
     },
     barracks:    { HATAMOTO: 0, YUMI: 0, CAVALRY: 0, HOROKU: 0 },
     troopLevel:  { HATAMOTO: 1, YUMI: 1, CAVALRY: 1, HOROKU: 1 },

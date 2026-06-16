@@ -1,4 +1,4 @@
-import { V_WIDTH, WALL_Y, WALL_FACE_Y } from '../config/constants.js';
+import { V_WIDTH, WALL_FACE_Y } from '../config/constants.js';
 import { WALL_LEVELS } from '../config/walls.js';
 import { drawPath, line, circle, rect } from './canvasShapes.js';
 
@@ -162,40 +162,81 @@ export function drawWall(ctx, s, _now) {
   ctx.restore();
 }
 
-// Small aesthetic HP bar for the wall, styled like the cave/orb HP bars.
+// HP bar for the player's wall. It lives in the strip just below the wall (and
+// above the barracks) — clearly inside our own base, so it doesn't read as an
+// enemy health bar — and is only shown while the wall is actually under attack,
+// fading out shortly after the last hit. Drawn last in the frame (GameRenderer)
+// so it sits cleanly on top.
+const WALL_HP_BAR_Y = 1350;        // below WALL_Y (1320), above the barracks (~1390)
+const WALL_HP_VISIBLE_MS = 1600;   // keep showing this long after the last hit
+const WALL_HP_FADE_MS = 400;       // fade out over the tail of that window
+
 export function drawWallHpBar(ctx, s, now) {
   const wall = s.wall;
   if (!wall) return;
+
+  // Only visible while under attack (recently hit by an enemy).
+  const sinceHit = now - (wall.lastHit ?? -Infinity);
+  if (sinceHit > WALL_HP_VISIBLE_MS) return;
+  const fade = sinceHit > WALL_HP_VISIBLE_MS - WALL_HP_FADE_MS
+    ? Math.max(0, (WALL_HP_VISIBLE_MS - sinceHit) / WALL_HP_FADE_MS)
+    : 1;
 
   const level = wall.level ?? 0;
   const wallDef = WALL_LEVELS[level] ?? WALL_LEVELS[0];
   const hpPct = wall.maxHp > 0 ? Math.max(0, Math.min(1, wall.hp / wall.maxHp)) : 0;
 
-  const barW = 200;
-  const barH = 14;
-  const barX = V_WIDTH / 2 - barW / 2;
-  const barY = WALL_Y - 200;
-
-  ctx.fillStyle = '#1b1918';
-  ctx.fillRect(barX - 2, barY - 2, barW + 4, barH + 4);
-  ctx.fillStyle = '#4c4947';
-  ctx.fillRect(barX, barY, barW, barH);
+  const barW = 280;
+  const barH = 16;
+  const cx = V_WIDTH / 2;
+  const barX = cx - barW / 2;
+  const barY = WALL_HP_BAR_Y;
+  const r = 5;
 
   let barColor;
-  if (hpPct > 0.66)      barColor = '#b84235';
-  else if (hpPct > 0.33) barColor = '#d4af37';
-  else                   barColor = '#ff3b1f';
+  if (hpPct > 0.66)      barColor = '#b84235'; // Vermilion (healthy)
+  else if (hpPct > 0.33) barColor = '#d4af37'; // Gold (wounded)
+  else                   barColor = '#ff3b1f'; // Bright (critical)
 
-  if (hpPct <= 0.33) {
-    ctx.globalAlpha = 0.8 + Math.sin(now / 100) * 0.2;
+  ctx.save();
+  ctx.globalAlpha = fade;
+
+  // Frame: dark plate with a thin bronze border
+  ctx.beginPath();
+  ctx.roundRect(barX - 3, barY - 3, barW + 6, barH + 6, r + 2);
+  ctx.fillStyle = '#1b1918';
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = '#5c4a3d';
+  ctx.stroke();
+
+  // Empty track
+  ctx.beginPath();
+  ctx.roundRect(barX, barY, barW, barH, r);
+  ctx.fillStyle = '#3a3633';
+  ctx.fill();
+
+  // Fill — pulse when critical
+  if (hpPct > 0) {
+    ctx.globalAlpha = fade * (hpPct <= 0.33 ? 0.75 + Math.sin(now / 100) * 0.25 : 1);
+    ctx.beginPath();
+    ctx.roundRect(barX, barY, Math.max(barH, barW * hpPct), barH, r);
+    ctx.fillStyle = barColor;
+    ctx.fill();
+    // Subtle top highlight for a bit of sheen
+    ctx.beginPath();
+    ctx.roundRect(barX, barY + 1, Math.max(barH, barW * hpPct), barH * 0.4, r);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.fill();
+    ctx.globalAlpha = fade;
   }
-  ctx.fillStyle = barColor;
-  ctx.fillRect(barX, barY, barW * hpPct, barH);
-  ctx.globalAlpha = 1;
 
+  // Wall name + HP centered in the bar
   ctx.fillStyle = '#dfd4ba';
   ctx.font = 'bold 11px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(`${wallDef.name}  ${Math.ceil(wall.hp)} / ${wall.maxHp}`, V_WIDTH / 2, barY + barH / 2);
+  ctx.fillText(`${wallDef.name}  ${Math.ceil(wall.hp)} / ${wall.maxHp}`, cx, barY + barH / 2 + 1);
+
+  ctx.restore();
 }
