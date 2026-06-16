@@ -440,9 +440,88 @@ function drawScreenPulse(ctx, effect) {
   ctx.restore();
 }
 
+function drawLightningStrike(ctx, hazard, now) {
+  // Telegraph only — the bolt + flash on impact are separate pushFx ('lightning').
+  const pulse = 0.5 + Math.sin(now / 50 + hazard.seed) * 0.5;
+  const charge = hazard.armTimer > 0 ? 1 - Math.max(0, hazard.armTimer) / 0.95 : 1;
+
+  ctx.save();
+  ctx.translate(hazard.x, hazard.y);
+  ctx.globalAlpha = 0.35 + pulse * 0.25;
+
+  ctx.strokeStyle = '#facc15';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([10, 8]);
+  ctx.beginPath();
+  ctx.arc(0, 0, hazard.radius * (0.92 - charge * 0.12), 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Inner ring contracts toward the impact point as the strike charges.
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(0, 0, hazard.radius * (0.6 - charge * 0.45), 0, Math.PI * 2);
+  ctx.stroke();
+
+  const r = hazard.radius * 0.9;
+  ctx.strokeStyle = '#facc15';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-r, 0); ctx.lineTo(r, 0);
+  ctx.moveTo(0, -r); ctx.lineTo(0, r);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawFreezeZone(ctx, hazard, now) {
+  const warning = hazard.armTimer > 0;
+  const pulse = 0.5 + Math.sin(now / 80 + hazard.seed) * 0.5;
+
+  ctx.save();
+  ctx.translate(hazard.x, hazard.y);
+  ctx.globalAlpha = warning ? 0.3 + pulse * 0.12 : Math.min(0.6, hazard.life / 4);
+
+  const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, hazard.radius);
+  grad.addColorStop(0, warning ? 'rgba(160, 196, 255, 0.12)' : 'rgba(207, 232, 255, 0.42)');
+  grad.addColorStop(0.6, 'rgba(120, 160, 220, 0.26)');
+  grad.addColorStop(1, 'rgba(120, 160, 220, 0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(0, 0, hazard.radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Crystalline shards radiating from the centre.
+  ctx.strokeStyle = warning ? '#dfe9ff' : '#a0c4ff';
+  ctx.lineWidth = warning ? 2 : 3;
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 + hazard.seed;
+    const inner = hazard.radius * 0.2;
+    const outer = hazard.radius * (0.7 + Math.sin(now / 600 + i) * 0.06);
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * inner, Math.sin(a) * inner);
+    ctx.lineTo(Math.cos(a) * outer, Math.sin(a) * outer);
+    const bx = Math.cos(a) * outer * 0.6;
+    const by = Math.sin(a) * outer * 0.6;
+    ctx.moveTo(bx, by);
+    ctx.lineTo(bx + Math.cos(a + 0.6) * inner, by + Math.sin(a + 0.6) * inner);
+    ctx.stroke();
+  }
+
+  ctx.setLineDash(warning ? [6, 8] : []);
+  ctx.beginPath();
+  ctx.arc(0, 0, hazard.radius * 0.85, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
 export function drawBossHazardFx(ctx, hazard, now) {
   if (hazard.type === 'mud_mine') drawGokiMine(ctx, hazard, now);
   else if (hazard.type === 'fire_zone') drawKashaZone(ctx, hazard, now);
+  else if (hazard.type === 'lightning_strike') drawLightningStrike(ctx, hazard, now);
+  else if (hazard.type === 'freeze_zone') drawFreezeZone(ctx, hazard, now);
 }
 
 export function drawVisualEffect(ctx, effect) {

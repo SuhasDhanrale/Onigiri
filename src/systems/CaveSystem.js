@@ -1,6 +1,7 @@
 import { CAVE_CONFIG } from '../config/cave.js';
 import { V_WIDTH, WALL_Y } from '../config/constants.js';
 import { isVisibleBossId, getCampaignChapterIndex } from '../config/campaign.js';
+import { BOSS_REGISTRY, getBossDef } from '../config/bosses.js';
 import { addParticle, spawnUnit } from './SpawnSystem.js';
 import { pushFx } from '../renderer/drawSumiFx.js';
 import { bus } from '../core/EventBus.js';
@@ -9,66 +10,16 @@ import { SoundManager } from './SoundManager.js';
 
 const GOKI_MINE_INTERVAL = 6.5;
 const KASHA_FIRE_INTERVAL = 5.0;
+const DAITENGU_STRIKE_INTERVAL = 4.5;
+const YUKIONNA_FREEZE_INTERVAL = 5.5;
+const OTAKEMARU_CHAOS_PHASE = 7.5;
 
 // Boss arrives as a "boss wave": it spawns alongside an escort, then reinforcement
 // waves keep pouring in so the player is never just trading blows with a lone boss.
 const BOSS_REINFORCE_INTERVAL = 11.0;
 const BOSS_REINFORCE_MAX_ENEMIES = 42; // skip a reinforcement tick if the field is already this crowded
 
-// Bosses must read as bosses: every radius is well above the regular ONI (55),
-// and HP is ~2x the previous values so they are a real damage check to bring down.
-const BOSS_DEFS = {
-  goki: {
-    name: 'Goki',
-    hp: 3000,
-    damage: 32,
-    speed: 20,
-    radius: 80,
-    color: '#8b7355',
-    armor: '#1b1918',
-    attackSpeed: 2.8,
-  },
-  kasha: {
-    name: 'Kasha',
-    hp: 2300,
-    damage: 26,
-    speed: 46,
-    radius: 76,
-    color: '#b84235',
-    armor: '#1b1918',
-    attackSpeed: 1.5,
-  },
-  daitengu: {
-    name: 'Daitengu',
-    hp: 2700,
-    damage: 30,
-    speed: 58,
-    radius: 74,
-    color: '#4a90e2',
-    armor: '#1b1918',
-    attackSpeed: 1.3,
-  },
-  yukionna: {
-    name: 'Yuki-Onna',
-    hp: 3000,
-    damage: 34,
-    speed: 32,
-    radius: 76,
-    color: '#a0c4ff',
-    armor: '#1b1918',
-    attackSpeed: 1.8,
-  },
-  otakemaru: {
-    name: 'Otakemaru',
-    hp: 3800,
-    damage: 42,
-    speed: 36,
-    radius: 88,
-    color: '#9b59b6',
-    armor: '#1b1918',
-    attackSpeed: 1.6,
-  },
-};
+// Boss stats + hazard ids now live in config/bosses.js (BOSS_REGISTRY).
 
 export function tickCave(s, dt, metaRef) {
   if (!s.cave || !s.orb || s.waveState !== 'BOSS_PHASE') return;
@@ -191,7 +142,7 @@ function tickBossReinforcements(s, dt, metaRef) {
 
 function ensureVisibleBoss(s, metaRef, bossId) {
   if (s.chapterBossSpawned) return;
-  const def = BOSS_DEFS[bossId] ?? BOSS_DEFS.goki;
+  const def = getBossDef(bossId);
   spawnUnit(s, 'ONI', 'enemy', V_WIDTH / 2, 260, metaRef);
   const boss = s.units[s.units.length - 1];
   boss.name = def.name;
@@ -239,13 +190,36 @@ function tickBossHazards(s, dt, metaRef) {
     if (hazard.type === 'fire_zone' && hazard.armTimer <= 0) {
       applyFireZoneDamage(s, hazard, dt);
     }
+
+    // Lightning is a timed strike: it detonates the instant its telegraph expires.
+    if (hazard.type === 'lightning_strike' && hazard.armTimer <= 0) {
+      detonateLightning(s, hazard);
+      hazard.life = 0;
+    }
+
+    // Freeze is a lingering zone, like fire — but it chills instead of burning.
+    if (hazard.type === 'freeze_zone' && hazard.armTimer <= 0) {
+      applyFreezeZone(s, hazard, dt);
+    }
   }
 
   s.bossHazards = s.bossHazards.filter(h => h.life > 0);
 
+  // Dispatch the boss's signature hazard from the registry. No fallback: an unknown
+  // bossId (e.g. the cave/orb path with no visible chapter boss) spawns no hazards,
+  // exactly as before this registry existed.
   const bossId = s.bossId ?? metaRef.current.activeBossId;
-  if (bossId === 'goki') tickGokiMines(s, dt);
-  if (bossId === 'kasha') tickKashaFireTrails(s, dt);
+  const def = BOSS_REGISTRY[bossId];
+  if (def) {
+    switch (def.hazard) {
+      case 'mud_mines':         tickGokiMines(s, dt); break;
+      case 'fire_trails':       tickKashaFireTrails(s, dt); break;
+      case 'lightning_strikes': tickDaitenguLightning(s, dt); break;
+      case 'freeze_zones':      tickYukionnaFreeze(s, dt); break;
+      case 'elemental_chaos':   tickOtakemaruChaos(s, dt); break;
+      default: break;
+    }
+  }
 }
 
 function tickGokiMines(s, dt) {
@@ -300,6 +274,156 @@ function tickKashaFireTrails(s, dt) {
   s.floatingTexts.push({ x: target.x, y: 300, text: 'FIRE TRAIL', color: '#ea580c', life: 1.0, vy: -18 });
   s.cave.fireTimer = KASHA_FIRE_INTERVAL;
   SoundManager.playSfx('boss_swift_attack');
+}
+
+// ── Daitengu — Lightning Strikes ─────────────────────────────────────────────
+// Telegraphs a strike on the densest knot of player units, then detonates as burst
+// AoE. Punishes clumping: spread out and a single bolt clips far fewer units.
+function tickDaitenguLightning(s, dt) {
+  if (s.cave.lightningTimer === undefined) s.cave.lightningTimer = 2.0;
+  s.cave.lightningTimer -= dt;
+  if (s.cave.lightningTimer > 0) return;
+
+  const target = pickClusterPoint(s);
+  s.bossHazards.push({
+    id: `bolt_${Date.now()}_${Math.random()}`,
+    type: 'lightning_strike',
+    x: target.x,
+    y: target.y,
+    radius: 96,
+    armTimer: 0.95,   // telegraph window before the bolt lands
+    life: 4,          // safety cap; it actually detonates at armTimer <= 0
+    damage: 40,
+    slowTimer: 1.5,
+    maxLife: 4,
+    seed: Math.random() * 100000,
+  });
+  s.floatingTexts.push({ x: target.x, y: target.y - 80, text: 'LIGHTNING', color: '#facc15', life: 0.9, vy: -18 });
+  s.cave.lightningTimer = DAITENGU_STRIKE_INTERVAL;
+  SoundManager.playSfx('boss_swift_attack');
+}
+
+/** Returns the position of the player unit with the most nearby allies (the clump). */
+function pickClusterPoint(s) {
+  const players = s.units.filter(u =>
+    u.team === 'player' && u.hp > 0 && u.type !== 'friction' && u.y > 280 && u.y < WALL_Y
+  );
+  if (players.length === 0) return pickPlayerPressurePoint(s);
+
+  let best = players[0];
+  let bestCount = -1;
+  for (const u of players) {
+    let count = 0;
+    for (const v of players) {
+      if (Math.hypot(u.x - v.x, u.y - v.y) < 110) count++;
+    }
+    if (count > bestCount) { bestCount = count; best = u; }
+  }
+  return {
+    x: clamp(best.x, 120, V_WIDTH - 120),
+    y: clamp(best.y, 320, WALL_Y - 100),
+  };
+}
+
+function detonateLightning(s, hazard) {
+  pushFx(s, { kind: 'lightning', layer: 'foreground', x: hazard.x, y: hazard.y, seed: hazard.seed, branches: 5, startY: -140, life: 0.4, maxLife: 0.4 });
+  pushFx(s, { kind: 'screen_pulse', layer: 'background', x: hazard.x, y: hazard.y, color: '#facc15', life: 0.4, maxLife: 0.4 });
+  pushFx(s, { kind: 'ground_star', layer: 'foreground', x: hazard.x, y: hazard.y, radius: hazard.radius * 1.1, color: '#facc15', life: 0.42, maxLife: 0.42 });
+  addParticle(s, hazard.x, hazard.y, '#facc15', 18, 300);
+  addParticle(s, hazard.x, hazard.y, '#ffffff', 8, 200);
+
+  s.units.forEach(u => {
+    if (u.team !== 'player' || u.hp <= 0) return;
+    const dist = Math.hypot(u.x - hazard.x, u.y - hazard.y);
+    if (dist > hazard.radius) return;
+    const falloff = 1 - (dist / hazard.radius) * 0.4;
+    u.hp -= hazard.damage * falloff;
+    u.slowTimer = Math.max(u.slowTimer ?? 0, hazard.slowTimer);
+    u.slowMult = 0.6;
+  });
+
+  s.screenShake = Math.max(s.screenShake, 0.4);
+  bus.emit(EVENTS.SCREEN_SHAKE, { amount: s.screenShake });
+  SoundManager.playSfx('mine_explode');
+}
+
+// ── Yuki-Onna — Deep Freeze ──────────────────────────────────────────────────
+// Drops a spread of lingering frost zones that heavily slow (and lightly chip) any
+// player units standing in them — area denial that punishes a static frontline.
+function tickYukionnaFreeze(s, dt) {
+  if (s.cave.freezeTimer === undefined) s.cave.freezeTimer = 2.2;
+  s.cave.freezeTimer -= dt;
+  if (s.cave.freezeTimer > 0) return;
+
+  const target = pickPlayerPressurePoint(s);
+  for (let i = 0; i < 3; i++) {
+    const x = clamp(target.x + (Math.random() - 0.5) * 260, 120, V_WIDTH - 120);
+    const y = clamp(target.y + (Math.random() - 0.5) * 220, 320, WALL_Y - 90);
+    s.bossHazards.push({
+      id: `frost_${Date.now()}_${i}_${Math.random()}`,
+      type: 'freeze_zone',
+      x,
+      y,
+      radius: 92,
+      armTimer: 0.8,
+      life: 6,
+      damagePerSec: 5,
+      slowMult: 0.4,
+      maxLife: 6,
+      seed: Math.random() * 100000,
+    });
+  }
+  pushFx(s, { kind: 'aura', layer: 'background', x: target.x, y: target.y, radius: 150, color: '#a0c4ff', life: 1.0, maxLife: 1.0, spin: -0.4 });
+  s.floatingTexts.push({ x: target.x, y: target.y - 70, text: 'DEEP FREEZE', color: '#a0c4ff', life: 1.0, vy: -18 });
+  s.cave.freezeTimer = YUKIONNA_FREEZE_INTERVAL;
+  SoundManager.playSfx('boss_mining_attack');
+}
+
+function applyFreezeZone(s, hazard, dt) {
+  if (Math.random() < dt * 8) {
+    addParticle(
+      s,
+      hazard.x + (Math.random() - 0.5) * hazard.radius,
+      hazard.y + (Math.random() - 0.5) * hazard.radius,
+      '#cfe8ff',
+      1,
+      70
+    );
+  }
+
+  s.units.forEach(u => {
+    if (u.team !== 'player' || u.hp <= 0) return;
+    if (Math.hypot(u.x - hazard.x, u.y - hazard.y) > hazard.radius) return;
+    u.hp -= hazard.damagePerSec * dt;
+    // Refresh a short slow each tick so it wears off shortly after leaving the zone.
+    u.slowTimer = Math.max(u.slowTimer ?? 0, 0.4);
+    u.slowMult = hazard.slowMult;
+  });
+}
+
+// ── Otakemaru — Elemental Chaos ──────────────────────────────────────────────
+// Cycles through the other four bosses' signature hazards, one element per phase, so
+// the player has to keep re-reading the board. Reuses each tick verbatim — the sub
+// timers (mineTimer/fireTimer/lightningTimer/freezeTimer) live on s.cave and persist.
+function tickOtakemaruChaos(s, dt) {
+  if (s.cave.chaosPhase === undefined) {
+    s.cave.chaosPhase = 0;
+    s.cave.chaosTimer = OTAKEMARU_CHAOS_PHASE;
+  }
+  s.cave.chaosTimer -= dt;
+  if (s.cave.chaosTimer <= 0) {
+    s.cave.chaosPhase = (s.cave.chaosPhase + 1) % 4;
+    s.cave.chaosTimer = OTAKEMARU_CHAOS_PHASE;
+    const labels = ['EARTH', 'FLAME', 'STORM', 'FROST'];
+    s.floatingTexts.push({ x: V_WIDTH / 2, y: 240, text: `OTAKEMARU CALLS ${labels[s.cave.chaosPhase]}`, color: '#9b59b6', life: 1.6, vy: -16 });
+  }
+
+  switch (s.cave.chaosPhase) {
+    case 0:  tickGokiMines(s, dt); break;
+    case 1:  tickKashaFireTrails(s, dt); break;
+    case 2:  tickDaitenguLightning(s, dt); break;
+    default: tickYukionnaFreeze(s, dt); break;
+  }
 }
 
 function detonateMudMine(s, hazard) {

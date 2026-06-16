@@ -216,6 +216,34 @@ export function generateMap(seed, runNumber) {
   return tiers.flat();
 }
 
+// Boss pressure-gate: the player must clear at least this many combat/elite nodes
+// before the boss unlocks, so an event/shop/rest-heavy route can't reach the boss
+// after a single fight. 2 is provably soft-lock-safe — completing START makes every
+// tier-1 node available, tier 1 always holds ≥2 combat nodes, and available nodes are
+// never re-locked, so the player can always reach the threshold regardless of path.
+export const BOSS_UNLOCK_MIN_FIGHTS = 2;
+
+// Counts cleared combat/elite nodes. `alsoCompletedId` lets callers count a node that
+// is being marked completed in the same update pass (its status hasn't flipped yet).
+function countClearedFights(mapNodes, alsoCompletedId = null) {
+  return mapNodes.reduce((total, node) => {
+    const isFight = node.type === 'combat' || node.type === 'elite';
+    const cleared = node.status === 'completed' || node.id === alsoCompletedId;
+    return total + (isFight && cleared ? 1 : 0);
+  }, 0);
+}
+
+// UI helper: how close the player is to satisfying the boss pressure-gate.
+export function getBossUnlockProgress(mapNodes) {
+  const cleared = countClearedFights(mapNodes);
+  return {
+    cleared,
+    required: BOSS_UNLOCK_MIN_FIGHTS,
+    remaining: Math.max(0, BOSS_UNLOCK_MIN_FIGHTS - cleared),
+    met: cleared >= BOSS_UNLOCK_MIN_FIGHTS,
+  };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // applyNodeCompletion — immutable update
 // Returns a new mapNodes array:
@@ -248,6 +276,8 @@ export function applyNodeCompletion(mapNodes, completedNodeId) {
   };
 
   const completedNode = mapNodes.find(n => n.id === completedNodeId);
+  // Count the just-completed node too, since its status flips later in this same map().
+  const clearedFights = countClearedFights(mapNodes, completedNodeId);
 
   return mapNodes.map(node => {
     // Mark the completed node
@@ -270,7 +300,11 @@ export function applyNodeCompletion(mapNodes, completedNodeId) {
     if (node.status === 'locked' && node.type === 'boss') {
       const preds = predecessorMap[node.id] ?? [];
       const anyDone = preds.some(predId => isCompleted(predId));
-      if (anyDone) {
+      // Pressure-gate: a tier-4 node must be cleared AND the player must have cleared
+      // enough fights this map. Closes the "one fight then boss" route without dictating
+      // which path the player takes. Re-checked on every completion, so a backtracked
+      // fight after reaching tier 4 will unlock the boss on the next clear.
+      if (anyDone && clearedFights >= BOSS_UNLOCK_MIN_FIGHTS) {
         return { ...node, status: 'available' };
       }
     }

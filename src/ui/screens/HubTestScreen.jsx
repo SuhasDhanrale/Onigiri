@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { applyNodeCompletion } from '../../systems/MapGenerator.js';
+import { applyNodeCompletion, getBossUnlockProgress } from '../../systems/MapGenerator.js';
 import { getEvent, applyEventChoice, tickCurses } from '../../systems/EventSystem.js';
 import { generateShopInventory, purchaseItem } from '../../systems/ShopSystem.js';
 import { getRestOptions, getRestBlessingChoices, applyRestChoice } from '../../systems/RestSystem.js';
@@ -343,6 +343,8 @@ export function HubTestScreen({
         icon: prov.icon,
       }))
   ), [meta?.unlockedProvisions]);
+
+  const bossProgress = getBossUnlockProgress(mapNodes);
 
   const getSvgLines = () => {
     const lines = [];
@@ -850,6 +852,12 @@ export function HubTestScreen({
                     ) : (
                       <div className="absolute top-[110%] mt-2 text-[8px] font-bold uppercase tracking-wider text-[#8b8574] group-hover/node:text-[#dfd4ba] group-hover/node:scale-110 transition-all bg-[#0a0908]/60 px-2 rounded backdrop-blur-sm whitespace-nowrap pointer-events-none">
                         {node.name}
+                      </div>
+                    )}
+
+                    {isBoss && isLocked && !bossProgress.met && (
+                      <div className="absolute top-[110%] mt-9 bg-[#0a0908]/90 border border-[#b84235]/60 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-[#b84235] whitespace-nowrap pointer-events-none">
+                        Defeat {bossProgress.remaining} more {bossProgress.remaining === 1 ? 'force' : 'forces'}
                       </div>
                     )}
                   </div>
