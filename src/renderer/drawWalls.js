@@ -1,6 +1,7 @@
 import { V_WIDTH, WALL_FACE_Y } from '../config/constants.js';
 import { WALL_LEVELS } from '../config/walls.js';
 import { drawPath, line, circle, rect } from './canvasShapes.js';
+import { translateText } from '../i18n/i18n.js';
 
 // Deterministic pseudo-random in [0, 1) so bamboo sticks/logs don't jitter every frame.
 function seededRandom(seed) {
@@ -236,7 +237,7 @@ export function drawWallHpBar(ctx, s, now) {
   ctx.font = 'bold 11px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(`${wallDef.name}  ${Math.ceil(wall.hp)} / ${wall.maxHp}`, cx, barY + barH / 2 + 1);
+  ctx.fillText(`${translateText(wallDef.name)}  ${Math.ceil(wall.hp)} / ${wall.maxHp}`, cx, barY + barH / 2 + 1);
 
   ctx.restore();
 }

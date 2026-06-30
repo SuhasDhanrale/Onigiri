@@ -1,3 +1,5 @@
+import { translateText } from '../i18n/i18n.js';
+
 const SUPPORTED_BOSS_VISUALS = new Set(['goki', 'kasha']);
 
 function drawPath(ctx, d, { fill = null, stroke = null, strokeWidth = 1, opacity = 1 } = {}) {
@@ -50,8 +52,9 @@ function drawBossHealth(ctx, unit) {
   ctx.fillStyle = '#dfd4ba';
   ctx.strokeStyle = '#1b1918';
   ctx.lineWidth = 4;
-  ctx.strokeText(unit.name?.toUpperCase?.() ?? 'BOSS', 0, -unit.radius - 20);
-  ctx.fillText(unit.name?.toUpperCase?.() ?? 'BOSS', 0, -unit.radius - 20);
+  const bossName = translateText(unit.name?.toUpperCase?.() ?? 'BOSS');
+  ctx.strokeText(bossName, 0, -unit.radius - 20);
+  ctx.fillText(bossName, 0, -unit.radius - 20);
 
   ctx.fillStyle = '#1b1918';
   ctx.fillRect(-width / 2, y, width, height);

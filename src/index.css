@@ -14,6 +14,10 @@ html, body, #root {
   overflow: hidden;
 }
 
+html:lang(ja), html:lang(zh-CN), html:lang(ko) {
+  font-family: "Noto Sans CJK JP", "Noto Sans JP", "Microsoft YaHei", "Yu Gothic UI", "Malgun Gothic", sans-serif;
+}
+
 /* Sumi Result Screen Custom Styles */
 @keyframes stampIn {
   0% { transform: scale(1.1); opacity: 0; filter: blur(10px); }

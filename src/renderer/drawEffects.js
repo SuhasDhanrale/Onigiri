@@ -1,6 +1,7 @@
 import { COLORS } from '../config/colors.js';
 import { V_WIDTH } from '../config/constants.js';
 import { drawBossHazardFx, drawVisualEffect } from './drawSumiFx.js';
+import { translateText } from '../i18n/i18n.js';
 
 export function drawBackgroundEffects(ctx, s) {
     (s.bossHazards ?? []).forEach(h => {
@@ -83,7 +84,7 @@ export function drawForegroundEffects(ctx, s) {
     s.floatingTexts.forEach(ft => { 
         ctx.fillStyle = ft.color; 
         ctx.globalAlpha = Math.min(1, ft.life * 2); 
-        ctx.fillText(ft.text, ft.x, ft.y); 
+        ctx.fillText(translateText(ft.text), ft.x, ft.y);
         ctx.globalAlpha = 1.0; 
     });
 }

@@ -1,5 +1,6 @@
 import { CAVE_CONFIG } from '../config/cave.js';
 import { isVisibleBossId } from '../config/campaign.js';
+import { translateText } from '../i18n/i18n.js';
 
 const BOSS_LABELS = {
   goki: { name: 'GOKI', power: 'MUD MINES', glow: '139, 115, 85' },
@@ -78,7 +79,7 @@ export function drawCave(ctx, s, now) {
     ctx.font = 'bold 13px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('⚠ RAGING', cave.x, cave.y);
+    ctx.fillText(`⚠ ${translateText('RAGING')}`, cave.x, cave.y);
     ctx.globalAlpha = 1;
   }
 
@@ -116,7 +117,7 @@ export function drawCave(ctx, s, now) {
   ctx.font = 'bold 11px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(`${bossLabel.name}  ${Math.ceil(cave.hp)} / ${cave.maxHp}`, cave.x, barY + barH / 2);
+  ctx.fillText(`${translateText(bossLabel.name)}  ${Math.ceil(cave.hp)} / ${cave.maxHp}`, cave.x, barY + barH / 2);
 
   // "DESTROY THE CAVE" hint — shown once when cave is untouched
   if (cave.hp >= cave.maxHp) {
@@ -124,7 +125,7 @@ export function drawCave(ctx, s, now) {
     ctx.fillStyle = '#dfd4ba';
     ctx.font = '10px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`TARGET: ${bossLabel.power}`, cave.x, barY - 14);
+    ctx.fillText(`${translateText('TARGET')}: ${translateText(bossLabel.power)}`, cave.x, barY - 14);
     ctx.globalAlpha = 1;
   }
 
@@ -135,7 +136,7 @@ export function drawCave(ctx, s, now) {
     ctx.font = 'bold 13px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(`${bossLabel.name}: ${bossLabel.power}`, cave.x, cave.y - cave.radius - 18);
+    ctx.fillText(`${translateText(bossLabel.name)}: ${translateText(bossLabel.power)}`, cave.x, cave.y - cave.radius - 18);
   }
 
   ctx.restore();

@@ -6,13 +6,16 @@ import './styles/panels.css'
 import './index.css'
 import App from './App.jsx'
 import { bootCrazyGamesSdkOnly } from './platforms/crazygamesSdk.js'
+import { LocalizationProvider } from './i18n/LocalizationProvider.jsx'
 
 async function main() {
   await bootCrazyGamesSdkOnly()
 
   createRoot(document.getElementById('root')).render(
     <StrictMode>
-      <App />
+      <LocalizationProvider>
+        <App />
+      </LocalizationProvider>
     </StrictMode>,
   )
 }

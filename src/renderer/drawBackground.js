@@ -4,11 +4,11 @@ import { BARRACKS_DEFS, BARRACKS_LAYOUT } from '../config/barracks.js';
 import { UNIT_TYPES } from '../config/units.js';
 import { getSquadCap } from '../core/utils.js';
 import { drawBuildingArt } from './drawBuildings.js';
+import { translateText } from '../i18n/i18n.js';
 
 export function drawBackground(ctx, s, now, metaRef) {
     const bgX = -3000;
     const bgW = V_WIDTH + 6000;
-    const bgY = -3000;
     const bgH = V_HEIGHT + 6000;
 
     const bossActive = s.units.some(u => u.type === 'boss');
@@ -120,18 +120,18 @@ export function drawBackground(ctx, s, now, metaRef) {
             if (isAtCap) {
                 ctx.fillStyle = COLORS.vermilion; ctx.fillRect(-68, 2, 136, 16);
                 ctx.fillStyle = COLORS.parchment; ctx.font = 'bold 12px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText('MAX SQUAD', 0, 12);
+                ctx.fillText(translateText('MAX SQUAD'), 0, 12);
             } else {
                 ctx.fillStyle = s.autoUnlocked[key] ? COLORS.jade : COLORS.navy;
                 ctx.fillRect(-68, 2, 136 * pct, 16);
                 ctx.fillStyle = pct > 0.5 ? COLORS.parchment : COLORS.inkDark;
                 ctx.font = 'bold 10px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText(s.autoUnlocked[key] ? 'TRAINING...' : 'TAP TO TRAIN', 0, 12);
+                ctx.fillText(translateText(s.autoUnlocked[key] ? 'TRAINING...' : 'TAP TO TRAIN'), 0, 12);
             }
         } else {
             ctx.fillStyle = 'rgba(27, 25, 24, 0.4)'; ctx.fillRect(-50, 0, 100, 20);
             ctx.fillStyle = COLORS.parchment; ctx.font = 'bold 10px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText('LOCKED', 0, 12);
+            ctx.fillText(translateText('LOCKED'), 0, 12);
         }
         ctx.restore();
     });
