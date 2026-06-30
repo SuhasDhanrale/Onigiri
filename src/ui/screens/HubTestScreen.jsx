@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { Video } from 'lucide-react';
 import { applyNodeCompletion, getBossUnlockProgress } from '../../systems/MapGenerator.js';
 import { getEvent, applyEventChoice, tickCurses } from '../../systems/EventSystem.js';
 import { generateShopInventory, purchaseItem } from '../../systems/ShopSystem.js';
@@ -17,6 +18,8 @@ import { RestModal } from './RestModal.jsx';
 import { SumiResultScreen } from './SumiResultScreen.jsx';
 import { SoundManager } from '../../systems/SoundManager.js';
 
+const RUN_SUPPLIES_COMMAND = 100;
+
 export function HubTestScreen({
   meta,
   setMeta,
@@ -30,11 +33,16 @@ export function HubTestScreen({
   equipProvision,
   upgradeWall,
   tutorial,
+  adManager,
 }) {
   const [activeSidebarTab, setActiveSidebarTab] = useState('DOJO');
   const [hoveredTech, setHoveredTech] = useState(null);
   const [hoveredMapNode, setHoveredMapNode] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
+  const [runRewardPending, setRunRewardPending] = useState(false);
+  const [runRewardError, setRunRewardError] = useState('');
+  const runRewardClaimingRef = useRef(false);
+  const runRewardRequestRef = useRef(false);
 
   // activeModal: null | { type: 'event'|'shop'|'rest', node, eventData?, inventory?, restOptions?, blessingChoices? }
   const [activeModal, setActiveModal] = useState(null);
@@ -95,6 +103,67 @@ export function HubTestScreen({
       tutorial?.requestStep?.('node_detail');
     }
   }, [selectedNode, tutorial?.completed?.map_upgrades, tutorial]);
+
+  useEffect(() => {
+    setRunRewardError('');
+  }, [selectedNode?.id]);
+
+  const tutorialAllowsAds = !tutorial || tutorial.skipped || tutorial.completed?.combat_spell_crisis;
+  const isCombatNode = ['combat', 'elite', 'boss'].includes(selectedNode?.type);
+  const canOfferRunSupplies =
+    isCombatNode &&
+    selectedNode.status === 'available' &&
+    tutorialAllowsAds &&
+    !runState?.runCommandBonusClaimed &&
+    adManager?.isAdAvailable('rewarded');
+
+  const claimRunSupplies = () => {
+    if (runRewardClaimingRef.current || !runState || runState.runCommandBonusClaimed) return false;
+
+    runRewardClaimingRef.current = true;
+
+    setRunState(prev => {
+      if (!prev || prev.runCommandBonusClaimed) return prev;
+      return {
+        ...prev,
+        baseCommand: prev.baseCommand + RUN_SUPPLIES_COMMAND,
+        runCommandBonusClaimed: true,
+      };
+    });
+
+    setRunRewardError('');
+    SoundManager.playSfx('level_up');
+    return true;
+  };
+
+  const handleRewardedRunSupplies = async () => {
+    if (
+      !canOfferRunSupplies ||
+      runRewardPending ||
+      runRewardClaimingRef.current ||
+      runRewardRequestRef.current
+    ) return;
+
+    runRewardRequestRef.current = true;
+    setRunRewardPending(true);
+    setRunRewardError('');
+    let granted = false;
+
+    try {
+      await adManager.showRewardedAd('run_command_bonus', (rewarded) => {
+        if (!rewarded) return;
+        granted = claimRunSupplies();
+      });
+
+      if (!granted) setRunRewardError('No ad available. You can begin normally.');
+    } catch (error) {
+      console.warn('[Ads] Run supplies reward failed', error);
+      setRunRewardError('No ad available. You can begin normally.');
+    } finally {
+      runRewardRequestRef.current = false;
+      setRunRewardPending(false);
+    }
+  };
 
   // Mark a node completed in the map and clear selection
   const completeNode = (nodeId) => {
@@ -868,7 +937,7 @@ export function HubTestScreen({
 
           {/* SELECTED NODE INFO CARD */}
           {selectedNode && (
-            <div data-tutorial-target="node-detail-card" className="absolute bottom-8 right-8 w-[400px] bg-[#0a0908]/95 backdrop-blur-xl border border-[#d4af37]/30 shadow-[0_30px_60px_rgba(0,0,0,0.95)] z-30 flex flex-col pointer-events-auto animate-[fade-in_0.2s_ease-out] rounded-sm">
+            <div data-tutorial-target="node-detail-card" className="absolute bottom-8 right-8 max-h-[calc(100vh-4rem)] w-[400px] overflow-y-auto bg-[#0a0908]/95 backdrop-blur-xl border border-[#d4af37]/30 shadow-[0_30px_60px_rgba(0,0,0,0.95)] z-30 flex flex-col pointer-events-auto animate-[fade-in_0.2s_ease-out] rounded-sm custom-scrollbar">
               <div className="flex justify-between items-start p-6 border-b border-[#8b8574]/20 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#b84235]/10 rounded-full blur-[40px] pointer-events-none" />
                 <div className="flex flex-col z-10">
@@ -891,7 +960,7 @@ export function HubTestScreen({
                     </span>
                     {selectedNode.threat > 0 && (
                       <span className={`px-2 py-0.5 uppercase font-bold text-[9px] border border-[#b84235]/30 bg-[#b84235]/10 ${selectedNode.threat >= 6 ? 'text-[#d4af37]' : 'text-[#b84235]'}`}>
-                        Threat {'💀'.repeat(Math.min(selectedNode.threat, 6))}
+                        Threat {selectedNode.threat}/6
                       </span>
                     )}
                   </div>
@@ -901,7 +970,7 @@ export function HubTestScreen({
 
               <div className="p-6 flex flex-col gap-5 bg-[#141211]/50">
                 <div className="flex justify-between items-center text-xs font-bold uppercase tracking-[0.2em] border-b border-[#8b8574]/10 pb-3">
-                  <span className="text-[#8b8574] flex items-center gap-2"><span>⚔️</span> Encounter Phases</span>
+                  <span className="text-[#8b8574]">Encounter Phases</span>
                   <span className="text-[#dfd4ba] font-black text-sm">
                     {(() => {
                       if (selectedNode.type === 'boss') return `${getPlayableWaveCount('boss', selectedNode.waves)} + Boss`;
@@ -913,7 +982,7 @@ export function HubTestScreen({
                   </span>
                 </div>
                 <div className="flex justify-between items-start text-xs font-bold uppercase tracking-[0.2em]">
-                  <span className="text-[#8b8574] mt-1 flex items-center gap-2"><span>🎁</span> Reward</span>
+                  <span className="mt-1 text-[#8b8574]">Encounter Reward</span>
                   <div className="flex flex-col items-end text-right">
                     {formatNodeRewardLines(selectedNode).length > 0 ? (
                       formatNodeRewardLines(selectedNode).map((line, idx) => (
@@ -941,7 +1010,7 @@ export function HubTestScreen({
                 </div>
                 {(selectedNode.type === 'combat' || selectedNode.type === 'elite' || selectedNode.type === 'boss') && (
                   <div className="flex justify-between items-center gap-3 border-t border-[#8b8574]/10 pt-3 text-xs font-bold uppercase tracking-[0.2em]">
-                    <span className="text-[#8b8574] flex items-center gap-2"><span>â›©ï¸</span> Dojo</span>
+                    <span className="text-[#8b8574]">Dojo Techniques</span>
                     {activeDojoTechs.length > 0 ? (
                       <div className="flex min-w-0 flex-wrap justify-end gap-1">
                         <span className="mr-1 text-[9px] font-black tracking-widest text-[#d4af37]">
@@ -964,9 +1033,36 @@ export function HubTestScreen({
                 )}
               </div>
 
+              {isCombatNode && runState?.runCommandBonusClaimed && (
+                <div className="border-y border-[#d4af37]/35 bg-[#d4af37]/10 px-4 py-2 text-center text-[10px] font-black uppercase tracking-[0.14em] text-[#d4af37]">
+                  +{RUN_SUPPLIES_COMMAND} Command Claimed
+                </div>
+              )}
+
+              {canOfferRunSupplies && (
+                <div className="border-y border-[#d4af37]/40 bg-[#0f0d0c] p-3">
+                  <button
+                    type="button"
+                    onClick={handleRewardedRunSupplies}
+                    disabled={runRewardPending}
+                    className="w-full border-2 border-[#f1d56a] bg-[#d4af37] px-4 py-3 text-xs font-black uppercase tracking-[0.14em] text-[#18140b] transition-colors hover:bg-[#e4c451] disabled:cursor-wait disabled:opacity-50"
+                  >
+                    {runRewardPending ? (
+                      'Loading Ad...'
+                    ) : (
+                      <span className="flex items-center justify-center gap-2">
+                        <Video size={16} strokeWidth={2.5} aria-hidden="true" />
+                        Watch Ad - Get +{RUN_SUPPLIES_COMMAND} Command
+                      </span>
+                    )}
+                  </button>
+                  {runRewardError && <p className="text-center text-[9px] font-bold text-[#b84235]">{runRewardError}</p>}
+                </div>
+              )}
+
               <button
                 onClick={handlePlayClick}
-                disabled={selectedNode.status !== 'available'}
+                disabled={selectedNode.status !== 'available' || runRewardPending}
                 className={`relative group overflow-hidden shadow-[0_-10px_30px_rgba(0,0,0,0.5)] pointer-events-auto cursor-pointer transition-opacity w-full ${selectedNode.status === 'available' ? '' : 'opacity-40 cursor-not-allowed'}`}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-[#b84235] to-[#802a20] translate-x-[-100%] group-hover:translate-x-[0%] transition-transform duration-500" />

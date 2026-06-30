@@ -61,9 +61,26 @@ export default function App() {
   // Result screen context for combat
   const [resultContext, setResultContext] = useState(null);
   const [showHome, setShowHome] = useState(true);
+  const [adManager, setAdManager] = useState(null);
+  const [interstitialPending, setInterstitialPending] = useState(false);
+  const resultCloseRef = useRef(false);
 
   // mapNodes is lifted here so it survives HubTestScreen unmounting during combat.
   const [mapNodes, setMapNodes] = useState(() => generateMap(Date.now(), 0));
+
+  useEffect(() => {
+    if (import.meta.env.VITE_ENABLE_ADS !== 'true') return undefined;
+
+    let cancelled = false;
+    import('../ads/AdManager.js')
+      .then(async ({ AdManager }) => {
+        await AdManager.init();
+        if (!cancelled) setAdManager(AdManager);
+      })
+      .catch(error => console.warn('[Ads] Manager unavailable', error));
+
+    return () => { cancelled = true; };
+  }, []);
 
   const state = useRef({
     command: 0, totalCommand: 0, wave: 1, fever: 0, feverActive: 0, screenShake: 0, conscriptCooldown: 0,
@@ -124,6 +141,7 @@ export default function App() {
   useEffect(() => {
     const s = state.current;
     if (s.gameState === 'REGION_VICTORY' && !resultContext) {
+      resultCloseRef.current = false;
       const combatStats = s.combatStats;
       if (combatStats) {
         const elapsed = performance.now() - combatStats.startTime;
@@ -171,6 +189,7 @@ export default function App() {
     }
     
     if (s.gameState === 'GAMEOVER' && !resultContext) {
+      resultCloseRef.current = false;
       const combatStats = s.combatStats;
       if (combatStats) {
         const elapsed = performance.now() - combatStats.startTime;
@@ -187,7 +206,11 @@ export default function App() {
         const wavesConquered = currentRun?.currentNodeType === 'boss' && s.waveState === 'BOSS_PHASE'
           ? totalWaves - 1
           : combatStats.conqueredWaves;
-        const combatHonor = s.earnedHonor || 0;
+        const combatHonor = Math.round(
+          (s.earnedHonor || 0) * getCurseHonorMult(currentRun?.curses ?? [])
+        );
+
+        bus.emit('level:fail');
         
         setResultContext({
           type: 'battle_loss',
@@ -205,7 +228,8 @@ export default function App() {
           resources: [
             { name: 'Honor', change: `+${combatHonor}`, color: 'text-[#d4af37]' }
           ],
-          impacts: []
+          impacts: [],
+          honorAwarded: combatHonor,
         });
       }
     }
@@ -213,6 +237,7 @@ export default function App() {
 
   const startCombat = useCallback((regionId, explicitNode = null) => {
     reportCrazyGamesGameplayStart();
+    bus.emit('level:start');
 
     if (!spriteRenderer.isLoaded()) {
       spriteRenderer.loadAllSprites().catch(err => {
@@ -643,24 +668,58 @@ export default function App() {
       setUiTick(t => t+1);
   }, [metaRef]);
 
-  const handleResultClose = useCallback(() => {
+  const handleResultClose = useCallback(async () => {
+    if (interstitialPending || resultCloseRef.current) return;
+    resultCloseRef.current = true;
     const isLoss = resultContext?.type === 'battle_loss';
     if (isLoss) {
       reportCrazyGamesGameplayStop();
     }
-    setResultContext(null);
     
     if (isLoss) {
+      setResultContext(null);
       setMeta(prev => ({ 
         ...prev, 
-        honor: prev.honor + state.current.earnedHonor, 
+        honor: prev.honor + (resultContext?.honorAwarded ?? state.current.earnedHonor),
         conqueredRegions: [] 
       }));
       initRun();
     } else {
+      const completedNodeType = runStateRef.current?.currentNodeType;
+      const tutorialAllowsAds = tutorial.skipped || tutorial.completed?.combat_spell_crisis;
+      const interstitialEligible =
+        completedNodeType === 'combat' &&
+        tutorialAllowsAds &&
+        adManager?.isAdAvailable('interstitial');
+
+      bus.emit('level:complete');
+      const completedCombatCount = adManager?.getStats().session.levelCompletes ?? 0;
+
+      setInterstitialPending(Boolean(interstitialEligible));
       handleRegionVictory();
+
+      if (interstitialEligible) {
+        try {
+          await adManager.showInterstitialAfterLevel(completedCombatCount);
+        } catch (error) {
+          console.warn('[Ads] Victory interstitial failed', error);
+        }
+      }
+
+      setResultContext(null);
+      setInterstitialPending(false);
     }
-  }, [resultContext, setMeta, initRun, handleRegionVictory]);
+  }, [
+    adManager,
+    resultContext,
+    interstitialPending,
+    runStateRef,
+    tutorial.skipped,
+    tutorial.completed,
+    setMeta,
+    initRun,
+    handleRegionVictory,
+  ]);
 
   // Hook up Game Loop
   useGameLoop(state, fgCanvasRef, bgCanvasRef, metaRef, setUiTick);
@@ -820,7 +879,11 @@ export default function App() {
 
   return (
     <div className="flex h-screen w-full bg-[#1b1918] text-[#1b1918] font-serif overflow-hidden select-none relative">
-      <SumiResultScreen data={resultContext} onClose={handleResultClose} />
+      <SumiResultScreen
+        data={resultContext}
+        onClose={handleResultClose}
+        transitionPending={interstitialPending}
+      />
       {showHome && (
         <HomeScreen
           meta={meta}
@@ -844,6 +907,7 @@ export default function App() {
           equipProvision={equipProvision}
           upgradeWall={upgradeWall}
           tutorial={tutorial}
+          adManager={adManager}
         />
       )}
 

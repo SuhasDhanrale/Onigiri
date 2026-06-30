@@ -1,14 +1,16 @@
 import { SoundManager } from '../systems/SoundManager.js';
 
-const isCrazyGamesSdkOnly =
-  import.meta.env.VITE_PLATFORM === 'crazygames' &&
-  import.meta.env.VITE_CG_SDK_ONLY === 'true';
+const isCrazyGamesPlatform = import.meta.env.VITE_PLATFORM === 'crazygames';
+const isCrazyGamesSdkOnly = isCrazyGamesPlatform && import.meta.env.VITE_CG_SDK_ONLY === 'true';
+const shouldBootCrazyGamesSdk =
+  isCrazyGamesPlatform &&
+  (isCrazyGamesSdkOnly || import.meta.env.VITE_ENABLE_ADS === 'true');
 
 let adManager = null;
 let adManagerPromise = null;
 
 async function getAdManager() {
-  if (!isCrazyGamesSdkOnly) return null;
+  if (!shouldBootCrazyGamesSdk) return null;
 
   if (adManager) return adManager;
 
@@ -19,8 +21,8 @@ async function getAdManager() {
   return adManager;
 }
 
-export async function bootCrazyGamesSdkOnly() {
-  if (!isCrazyGamesSdkOnly) return false;
+export async function bootCrazyGamesSdk() {
+  if (!shouldBootCrazyGamesSdk) return false;
 
   try {
     SoundManager.setMuted(false);
@@ -31,25 +33,25 @@ export async function bootCrazyGamesSdkOnly() {
     manager.reportLoadingStop();
     return true;
   } catch (error) {
-    console.warn('[CrazyGames] SDK-only boot failed', error);
+    console.warn('[CrazyGames] SDK boot failed', error);
     return false;
   }
 }
 
 export function reportCrazyGamesGameplayStart() {
-  if (isCrazyGamesSdkOnly) {
+  if (shouldBootCrazyGamesSdk) {
     void getAdManager().then((manager) => manager?.reportGameplayStart());
   }
 }
 
 export function reportCrazyGamesGameplayStop() {
-  if (isCrazyGamesSdkOnly) {
+  if (shouldBootCrazyGamesSdk) {
     void getAdManager().then((manager) => manager?.reportGameplayStop());
   }
 }
 
 export function reportCrazyGamesHappyTime() {
-  if (isCrazyGamesSdkOnly) {
+  if (shouldBootCrazyGamesSdk) {
     void getAdManager().then((manager) => manager?.reportHappyTime());
   }
 }

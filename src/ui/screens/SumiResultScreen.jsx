@@ -1,6 +1,10 @@
 import React from 'react';
 
-export function SumiResultScreen({ data, onClose }) {
+export function SumiResultScreen({
+  data,
+  onClose,
+  transitionPending = false,
+}) {
   if (!data) return null;
 
   const isWin = data.type === 'battle_win';
@@ -132,10 +136,17 @@ export function SumiResultScreen({ data, onClose }) {
           </div>
 
           {/* Action Footer */}
-          <div className="mt-3 md:mt-4 w-full flex justify-center animate-ink-bleed delay-3 shrink-0">
+          <div className="mt-3 md:mt-4 flex w-full shrink-0 flex-col items-center gap-2 animate-ink-bleed delay-3">
+            {transitionPending && (
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-[#8b8574]">
+                Preparing the map…
+              </p>
+            )}
+            <div className="flex w-full flex-col items-center justify-center gap-2 sm:flex-row">
             <button 
               onClick={onClose}
-              className="group relative px-8 md:px-10 py-2.5 bg-transparent overflow-hidden transition-all duration-500 focus:outline-none cursor-pointer"
+              disabled={transitionPending}
+              className="group relative min-w-[280px] px-8 md:px-10 py-2.5 bg-transparent overflow-hidden transition-all duration-500 focus:outline-none cursor-pointer disabled:cursor-wait disabled:opacity-50"
             >
               {/* Painted Button Border */}
               <svg className="absolute inset-0 w-full h-full text-[#1a1818]" preserveAspectRatio="none" viewBox="0 0 100 100">
@@ -145,10 +156,11 @@ export function SumiResultScreen({ data, onClose }) {
               {/* Ink fill on hover */}
               <div className="absolute inset-0 bg-[#1a1818] scale-y-0 origin-bottom transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:scale-y-100" />
               
-              <span className="relative z-10 text-xl md:text-2xl font-black uppercase tracking-[0.28em] text-[#1a1818] group-hover:text-[#eaddcf] transition-colors duration-300">
-                Continue
+              <span className={`relative z-10 font-black uppercase text-[#1a1818] group-hover:text-[#eaddcf] transition-colors duration-300 ${isLoss ? 'text-base tracking-[0.12em]' : 'text-xl md:text-2xl tracking-[0.28em]'}`}>
+                {isLoss ? `Continue with ${data.honorAwarded ?? 0} Honor` : 'Continue'}
               </span>
             </button>
+            </div>
           </div>
           
         </div>

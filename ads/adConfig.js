@@ -1,8 +1,7 @@
 /**
  * Ad Configuration - Game-Specific Rules
  * 
- * This file contains all ad placement rules, timing configurations,
- * and shop-related ad settings for Starline.
+ * This file contains Onigiri's ad placement rules and timing limits.
  * 
  * All numbers are in one place for easy tweaking!
  */
@@ -12,6 +11,8 @@
 export const AD_CONFIG = {
     // Current platform (auto-detected or set via environment)
     platform: import.meta.env.VITE_PLATFORM || 'development',
+    // Master monetization switch for platform builds.
+    ADS_ENABLED: import.meta.env.VITE_ENABLE_ADS === 'true',
     // Global Ad-Free Toggle (Driven by Vite build mode)
     AD_FREE_VERSION: import.meta.env.VITE_AD_FREE === 'true',
     // CrazyGames SDK-only mode: load SDK/features, but never request ads
@@ -19,10 +20,10 @@ export const AD_CONFIG = {
     // ==================== LEVEL-BASED INTERSTITIAL RULES ====================
     levelRules: {
         // First N levels have NO ADS (clean experience for new players)
-        noAdsUntilLevel: 5,
+        noAdsUntilLevel: 3,
 
         // After the no-ad period, show interstitial every N levels
-        // Example: levels 5, 8, 11, 14, 17, 20, 23, 26, 29
+        // Requests after completed combats 3, 6, 9, 12, and so on.
         showAdEveryNLevels: 3,
 
         // Total levels in the game (for reference)
@@ -32,13 +33,13 @@ export const AD_CONFIG = {
     // ==================== TIMING RULES (in milliseconds) ====================
     timing: {
         // Minimum time between interstitial ads
-        interstitialCooldown: 60000, // 60 seconds
+        interstitialCooldown: 180000, // 3 minutes
 
         // Minimum time between any ads (global cooldown)
         globalCooldown: 30000, // 30 seconds
 
         // Delay before first ad can be shown after game/session start
-        initialDelay: 30000, // 30 seconds
+        initialDelay: 180000, // 3 minutes
 
         // Simulated ad durations for DummyAdapter testing
         dummyInterstitialDuration: 3000, // 3 seconds
@@ -48,10 +49,10 @@ export const AD_CONFIG = {
     // ==================== FREQUENCY CAPS ====================
     frequencyCaps: {
         // Maximum interstitial ads per session
-        maxInterstitialsPerSession: 10,
+        maxInterstitialsPerSession: 6,
 
         // Maximum rewarded ads per session (usually high - player's choice)
-        maxRewardedPerSession: 50,
+        maxRewardedPerSession: 6,
 
         // Show interstitial every N game overs
         interstitialEveryNGameOvers: 2,
@@ -60,18 +61,14 @@ export const AD_CONFIG = {
         interstitialEveryNLevelCompletes: 3
     },
 
-    // ==================== SHOP / REWARDED AD INTEGRATION ====================
+    // ==================== LEGACY OPTIONAL HELPERS ====================
+    // Onigiri uses explicit placement calls. These generic upgrade/continue
+    // helpers stay disabled so they cannot surface accidentally.
     shop: {
-        // Which upgrade types support "Watch Ad" option
-        // true = coins OR rewarded ad, false = coins only
-        upgradesWithRewardedOption: {
-            speed: true,   // Speed: Coins OR Watch Ad
-            damage: true,  // Damage: Coins OR Watch Ad  
-            shield: true   // Shield: Coins OR Watch Ad
-        },
+        upgradesWithRewardedOption: {},
 
         // Enable "Continue" with rewarded ad on game over
-        allowContinueWithAd: true,
+        allowContinueWithAd: false,
 
         // Max continues per level attempt
         maxContinuesPerAttempt: 1,
@@ -170,6 +167,7 @@ export function getPlacementId(adType) {
 
 
 export function areAdsEnabled() {
+    if (!AD_CONFIG.ADS_ENABLED) return false;
     if (AD_CONFIG.CG_SDK_ONLY) return false;
 
     // Check Global Ad Config first

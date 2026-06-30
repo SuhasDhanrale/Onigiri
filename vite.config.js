@@ -28,7 +28,11 @@ export default defineConfig(({ command, mode }) => {
   const platform = env.VITE_PLATFORM || platformFromMode
 
   const isFirebaseEnabled = env.VITE_ENABLE_FIREBASE === 'true'
-  const isAdsEnabled = env.VITE_ENABLE_ADS === 'true'
+  // Local dev uses the DummyAdapter by default so ad placements are testable
+  // with `npm run dev`. Explicit platform env values still take precedence.
+  const isAdsEnabled = env.VITE_ENABLE_ADS
+    ? env.VITE_ENABLE_ADS === 'true'
+    : mode === 'development'
   const isAnalyticsEnabled = env.VITE_ENABLE_ANALYTICS === 'true'
   const isAdFree = env.VITE_AD_FREE === 'true'
   const isCrazyGamesSdkOnly = env.VITE_CG_SDK_ONLY === 'true'
@@ -63,7 +67,7 @@ export default defineConfig(({ command, mode }) => {
       'import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(env.VITE_FIREBASE_MESSAGING_SENDER_ID || ''),
       'import.meta.env.VITE_FIREBASE_APP_ID': JSON.stringify(env.VITE_FIREBASE_APP_ID || ''),
       'import.meta.env.VITE_FIREBASE_MEASUREMENT_ID': JSON.stringify(env.VITE_FIREBASE_MEASUREMENT_ID || ''),
-      'import.meta.env.VITE_ENABLE_ADS': JSON.stringify(env.VITE_ENABLE_ADS || 'false'),
+      'import.meta.env.VITE_ENABLE_ADS': JSON.stringify(isAdsEnabled ? 'true' : 'false'),
       'import.meta.env.VITE_ENABLE_ANALYTICS': JSON.stringify(env.VITE_ENABLE_ANALYTICS || 'false'),
 
       'import.meta.env.VITE_GD_GAME_ID': JSON.stringify(env.VITE_GD_GAME_ID || ''),
@@ -79,11 +83,8 @@ export default defineConfig(({ command, mode }) => {
 
       rollupOptions: {
         output: {
-          manualChunks: (isFirebaseEnabled || isAdsEnabled)
-            ? {
-                firebase: ['firebase/app', 'firebase/analytics'],
-                ...(isAdsEnabled ? { ads: [] } : {})
-              }
+          manualChunks: isFirebaseEnabled
+            ? { firebase: ['firebase/app', 'firebase/analytics'] }
             : undefined
         },
         external: (id) => {
